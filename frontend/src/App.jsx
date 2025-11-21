@@ -20,6 +20,7 @@ const PRODUCTS = [
 const MenuScreen = () => {
   const [activeCategory, setActiveCategory] = useState('all');
   const [cart, setCart] = useState([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
 
   // Lọc sản phẩm theo danh mục
   const filteredProducts = useMemo(() => {
@@ -55,9 +56,26 @@ const MenuScreen = () => {
 
   // Tính tổng tiền
   const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+  
+  // Tính tổng số lượng món
+  const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
+  
+  // Lấy số lượng món trong giỏ
+  const getItemQuantity = (productId) => {
+    const item = cart.find(i => i.id === productId);
+    return item ? item.qty : 0;
+  };
 
   return (
-    <div className="flex h-screen bg-gray-100 font-sans overflow-hidden">
+    <div className="flex h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 font-sans overflow-hidden relative">
+      
+      {/* --- Overlay mờ khi giỏ hàng mở --- */}
+      {isCartOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-30 transition-opacity duration-300"
+          onClick={() => setIsCartOpen(false)}
+        />
+      )}
       
       {/* --- Cột 1: Danh mục (Sidebar) --- */}
       <div className="w-24 bg-white border-r flex flex-col items-center py-6 space-y-4 shadow-sm z-10">
@@ -71,10 +89,10 @@ const MenuScreen = () => {
           <button
             key={cat.id}
             onClick={() => setActiveCategory(cat.id)}
-            className={`flex flex-col items-center justify-center w-16 h-16 rounded-xl transition-all ${
+            className={`flex flex-col items-center justify-center w-16 h-16 rounded-xl transition-all duration-300 ${
               activeCategory === cat.id 
-              ? 'bg-amber-500 text-white shadow-lg scale-105' // Màu vàng cam chủ đạo
-              : 'text-gray-400 hover:bg-amber-50 hover:text-amber-500' // Màu vàng cam nhạt khi hover
+              ? 'bg-gradient-to-br from-orange-400 to-orange-600 text-white shadow-lg shadow-orange-300/50 scale-105 hover:shadow-xl hover:shadow-orange-400/60'
+              : 'text-gray-400 hover:bg-gradient-to-br hover:from-orange-50 hover:to-orange-100 hover:text-orange-600 hover:scale-105'
             }`}
           >
             <div className="mb-1">{cat.icon}</div>
@@ -84,49 +102,102 @@ const MenuScreen = () => {
       </div>
 
       {/* --- Cột 2: Khu vực chọn món (Main Grid) --- */}
-      <div className="flex-1 overflow-y-auto p-6">
-        <header className="mb-6 flex justify-between items-center">
+      <div className="flex-1 overflow-y-auto p-6 flex flex-col h-screen">
+        <header className="mb-6 flex justify-between items-center shrink-0">
           <div>
             <h1 className="text-3xl font-bold text-gray-800">Thực Đơn</h1>
             <p className="text-gray-500">Thứ 5, 20/11/2025</p>
           </div>
-          <div className="bg-white px-4 py-2 rounded-full shadow-sm text-sm font-medium text-amber-600 border border-amber-100"> {/* Màu vàng cam */}
+          <div className="bg-white px-4 py-2 rounded-full shadow-sm text-sm font-medium text-amber-600 border border-amber-100">
             Bàn số: 05
           </div>
         </header>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 pb-20">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 auto-rows-fr pb-6">
           {filteredProducts.map(product => (
             <div 
               key={product.id} 
-              onClick={() => addToCart(product)}
-              className="bg-white rounded-2xl p-3 shadow-sm hover:shadow-md cursor-pointer transition-all hover:-translate-y-1 border border-transparent hover:border-amber-200 group" // Màu vàng cam khi hover border
+              className="bg-white rounded-2xl p-3 shadow-sm hover:shadow-md transition-all hover:-translate-y-1 border border-transparent hover:border-amber-200 group flex flex-col"
             >
-              <div className="h-32 w-full rounded-xl overflow-hidden mb-3 relative">
+              <div className="aspect-square w-full rounded-xl overflow-hidden mb-3">
                 <img 
                   src={product.image} 
                   alt={product.name} 
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                 />
-                <button className="absolute bottom-2 right-2 bg-white p-2 rounded-full shadow-md text-amber-500 hover:bg-amber-500 hover:text-white transition-colors"> {/* Màu vàng cam nút + */}
-                  <Plus size={16} />
-                </button>
               </div>
-              <h3 className="font-bold text-gray-800 text-sm truncate">{product.name}</h3>
-              <p className="text-amber-600 font-bold mt-1"> {/* Màu vàng cam giá */}
-                {product.price.toLocaleString('vi-VN')}đ
-              </p>
+              <div className="flex items-center justify-between gap-2 mt-auto">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-gray-800 text-sm truncate">{product.name}</h3>
+                  <p className="text-amber-600 font-bold mt-1">
+                    {product.price.toLocaleString('vi-VN')}đ
+                  </p>
+                </div>
+                {getItemQuantity(product.id) > 0 ? (
+                  <div className="flex items-center border-2 border-orange-500 rounded-full overflow-hidden shadow-lg shrink-0">
+                    <div 
+                      onClick={() => removeFromCart(product.id)}
+                      className="bg-orange-100 text-gray-800 px-3 py-2.5 border-r-2 border-orange-600 hover:bg-orange-200 transition-all cursor-pointer"
+                    >
+                      <Minus size={16} />
+                    </div>
+                      <span className="bg-white text-orange-600 font-bold text-base min-w-10 text-center">
+                        {getItemQuantity(product.id)}
+                      </span>
+                    <div 
+                      onClick={() => addToCart(product)}
+                      className="bg-orange-500  text-white px-3 py-2.5 border-l-2 border-orange-600 hover:bg-orange-600 transition-all cursor-pointer"
+                    >
+                      <Plus size={16} />
+                    </div>
+                  </div>
+                ) : (
+                  <button 
+                    onClick={() => addToCart(product)}
+                    className="bg-gradient-to-br from-orange-400 to-orange-600 p-2 rounded-full shadow-md shadow-orange-300/40 text-white hover:shadow-lg hover:shadow-orange-400/60 hover:scale-110 transition-all duration-300 shrink-0"
+                  >
+                    <Plus size={18} />
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* --- Cột 3: Giỏ hàng (Order Summary) --- */}
-      <div className="w-96 bg-white shadow-2xl flex flex-col border-l z-20">
-        <div className="p-6 border-b bg-gray-50">
+      {/* --- Nút giỏ hàng nổi (Floating Cart Button) --- */}
+      {!isCartOpen && totalItems > 0 && (
+        <button
+          onClick={() => setIsCartOpen(true)}
+          className="fixed bottom-8 right-8 bg-gradient-to-br from-orange-500 to-red-500 text-white rounded-2xl shadow-2xl shadow-orange-400/50 hover:shadow-orange-500/60 hover:scale-105 transition-all duration-300 z-40 flex items-center gap-3 px-6 py-4"
+        >
+          <div className="relative">
+            <ShoppingCart size={28} />
+            <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+              {totalItems}
+            </span>
+          </div>
+          <div className="flex flex-col items-start">
+            <span className="text-xs opacity-90">Tổng cộng</span>
+            <span className="font-bold text-lg">{totalAmount.toLocaleString('vi-VN')}đ</span>
+          </div>
+        </button>
+      )}
+
+      {/* --- Cột 3: Giỏ hàng (Order Summary) - Slide từ phải --- */}
+      <div className={`fixed top-0 right-0 h-screen w-96 bg-white shadow-2xl flex flex-col border-l z-40 transition-transform duration-300 ${
+        isCartOpen ? 'translate-x-0' : 'translate-x-full'
+      }`}>
+        <div className="p-6 border-b bg-gray-50 flex items-center justify-between">
           <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-            <ShoppingCart className="text-amber-500" /> Đơn Hàng {/* Màu vàng cam icon */}
+            <ShoppingCart className="text-amber-500" /> Đơn Hàng
           </h2>
+          <button
+            onClick={() => setIsCartOpen(false)}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            ✕
+          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -139,26 +210,26 @@ const MenuScreen = () => {
             </div>
           ) : (
             cart.map(item => (
-              <div key={item.id} className="flex items-center gap-3 bg-white p-2 rounded-lg border border-gray-100">
+              <div key={item.id} className="flex items-center gap-3 bg-amber-50 p-3 rounded-xl border-2 border-amber-200 shadow-sm">
                 <img src={item.image} alt={item.name} className="w-12 h-12 rounded-md object-cover" />
                 <div className="flex-1">
                   <h4 className="text-sm font-semibold text-gray-800 truncate">{item.name}</h4>
                   <p className="text-xs text-gray-500">{item.price.toLocaleString('vi-VN')}đ</p>
                 </div>
-                <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
-                  <button 
+                <div className="flex items-center border-2 border-orange-500 rounded-full overflow-hidden shadow-lg">
+                  <div 
                     onClick={() => removeFromCart(item.id)}
-                    className="p-1 bg-white rounded text-red-500 shadow-sm hover:bg-red-50"
+                    className="bg-orange-100 text-gray-800 px-2.5 py-1.5 border-r-2 border-orange-400 hover:bg-orange-200 transition-all cursor-pointer"
                   >
                     <Minus size={12} />
-                  </button>
-                  <span className="text-sm font-bold w-4 text-center">{item.qty}</span>
-                  <button 
+                  </div>
+                  <span className="bg-white text-orange-600 font-bold text-sm min-w-8 text-center">{item.qty}</span>
+                  <div 
                     onClick={() => addToCart(item)}
-                    className="p-1 bg-white rounded text-green-600 shadow-sm hover:bg-green-50"
+                    className="bg-orange-500 text-white px-2.5 py-1.5 hover:bg-orange-600 transition-all cursor-pointer"
                   >
                     <Plus size={12} />
-                  </button>
+                  </div>
                 </div>
               </div>
             ))
@@ -171,9 +242,9 @@ const MenuScreen = () => {
             <span className="text-2xl font-bold text-gray-800">{totalAmount.toLocaleString('vi-VN')}đ</span>
           </div>
           <button 
-            className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg transition-all ${
+            className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg transition-all duration-300 ${
               cart.length > 0 
-              ? 'bg-amber-500 text-white hover:bg-amber-600 hover:shadow-amber-200' // Màu vàng cam nút thanh toán
+              ? 'bg-gradient-to-r from-orange-500 via-orange-600 to-red-500 text-white hover:from-orange-600 hover:via-orange-700 hover:to-red-600 hover:shadow-xl hover:shadow-orange-400/50 hover:scale-[1.02] active:scale-[0.98]'
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
             disabled={cart.length === 0}
