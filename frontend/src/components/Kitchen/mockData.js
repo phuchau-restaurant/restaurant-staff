@@ -114,5 +114,49 @@ export const MOCK_ORDERS = [
     orderTime: new Date(Date.now() - 20 * 60000),
     startTime: new Date(Date.now() - 18 * 60000),
     completeTime: new Date(Date.now() - 2 * 60000)
+  },
+  {
+    id: 6,
+    orderNumber: 'O-006',
+    tableNumber: 10,
+    items: [
+      { 
+        id: 8, 
+        name: 'Sườn Nướng BBQ', 
+        quantity: 1, 
+        image: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=200&q=80', 
+        notes: 'Nhiều sốt BBQ', 
+        station: 'grill' 
+      },
+      { 
+        id: 9, 
+        name: 'Salad Trộn', 
+        quantity: 2, 
+        image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=200&q=80', 
+        notes: 'Không hành tây', 
+        station: 'bar' 
+      },
+      { 
+        id: 10, 
+        name: 'Mực Chiên Giòn', 
+        quantity: 1, 
+        image: 'https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?w=200&q=80', 
+        notes: '', 
+        station: 'fryer' 
+      },
+      { 
+        id: 11, 
+        name: 'Tiramisu', 
+        quantity: 1, 
+        image: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=200&q=80', 
+        notes: 'Thêm kem', 
+        station: 'dessert' 
+      }
+    ],
+    server: 'Phạm Thị D',
+    status: 'new',
+    orderTime: new Date(Date.now() - 3 * 60000),
+    startTime: null,
+    completeTime: null
   }
 ];
