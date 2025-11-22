@@ -1,5 +1,68 @@
 import React, { useState, useMemo } from 'react';
-import { ShoppingCart, Trash2, Plus, Minus, Utensils, Coffee, Cookie } from 'lucide-react'; // Cần cài: npm install lucide-react
+import { ShoppingCart, Trash2, Plus, Minus, Utensils, Coffee, Cookie, ChefHat } from 'lucide-react';
+import KitchenScreen from './screens/KitchenScreen';
+
+// Home Screen - Chọn màn hình
+const HomeScreen = ({ onSelectScreen }) => {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-red-50 flex items-center justify-center p-8">
+      <div className="max-w-4xl w-full">
+        <h1 className="text-5xl font-bold text-center text-gray-800 mb-4">
+          Hệ Thống Nhà Hàng
+        </h1>
+        <p className="text-center text-gray-600 mb-12 text-xl">
+          Chọn màn hình bạn muốn sử dụng
+        </p>
+        
+        <div className="grid md:grid-cols-2 gap-8">
+          {/* Màn hình chọn món */}
+          <button
+            onClick={() => onSelectScreen('menu')}
+            className="group relative bg-gradient-to-br from-orange-100 to-amber-100 rounded-3xl p-12 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105 border-4 border-orange-300 hover:border-orange-500"
+          >
+            <div className="flex flex-col items-center">
+              <div className="bg-gradient-to-br from-orange-400 to-orange-600 p-8 rounded-full mb-6 group-hover:scale-110 transition-transform duration-300">
+                <Utensils size={64} className="text-white" />
+              </div>
+              <h2 className="text-3xl font-bold text-gray-800 mb-3">
+                Màn Hình Chọn Món
+              </h2>
+              <p className="text-gray-600 text-center">
+                Dành cho nhân viên phục vụ<br/>
+                Gọi món và quản lý đơn hàng
+              </p>
+            </div>
+            <div className="absolute top-4 right-4 bg-orange-500 text-white px-4 py-2 rounded-full text-sm font-bold">
+              Phục vụ
+            </div>
+          </button>
+
+          {/* Màn hình bếp */}
+          <button
+            onClick={() => onSelectScreen('kitchen')}
+            className="group relative bg-gradient-to-br from-red-100 to-pink-100 rounded-3xl p-12 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105 border-4 border-red-300 hover:border-red-500"
+          >
+            <div className="flex flex-col items-center">
+              <div className="bg-gradient-to-br from-red-500 to-red-600 p-8 rounded-full mb-6 group-hover:scale-110 transition-transform duration-300">
+                <ChefHat size={64} className="text-white" />
+              </div>
+              <h2 className="text-3xl font-bold text-gray-800 mb-3">
+                Màn Hình Bếp
+              </h2>
+              <p className="text-gray-600 text-center">
+                Dành cho đầu bếp<br/>
+                Xem và xử lý đơn hàng
+              </p>
+            </div>
+            <div className="absolute top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-full text-sm font-bold">
+              Bếp
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // --- Dữ liệu giả lập (Mock Data) ---
 const CATEGORIES = [
@@ -17,6 +80,34 @@ const PRODUCTS = [
   { id: 5, name: 'Bánh Kem Dâu', price: 40000, category: 'dessert', image: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=500&q=80' },
   { id: 6, name: 'Khoai Tây Chiên', price: 25000, category: 'dessert', image: 'https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?w=500&q=80' },
 ];
+
+function App() {
+  const [currentScreen, setCurrentScreen] = useState(null); // null, 'menu', 'kitchen'
+
+  // Nút quay lại
+  const BackButton = () => (
+    <button
+      onClick={() => setCurrentScreen(null)}
+      className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-white px-8 py-4 rounded-2xl shadow-xl hover:shadow-2xl transition-all flex items-center gap-3 font-bold text-gray-700 hover:text-orange-600 border-2 border-gray-200 hover:border-orange-500 hover:scale-105"
+    >
+      ← Quay lại
+    </button>
+  );
+
+  // Hiển thị màn hình chính
+  if (!currentScreen) {
+    return <HomeScreen onSelectScreen={setCurrentScreen} />;
+  }
+
+  // Hiển thị màn hình được chọn
+  return (
+    <>
+      <BackButton />
+      {currentScreen === 'menu' ? <MenuScreen /> : <KitchenScreen />}
+    </>
+  );
+}
+
 const MenuScreen = () => {
   const [activeCategory, setActiveCategory] = useState('all');
   const [cart, setCart] = useState([]);
@@ -113,7 +204,7 @@ const MenuScreen = () => {
           </div>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 auto-rows-fr pb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 auto-rows-fr pb-6">
           {filteredProducts.map(product => (
             <div 
               key={product.id} 
@@ -259,4 +350,4 @@ const MenuScreen = () => {
   );
 };
 
-export default MenuScreen;
+export default App;
