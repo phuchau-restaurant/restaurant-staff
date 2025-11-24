@@ -101,10 +101,10 @@ function App() {
 
   // Hiển thị màn hình được chọn
   return (
-    <>
+    <div className="h-screen overflow-hidden">
       <BackButton />
       {currentScreen === 'menu' ? <MenuScreen /> : <KitchenScreen />}
-    </>
+    </div>
   );
 }
 

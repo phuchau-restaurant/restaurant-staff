@@ -22,52 +22,66 @@ const OrderCard = ({
     <>
     <div 
       onClick={() => setShowDetailModal(true)}
-      className={`bg-white rounded-2xl shadow-lg border-4 ${statusConfig.borderColor} overflow-hidden hover:shadow-2xl transition-all cursor-pointer ${
+      className={`group bg-white rounded-xl shadow-md border-l-8 ${statusConfig.borderColor} overflow-hidden hover:shadow-xl transition-all cursor-pointer ${
       viewMode === 'list' ? 'flex items-stretch' : ''
     }`}>
       {/* Header */}
-      <div className={`${statusConfig.color} text-white p-4 ${viewMode === 'list' ? 'w-48 flex-shrink-0 flex flex-col justify-center' : ''}`}>
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <Bell size={20} />
-            <span className="font-bold text-lg">{order.orderNumber}</span>
+      <div className={`bg-gradient-to-br from-gray-50 to-white p-4 border-b-2 border-gray-100 ${viewMode === 'list' ? 'w-64 flex-shrink-0 border-b-0 border-r-2' : ''}`}>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <div className="bg-gradient-to-br from-blue-400 to-blue-500 p-2 rounded-lg shadow-sm">
+              <Bell size={20} className="text-white" />
+            </div>
+            <div>
+              <span className="font-black text-xl text-gray-800">{order.orderNumber}</span>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-blue-400 to-blue-500 text-white shadow-sm">
+                  Bàn {order.tableNumber}
+                </span>
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-gray-200 text-gray-700">
+                  {order.items.length} món
+                </span>
+              </div>
+            </div>
           </div>
-          <span className="bg-white/20 px-3 py-1 rounded-full text-sm font-bold">
-            Bàn {order.tableNumber}
+        </div>
+        
+        <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200">
+          <Clock size={16} className={elapsed >= 10 ? 'text-red-500' : 'text-gray-500'} />
+          <span className={`font-bold text-sm ${elapsed >= 10 ? 'text-red-600' : 'text-gray-700'}`}>
+            {elapsed} phút
           </span>
+          {elapsed >= 10 && <AlertCircle size={16} className="text-red-500 animate-pulse" />}
         </div>
-        <div className="flex items-center gap-2 text-sm">
-          <Clock size={16} />
-          <span className="font-semibold">{elapsed} phút</span>
-          {elapsed >= 10 && <AlertCircle size={16} className="animate-pulse" />}
-        </div>
-        <div className="mt-2 text-xs bg-white/20 px-2 py-1 rounded text-center">
-          {order.items.length} món - Click xem chi tiết
+
+        <div className="mt-3 flex items-center gap-2 text-xs text-gray-600">
+          <User size={14} />
+          <span className="font-medium">{order.server}</span>
         </div>
       </div>
 
-      {/* Content - Hidden in card view */}
+      {/* Content */}
       <div className={`p-4 flex-1 ${viewMode === 'list' ? 'flex items-center gap-4' : ''}`}>
         {/* Items */}
-        <div className={`mb-4 ${viewMode === 'list' ? 'flex-1 mb-0' : ''}`}>
+        <div className={`space-y-2 mb-3 ${viewMode === 'list' ? 'flex-1 mb-0 space-y-1' : ''}`}>
           {order.items.map(item => (
-            <div key={item.id} className={`flex gap-3 mb-3 ${viewMode === 'list' ? 'items-center' : ''}`}>
+            <div key={item.id} className={`flex gap-3 bg-gray-50 p-2 rounded-lg ${viewMode === 'list' ? 'items-center p-1.5' : ''}`}>
               <img 
                 src={item.image} 
                 alt={item.name} 
-                className={`rounded-lg object-cover ${viewMode === 'list' ? 'w-12 h-12' : 'w-16 h-16'}`}
+                className={`rounded-lg object-cover flex-shrink-0 ${viewMode === 'list' ? 'w-10 h-10' : 'w-14 h-14'}`}
               />
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h3 className={`font-bold text-gray-800 ${viewMode === 'list' ? 'text-base' : 'text-lg'}`}>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className={`font-bold text-gray-800 truncate ${viewMode === 'list' ? 'text-sm' : 'text-base'}`}>
                     {item.name}
                   </h3>
-                  <span className="bg-orange-500 text-white px-3 py-1 rounded-full text-sm font-bold">
+                  <span className="bg-orange-500 text-white px-2 py-0.5 rounded-full text-xs font-bold flex-shrink-0">
                     x{item.quantity}
                   </span>
                 </div>
                 {item.notes && (
-                  <p className="text-red-600 text-sm font-semibold mt-1 italic">
+                  <p className="text-red-600 text-xs font-semibold mt-0.5 italic truncate">
                     📝 {item.notes}
                   </p>
                 )}
@@ -76,22 +90,18 @@ const OrderCard = ({
           ))}
         </div>
 
-        {/* Server Info */}
-        <div className={`flex items-center gap-2 text-sm text-gray-600 mb-4 ${viewMode === 'list' ? 'mb-0 w-48' : ''}`}>
-          <User size={16} />
-          <span>{order.server}</span>
-        </div>
-
         {/* Action Buttons */}
-        <OrderActions 
-          status={status}
-          orderId={order.id}
-          handleStart={handleStart}
-          handleComplete={handleComplete}
-          handleCancel={handleCancel}
-          handleRecall={handleRecall}
-          viewMode={viewMode}
-        />
+        <div onClick={(e) => e.stopPropagation()}>
+          <OrderActions 
+            status={status}
+            orderId={order.id}
+            handleStart={handleStart}
+            handleComplete={handleComplete}
+            handleCancel={handleCancel}
+            handleRecall={handleRecall}
+            viewMode={viewMode}
+          />
+        </div>
       </div>
     </div>
 
@@ -100,23 +110,30 @@ const OrderCard = ({
       <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4" onClick={() => setShowDetailModal(false)}>
         <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
           {/* Modal Header */}
-          <div className={`${statusConfig.color} text-white p-6 sticky top-0 z-10`}>
+          <div className="bg-gradient-to-br from-gray-50 to-white p-6 border-b-2 border-gray-200 sticky top-0 z-10">
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-4">
-                <ChefHat size={32} />
+            <div className="flex items-center gap-4">
+              <div className="bg-gradient-to-br from-blue-400 to-blue-500 p-3 rounded-xl shadow-md">
+                <ChefHat size={32} className="text-white" />
+              </div>
                 <div>
-                  <h2 className="text-3xl font-bold">{order.orderNumber}</h2>
-                  <p className="text-white/90">Bàn {order.tableNumber} • {elapsed} phút</p>
+                  <h2 className="text-3xl font-bold text-gray-800">{order.orderNumber}</h2>
+                  <p className="text-gray-600">Bàn {order.tableNumber} • {elapsed} phút</p>
                 </div>
               </div>
-              <button 
-                onClick={() => setShowDetailModal(false)}
-                className="bg-white/20 hover:bg-white/30 p-2 rounded-full transition-all"
-              >
-                <X size={28} />
-              </button>
+              <div className="flex items-center gap-3">
+                <span className={`px-4 py-2 rounded-lg text-sm font-bold ${statusConfig.color} text-white`}>
+                  {statusConfig.label}
+                </span>
+                <button 
+                  onClick={() => setShowDetailModal(false)}
+                  className="bg-gray-200 hover:bg-gray-300 p-2 rounded-full transition-all"
+                >
+                  <X size={28} className="text-gray-700" />
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-2 text-sm">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
               <User size={18} />
               <span>Phục vụ: {order.server}</span>
             </div>
@@ -133,7 +150,7 @@ const OrderCard = ({
             
             <div className="space-y-4">
               {order.items.map((item, index) => (
-                <div key={item.id} className="bg-gradient-to-r from-orange-50 to-amber-50 p-4 rounded-2xl border-2 border-orange-200 flex gap-4 items-center">
+                <div key={item.id} className="bg-gray-50 p-4 rounded-xl border-2 border-gray-200 flex gap-4 items-center">
                   <img 
                     src={item.image} 
                     alt={item.name} 
@@ -178,22 +195,23 @@ const OrderCard = ({
 
 // Action Buttons Component
 const OrderActions = ({ status, orderId, handleStart, handleComplete, handleCancel, handleRecall, viewMode }) => {
-  const gridClass = viewMode === 'list' ? 'grid-cols-2 w-64' : 'grid-cols-2';
+  const gridClass = viewMode === 'list' ? 'grid-cols-2 gap-1.5' : 'grid-cols-2 gap-2';
 
   if (status === 'new') {
     return (
-      <div className={`grid gap-2 ${gridClass}`}>
+      <div className={`grid ${gridClass}`}>
         <button
-          onClick={() => handleStart(orderId)}
-          className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-white py-3 px-4 rounded-xl font-bold hover:shadow-lg hover:scale-105 transition-all"
+          onClick={(e) => { e.stopPropagation(); handleStart(orderId); }}
+          className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white py-2.5 px-3 rounded-lg font-bold hover:shadow-lg hover:scale-105 transition-all text-sm"
         >
-          🔥 Bắt đầu
+          Bắt đầu
         </button>
         <button
-          onClick={() => handleCancel(orderId)}
-          className="bg-gradient-to-r from-red-400 to-red-600 text-white py-3 px-4 rounded-xl font-bold hover:shadow-lg hover:scale-105 transition-all"
+          onClick={(e) => { e.stopPropagation(); handleCancel(orderId); }}
+          className="bg-red-50 text-red-700 py-2.5 px-3 rounded-lg font-bold hover:bg-red-100 hover:shadow-md hover:scale-105 transition-all text-sm border-2 border-red-200"
+          style={{ backgroundColor: '#FEF2F2', color: '#B91C1C', borderColor: '#FECACA' }}
         >
-          ❌ Hủy
+          Hủy đơn
         </button>
       </div>
     );
@@ -201,24 +219,26 @@ const OrderActions = ({ status, orderId, handleStart, handleComplete, handleCanc
 
   if (status === 'cooking' || status === 'warning' || status === 'late') {
     return (
-      <div className={`grid gap-2 ${gridClass}`}>
+      <div className={`grid ${gridClass}`}>
         <button
-          onClick={() => handleComplete(orderId)}
-          className="bg-gradient-to-r from-green-400 to-green-600 text-white py-3 px-4 rounded-xl font-bold hover:shadow-lg hover:scale-105 transition-all col-span-2"
+          onClick={(e) => { e.stopPropagation(); handleComplete(orderId); }}
+          className="bg-gradient-to-r from-green-500 to-emerald-600 text-white py-2.5 px-3 rounded-lg font-bold hover:shadow-lg hover:scale-105 transition-all col-span-2 text-sm"
         >
-          ✅ Hoàn thành
+          Hoàn thành
         </button>
         <button
-          onClick={() => handleCancel(orderId)}
-          className="bg-gradient-to-r from-red-400 to-red-600 text-white py-3 px-4 rounded-xl font-bold hover:shadow-lg hover:scale-105 transition-all"
+          onClick={(e) => { e.stopPropagation(); handleCancel(orderId); }}
+          className="bg-red-50 text-red-700 py-2.5 px-3 rounded-lg font-bold hover:bg-red-100 hover:shadow-md hover:scale-105 transition-all text-sm border-2 border-red-200"
+          style={{ backgroundColor: '#FEF2F2', color: '#B91C1C', borderColor: '#FECACA' }}
         >
-          ❌ Hủy
+          Hủy đơn
         </button>
         <button
-          onClick={() => handleRecall(orderId)}
-          className="bg-gradient-to-r from-purple-400 to-purple-600 text-white py-3 px-4 rounded-xl font-bold hover:shadow-lg hover:scale-105 transition-all"
+          onClick={(e) => { e.stopPropagation(); handleRecall(orderId); }}
+          className="bg-blue-100 text-blue-700 py-2.5 px-3 rounded-lg font-bold hover:bg-blue-200 hover:shadow-md hover:scale-105 transition-all text-sm border-2 border-blue-300"
+          style={{ backgroundColor: '#DBEAFE', color: '#1D4ED8' }}
         >
-          📢 Gọi PV
+          Gọi PV
         </button>
       </div>
     );
@@ -226,12 +246,13 @@ const OrderActions = ({ status, orderId, handleStart, handleComplete, handleCanc
 
   if (status === 'completed') {
     return (
-      <div className={`grid gap-2 ${gridClass}`}>
+      <div className={`grid ${gridClass}`}>
         <button
-          onClick={() => handleRecall(orderId)}
-          className="bg-gradient-to-r from-blue-400 to-blue-600 text-white py-3 px-4 rounded-xl font-bold hover:shadow-lg hover:scale-105 transition-all col-span-2"
+          onClick={(e) => { e.stopPropagation(); handleRecall(orderId); }}
+          className="bg-blue-100 text-blue-700 py-2.5 px-3 rounded-lg font-bold hover:bg-blue-200 hover:shadow-md hover:scale-105 transition-all col-span-2 text-sm border-2 border-blue-300"
+          style={{ backgroundColor: '#DBEAFE', color: '#1D4ED8' }}
         >
-          📢 Gọi ra lấy
+          Gọi ra lấy
         </button>
       </div>
     );

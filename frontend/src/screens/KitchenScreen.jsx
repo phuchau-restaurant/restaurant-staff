@@ -31,8 +31,7 @@ const KitchenScreen = () => {
       return order.status;
     }
     const elapsed = getElapsedTime(order.orderTime);
-    if (elapsed >= 15) return 'late';
-    if (elapsed >= 10) return 'warning';
+    if (elapsed >= 10) return 'late';
     return order.status;
   };
 
@@ -71,7 +70,7 @@ const KitchenScreen = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200">
+    <div className="h-full bg-gradient-to-br from-slate-100 to-slate-200 flex flex-col">
       <KitchenHeader
         currentTime={currentTime}
         viewMode={viewMode}
@@ -82,7 +81,7 @@ const KitchenScreen = () => {
         setFilterStatus={setFilterStatus}
       />
 
-      <div className="p-6">
+      <div className="flex-1 p-6 overflow-y-auto">
         <OrdersGrid
           orders={filteredOrders}
           currentTime={currentTime}

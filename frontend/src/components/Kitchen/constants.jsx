@@ -11,7 +11,7 @@ export const STATIONS = [
 
 export const STATUS_CONFIG = {
   new: { 
-    label: 'Mới vào', 
+    label: 'Đơn mới', 
     color: 'bg-blue-500', 
     borderColor: 'border-blue-500', 
     textColor: 'text-blue-600' 
@@ -21,12 +21,6 @@ export const STATUS_CONFIG = {
     color: 'bg-yellow-500', 
     borderColor: 'border-yellow-500', 
     textColor: 'text-yellow-600' 
-  },
-  warning: { 
-    label: 'Sắp quá giờ', 
-    color: 'bg-orange-500', 
-    borderColor: 'border-orange-500', 
-    textColor: 'text-orange-600' 
   },
   late: { 
     label: 'Trễ', 
