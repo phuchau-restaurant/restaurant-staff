@@ -85,23 +85,6 @@ const HomeScreen = ({ onSelectScreen }) => {
             </button>
           </div>
         </div>
-
-        {/* --- TEMP NAVIGATION BUTTONS --- */}
-        <div className="flex justify-center items-center gap-4 mt-6">
-        <button
-            onClick={() => onSelectScreen("menu")}
-            className="bg-green-500 text-white font-bold py-2 px-4 rounded hover:bg-green-600 transition-all"
-        >
-            Chuyển sang MenuScreen
-        </button>
-        <button
-            onClick={() => onSelectScreen("kitchen")}
-            className="bg-purple-500 text-white font-bold py-2 px-4 rounded hover:bg-purple-600 transition-all"
-        >
-            Chuyển sang KitchenScreen
-        </button>
-        </div>
-
       </div>
 
       {/* --- BOTTOM WAVE & CTA --- */}
