@@ -10,11 +10,14 @@ const KitchenHeader = ({
   setFilterStation,
   filterStatus,
   setFilterStatus,
+  searchOrderId,
+  setSearchOrderId,
 }) => {
   return (
     <div className="bg-linear-to-r from-orange-50 via-amber-50 to-yellow-50 shadow-md border-b-4 border-orange-400 sticky top-0 z-50">
       <div className="px-6 py-4">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between gap-4">
+          {/* Logo và tiêu đề */}
           <div className="flex items-center gap-4">
             <ChefHat className="text-orange-500" size={36} />
             <div>
@@ -24,6 +27,18 @@ const KitchenHeader = ({
                 {currentTime.toLocaleDateString("vi-VN")}
               </p>
             </div>
+          </div>
+
+          {/* Filters */}
+          <div className="flex-1 max-w-2xl">
+            <FilterBar
+              filterStation={filterStation}
+              setFilterStation={setFilterStation}
+              filterStatus={filterStatus}
+              setFilterStatus={setFilterStatus}
+              searchOrderId={searchOrderId}
+              setSearchOrderId={setSearchOrderId}
+            />
           </div>
 
           {/* View Mode Toggle */}
@@ -50,14 +65,6 @@ const KitchenHeader = ({
             </button>
           </div>
         </div>
-
-        {/* Filters */}
-        <FilterBar
-          filterStation={filterStation}
-          setFilterStation={setFilterStation}
-          filterStatus={filterStatus}
-          setFilterStatus={setFilterStatus}
-        />
       </div>
     </div>
   );
