@@ -1,6 +1,8 @@
 // src/App.jsx
 import React, { useState } from "react";
 import HomeScreen from "./screens/HomeScreen";
+import Register from "./screens/RegisterScreen";
+import VerifyEmailScreen from "./screens/VerifyEmailScreen";
 import DashboardLayout from "./components/Dashboard/DashboardLayout";
 import MenuScreen from "./screens/MenuScreen";
 import KitchenScreen from "./screens/KitchenScreen";
@@ -13,6 +15,21 @@ function App() {
     // Hiển thị TestScreen
     if (currentScreen === "test") {
       return <TestScreen onSelectScreen={setCurrentScreen} />;
+    }
+
+    // Hiển thị Login (HomeScreen)
+    if (currentScreen === "login") {
+      return <HomeScreen onSelectScreen={setCurrentScreen} />
+    }
+
+    // Hiển thị Register
+    if (currentScreen === "register") {
+      return <Register onSelectScreen={setCurrentScreen} />
+    }
+
+    // Hiển thị Verify Email
+    if (currentScreen === "verify-email") {
+      return <VerifyEmailScreen onSelectScreen={setCurrentScreen} />
     }
 
     // Nếu chưa chọn màn hình, hiển thị HomeScreen
