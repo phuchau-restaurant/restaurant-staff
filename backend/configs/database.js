@@ -55,7 +55,7 @@ export async function connectDatabase() {
     if (error) throw error;
 
     console.log('✅ Kết nối Supabase thành công!');
-     console.log('Sample Data:', data); // Bật lên nếu muốn xem dữ liệu
+     //console.log('Sample Data:', data); // Bật lên nếu muốn xem dữ liệu
     
   } catch (err) {
     console.error('❌ Lỗi kết nối Supabase:', err.message);

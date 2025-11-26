@@ -76,7 +76,7 @@ class CategoriesController {
   // [POST] /api/categories
   async create(req, res) {
     try {
-      const tenantId = this.getTenantId(req);
+      const tenantId = this.getTenantId(req); // sẽ lấy tenant id từ Header (nếu như đang test API)
       
       // Gọi Service
       const newCategory = await CategoriesService.createCategory({
