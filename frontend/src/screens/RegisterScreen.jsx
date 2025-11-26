@@ -1,7 +1,7 @@
 import { Mail, Lock, Home } from 'lucide-react';
 
-// --- COMPONENT: HOMESCREEN ---
-const HomeScreen = ({ onSelectScreen }) => {
+// --- COMPONENT: REGISTERSCREEN ---
+const RegisterScreen = ({ onSelectScreen }) => {
   return (
     <div className="fixed inset-0 w-screen h-screen bg-white overflow-hidden flex flex-col font-sans z-50 ">
       
@@ -18,16 +18,29 @@ const HomeScreen = ({ onSelectScreen }) => {
       </div>
 
       {/* --- MAIN CONTENT AREA --- */}
-      <div className="flex-1 z-10 flex flex-col justify-center px-8 sm:px-12 md:px-24 lg:max-w-lg lg:mx-auto w-full pt-40 pb-40">
+      <div className="flex-1 z-10 flex flex-col justify-center px-8 sm:px-12 md:px-24 lg:max-w-lg lg:mx-auto w-full pt-20 pb-40">
         
         {/* Header Text */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-blue-600 mb-2">Đăng Nhập</h1>
+          <h1 className="text-4xl font-bold text-blue-600 mb-2">Đăng Ký</h1>
           <p className="text-gray-500 font-medium">Hệ thống quản lý nhà hàng</p>
         </div>
 
         {/* Form Inputs */}
         <div className="space-y-6">
+          {/* Email */}
+          <div className="space-y-2">
+            <label className="text-blue-500 text-sm font-semibold ml-1">EMAIL</label>
+            <div className="relative">
+              <input 
+                type="email" 
+                className="w-full border-2 border-blue-200 rounded-xl px-4 py-3 text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all bg-white"
+                placeholder="example@email.com"
+              />
+              <Mail className="absolute right-4 top-3.5 w-5 h-5 text-blue-300" />
+            </div>
+          </div>
+
           {/* Username */}
           <div className="space-y-2">
             <label className="text-blue-500 text-sm font-semibold ml-1">TÊN ĐĂNG NHẬP</label>
@@ -54,10 +67,22 @@ const HomeScreen = ({ onSelectScreen }) => {
             </div>
           </div>
 
+          <div className="space-y-2">
+            <label className="text-blue-500 text-sm font-semibold ml-1">XÁC NHẬN MẬT KHẨU</label>
+            <div className="relative">
+              <input 
+                type="password" 
+                className="w-full border-2 border-blue-200 rounded-xl px-4 py-3 text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all bg-white"
+                placeholder="••••••••"
+              />
+              <Lock className="absolute right-4 top-3.5 w-5 h-5 text-blue-300" />
+            </div>
+          </div>
+
           {/* LOGIN + FORGOT IN 1 ROW */}
           <div className="flex justify-between items-center pt-2">
             <button
-        
+              onClick={() => onSelectScreen('verify-email')}
               className="
                 bg-blue-600 text-white font-bold 
                 py-3 px-8 rounded-xl 
@@ -66,24 +91,17 @@ const HomeScreen = ({ onSelectScreen }) => {
                 hover:bg-white hover:text-blue-600
               "
             >
-              Đăng Nhập
-            </button>
-
-            <button className="text-sm text-blue-500 hover:text-blue-700 font-medium">
-              Quên mật khẩu?
-            </button>
-          </div>
-
-          {/* BOTTOM SIGNUP */}
-          <div className="flex justify-center items-center gap-10 mt-4">
-            <span className="text-blue-500 text-sm">Chưa có tài khoản?</span>
+              Đăng Ký Ngay
+            </button>                            
             <button
-              onClick={() => onSelectScreen('register')}
-              className="font-bold text-blue-600 text-sm hover:underline"
-            >
-              Đăng ký ngay
-            </button>
+                  onClick={() => onSelectScreen('login')}
+                  className="font-bold text-blue-600 text-sm hover:underline"
+                >
+                  Đã có tài khoản?
+                </button>
           </div>
+
+
         </div>
       </div>
 
@@ -97,4 +115,4 @@ const HomeScreen = ({ onSelectScreen }) => {
   );
 };
 
-export default HomeScreen;
+export default RegisterScreen;

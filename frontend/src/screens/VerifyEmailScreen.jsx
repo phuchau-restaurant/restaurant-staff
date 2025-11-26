@@ -1,7 +1,30 @@
+import { useState, useEffect } from 'react';
 import { Mail, Lock, Home } from 'lucide-react';
 
-// --- COMPONENT: HOMESCREEN ---
-const HomeScreen = ({ onSelectScreen }) => {
+// --- COMPONENT: VERIFYEMAILSCREEN ---
+const VerifyEmailScreen = ({ onSelectScreen }) => {
+  const [countdown, setCountdown] = useState(30);
+  const [canResend, setCanResend] = useState(false);
+
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => {
+        setCountdown(countdown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else {
+      setCanResend(true);
+    }
+  }, [countdown]);
+
+  const handleResend = () => {
+    if (canResend) {
+      setCountdown(30);
+      setCanResend(false);
+      // TODO: Gửi lại mã xác minh
+    }
+  };
+
   return (
     <div className="fixed inset-0 w-screen h-screen bg-white overflow-hidden flex flex-col font-sans z-50 ">
       
@@ -21,36 +44,23 @@ const HomeScreen = ({ onSelectScreen }) => {
       <div className="flex-1 z-10 flex flex-col justify-center px-8 sm:px-12 md:px-24 lg:max-w-lg lg:mx-auto w-full pt-40 pb-40">
         
         {/* Header Text */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-blue-600 mb-2">Đăng Nhập</h1>
-          <p className="text-gray-500 font-medium">Hệ thống quản lý nhà hàng</p>
+        <div className="mb-6">
+          <h1 className="text-4xl font-bold text-blue-600 mb-2">Xác Minh Email</h1>
+          <p className="text-gray-500 font-medium">Nhập mã xác minh đã được gửi đến địa chỉ email của bạn. </p>
         </div>
 
         {/* Form Inputs */}
         <div className="space-y-6">
           {/* Username */}
           <div className="space-y-2">
-            <label className="text-blue-500 text-sm font-semibold ml-1">TÊN ĐĂNG NHẬP</label>
+            <label className="text-blue-500 text-sm font-semibold ml-1">Nhập mã xác minh</label>
             <div className="relative">
               <input 
                 type="text" 
                 className="w-full border-2 border-blue-200 rounded-xl px-4 py-3 text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all bg-white"
-                placeholder="username"
+                placeholder="Mã xác minh"
               />
               <Home className="absolute right-4 top-3.5 w-5 h-5 text-blue-300" />
-            </div>
-          </div>
-
-          {/* Password */}
-          <div className="space-y-2">
-            <label className="text-blue-500 text-sm font-semibold ml-1">MẬT KHẨU</label>
-            <div className="relative">
-              <input 
-                type="password" 
-                className="w-full border-2 border-blue-200 rounded-xl px-4 py-3 text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all bg-white"
-                placeholder="••••••••"
-              />
-              <Lock className="absolute right-4 top-3.5 w-5 h-5 text-blue-300" />
             </div>
           </div>
 
@@ -66,24 +76,22 @@ const HomeScreen = ({ onSelectScreen }) => {
                 hover:bg-white hover:text-blue-600
               "
             >
-              Đăng Nhập
+              Xác Minh Email
             </button>
 
-            <button className="text-sm text-blue-500 hover:text-blue-700 font-medium">
-              Quên mật khẩu?
-            </button>
-          </div>
-
-          {/* BOTTOM SIGNUP */}
-          <div className="flex justify-center items-center gap-10 mt-4">
-            <span className="text-blue-500 text-sm">Chưa có tài khoản?</span>
-            <button
-              onClick={() => onSelectScreen('register')}
-              className="font-bold text-blue-600 text-sm hover:underline"
+            <button 
+              onClick={handleResend}
+              disabled={!canResend}
+              className={`text-sm font-medium transition-all ${
+                canResend 
+                  ? 'text-blue-500 hover:text-blue-700 hover:underline cursor-pointer' 
+                  : 'text-gray-400 cursor-not-allowed'
+              }`}
             >
-              Đăng ký ngay
+              {canResend ? 'Gửi lại' : `Gửi lại sau ${countdown}s`}
             </button>
           </div>
+
         </div>
       </div>
 
@@ -97,4 +105,4 @@ const HomeScreen = ({ onSelectScreen }) => {
   );
 };
 
-export default HomeScreen;
+export default VerifyEmailScreen;
