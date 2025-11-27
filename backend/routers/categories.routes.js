@@ -32,6 +32,4 @@ router.put('/:id', categoriesController.update);
 // [DELETE] /api/categories/:id
 router.delete('/:id', categoriesController.delete);
 
-// Middleware xử lý lỗi chung cho tất cả các route ở đây
-router.use(errorMiddleware);
 export default router;

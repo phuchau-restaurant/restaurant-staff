@@ -10,6 +10,10 @@ import { fileURLToPath } from 'url';
 import categoriesRoutes from './routers/categories.routes.js';
 import { connectDatabase } from './configs/database.js';
 
+//Import middlewares 
+import { errorMiddleware } from './middlewares/errorMiddleware.js';
+import { requestLogger } from './middlewares/loggerMiddleware.js';
+
 // Cấu hình môi trường
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,15 +25,19 @@ const PORT = process.env.PORT || 3000;
 // --- MIDDLEWARE ---
 app.use(cors()); // Cho phép Frontend gọi API
 app.use(express.json()); // QUAN TRỌNG: Để server đọc được JSON từ body request (req.body)
+// [LOGGER] Đặt ở đây để ghi lại MỌI request bay vào server
+app.use(requestLogger);
 
 // --- ROUTES ---
 // Gắn route categories vào đường dẫn gốc /api/categories
 app.use('/api/categories', categoriesRoutes);
-
 // Route kiểm tra server sống hay chết
 app.get('/', (req, res) => {
   res.send('🚀 Server is running...');
 });
+// --- ERROR HANDLING  ---
+// Nếu controller gọi next(error), nó sẽ nhảy thẳng xuống đây
+app.use(errorMiddleware);
 
 // --- START SERVER ---
 const startServer = async () => {

@@ -13,7 +13,7 @@ class CategoriesController {
     }
 
   // [GET] /api/categories
-  getAll = async (req, res) => {
+  getAll = async (req, res, next) => {
     try {
       // Lấy trực tiếp từ req.tenantId (do Middleware đã gắn vào)
       const tenantId = req.tenantId;
@@ -23,15 +23,15 @@ class CategoriesController {
       // Gọi Service
       const data = await this.categoriesService.getCategoriesByTenant(tenantId, onlyActive); //sử dụng this vì tại constructor đã inject service vào this.categoriesService
       return res.status(200).json({ success: true, data });
+
     } catch (error) {
-      // Xử lý lỗi tập trung
-      //console.log("Something went wrong in getAll:", error);
-      return res.status(500).json({ success: false, message: error.message });
+      //return res.status(500).json({ success: false, message: error.message });
+      next(error); // in middleware
     }
   }
 
   // [GET] /api/categories/:id
-  getById = async (req, res) => {
+  getById = async (req, res, next) => {
     try {
       const tenantId = req.tenantId;
       const { id } = req.params;
@@ -43,19 +43,15 @@ class CategoriesController {
         data: data
       });
     } catch (error) {
-      // Phân loại lỗi: Nếu là "Not found" trả 404, còn lại 500 hoặc 403
-      const status = error.message.includes("not found") ? 404 : 
-                     error.message.includes("Access denied") ? 403 : 500;
+      if (error.message.includes("not found")) error.statusCode = 404;
+      else if (error.message.includes("Access denied")) error.statusCode = 403;
       
-      return res.status(status).json({
-        success: false,
-        message: error.message
-      });
+      next(error);
     }
   }
 
   // [POST] /api/categories
-  create = async (req, res) => {
+  create = async (req, res, next) => {
     try {
       const tenantId = req.tenantId;
       // Gọi Service
@@ -70,15 +66,14 @@ class CategoriesController {
         data: newCategory
       });
     } catch (error) {
-      return res.status(400).json({
-        success: false,
-        message: error.message
-      });
+      // gán 400 để middleware biết không phải lỗi server sập
+      error.statusCode = 400;
+      next(error);
     }
   }
 
   // [PUT] /api/categories/:id
-  update = async (req, res) => {
+  update = async (req, res, next) => {
     try {
       const tenantId = req.tenantId;
       const { id } = req.params;
@@ -91,15 +86,13 @@ class CategoriesController {
         data: updatedCategory
       });
     } catch (error) {
-      return res.status(400).json({
-        success: false,
-        message: error.message
-      });
+      error.statusCode = 400;
+      next(error);
     }
   }
 
   // [DELETE] /api/categories/:id
-  delete = async (req, res) => {
+  delete = async (req, res, next) => {
     try {
       const tenantId = req.tenantId;
       const { id } = req.params;
@@ -111,10 +104,8 @@ class CategoriesController {
         message: "Category deleted successfully"
       });
     } catch (error) {
-      return res.status(400).json({
-        success: false,
-        message: error.message
-      });
+        error.statusCode = 400;
+        next(error);
     }
   }
 }
