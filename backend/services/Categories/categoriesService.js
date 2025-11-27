@@ -17,7 +17,7 @@ class CategoriesService {
   async getCategoriesByTenant(tenantId, onlyActive = false) {
     if (!tenantId) throw new Error("Missing tenantId");
 
-    const filters = { tenant_id: tenantId };
+    const filters = { tenant_id: tenantId }; 
     
     if (onlyActive) {
       filters.is_active = true;
@@ -32,16 +32,16 @@ class CategoriesService {
    * - Rule 1: Tên không được để trống
    * - Rule 2: Tên không được trùng trong cùng 1 Tenant
    */
-  async createCategory({ tenant_id, name, display_order = 0, is_active = true }) {
+  async createCategory({ tenantId, name, displayOrder = 0, isActive = true }) {
     // 1. Validate dữ liệu đầu vào
-    if (!tenant_id) throw new Error("Tenant ID is required");
+    if (!tenantId) throw new Error("Tenant ID is required");
     if (!name || name.trim() === "") throw new Error("Category name is required");
 
     // 2. Business Logic: Kiểm tra trùng tên trong cùng tenant
-    // Lưu ý: Hàm findByName trả về mảng, nên ta kiểm tra độ dài
+    // Lưu ý: Hàm findByName trả về mảng các Model
 
     // Gọi repo được inject vào -> cleaner
-    const existing = await this.categoryRepo.findByName(tenant_id, name.trim());
+    const existing = await this.categoryRepo.findByName(tenantId, name.trim());
     //const existing = await CategoriesRepository.findByName(tenant_id, name.trim()); - 3 lớp
     if (existing && existing.length > 0) {
       // Kiểm tra kỹ hơn: Nếu có bản ghi trùng tên chính xác (findByName dùng ilike)
@@ -52,12 +52,12 @@ class CategoriesService {
       }
     }
 
-    // Chuẩn bị dữ liệu để lưu
+    // chuẩn bị dữ liệu 
     const newCategoryData = {
-      tenant_id,
+      tenantId: tenantId,         
       name: name.trim(),
-      display_order,
-      is_active
+      displayOrder: displayOrder, 
+      isActive: isActive          
     };
 
     // Gọi Repository -> Lưu xuống DB
@@ -65,7 +65,6 @@ class CategoriesService {
   }
 
   /**
-   * Lấy chi tiết một danh mục
    * @param {string} id - ID danh mục
    * @param {string} tenantId - ID nhà hàng (Dùng để verify quyền sở hữu)
    */
@@ -79,7 +78,7 @@ class CategoriesService {
     }
 
     // Security Check: Đảm bảo user của tenant này không xem trộm data của tenant kia
-    if (tenantId && category.tenant_id !== tenantId) {
+    if (tenantId && category.tenantId !== tenantId) { //category bây giờ là Model nên thuộc tính là tenantId thay vì tenant_id
       throw new Error("Access denied: Category belongs to another tenant");
     }
 
@@ -103,6 +102,8 @@ class CategoriesService {
     }
 
     // 3. Thực hiện update
+    // <updates> là object từ Controller (VD: { name: "New Name", displayOrder: 5 })
+    // Repository.update đã có logic new Category(updates) -> toPersistence() nên cứ truyền thẳng.
     return await this.categoryRepo.update(id, updates);
   }
 
@@ -111,7 +112,7 @@ class CategoriesService {
    * (Lưu ý: Cân nhắc dùng Soft Delete (is_active=false) thay vì xóa hẳn nếu dữ liệu quan trọng)
    */
   async deleteCategory(id, tenantId) {
-    // Kiểm tra quyền sở hữu trước khi xóa
+    //ktra tồn tại không ?
     await this.getCategoryById(id, tenantId);
     //TODO: cân nhắc dùng soft delete
     //update is_active = false thay vì xóa hẳn

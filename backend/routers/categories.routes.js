@@ -2,8 +2,13 @@
 import express from 'express';
 // Import controller đã được lắp ráp sẵn (đã có service & repo bên trong) từ Container
 import { categoriesController } from '../containers/categoriesContainer.js'; 
-
+import { tenantMiddleware } from '../middlewares/tenantMiddleware.js';
+import { errorMiddleware } from '../middlewares/errorMiddleware.js';
 const router = express.Router();
+
+
+// Áp dụng middleware cho TOÀN BỘ các route bên dưới
+router.use(tenantMiddleware);
 
 // --- ĐỊNH NGHĨA CÁC ROUTE ---
 
@@ -27,4 +32,6 @@ router.put('/:id', categoriesController.update);
 // [DELETE] /api/categories/:id
 router.delete('/:id', categoriesController.delete);
 
+// Middleware xử lý lỗi chung cho tất cả các route ở đây
+router.use(errorMiddleware);
 export default router;

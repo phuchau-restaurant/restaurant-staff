@@ -11,33 +11,12 @@ class CategoriesController {
   constructor(categoriesService) {
       this.categoriesService = categoriesService;
     }
-  /** TODO: đưa hàm này vô middleware
-   * Helper: Lấy Tenant ID từ Request
-   * ------------------------------------------------
-   * TRONG THỰC TẾ: TenantID nên được lấy từ JWT Token (req.user.tenant_id) sau khi qua Middleware xác thực.
-   * TẠM THỜI: sẽ lấy từ Header 'x-tenant-id' để tiện test API.
-   */
-  getTenantId(req) {
-    // Ưu tiên 1: Lấy từ User đã đăng nhập (nếu đã cài Auth Middleware)
-    if (req.user && req.user.tenant_id) return req.user.tenant_id;
-
-
-    //TODO: nhớ xóa sau khi hoàn thành Auth Middleware
-    // Ưu tiên 2: Lấy từ Header (Dùng cho Testing/Postman)
-    const tenantIdHeader = req.headers['x-tenant-id'];
-    
-    // Nếu không có -> Báo lỗi ngay. Hệ thống Multi-tenant không được phép thiếu.
-    if (!tenantIdHeader) {
-      throw new Error("Missing Tenant ID header (x-tenant-id)");
-    }
-    return tenantIdHeader;
-  }
 
   // [GET] /api/categories
   getAll = async (req, res) => {
     try {
-      // Gọi hàm helper nội bộ (dùng this.)
-      const tenantId = this.getTenantId(req); 
+      // Lấy trực tiếp từ req.tenantId (do Middleware đã gắn vào)
+      const tenantId = req.tenantId;
       
       const onlyActive = req.query.active === 'true';
 
@@ -54,7 +33,7 @@ class CategoriesController {
   // [GET] /api/categories/:id
   getById = async (req, res) => {
     try {
-      const tenantId = this.getTenantId(req);
+      const tenantId = req.tenantId;
       const { id } = req.params;
 
       const data = await this.categoriesService.getCategoryById(id, tenantId);
@@ -78,11 +57,11 @@ class CategoriesController {
   // [POST] /api/categories
   create = async (req, res) => {
     try {
-      const tenantId = this.getTenantId(req); // sẽ lấy tenant id từ Header (nếu như đang test API)
+      const tenantId = req.tenantId;
       // Gọi Service
       const newCategory = await this.categoriesService.createCategory({
         ...req.body,
-        tenant_id: tenantId // Force tenant_id từ header/token, không tin tưởng body
+        tenantId: tenantId // Force tenantId từ header/token, không tin tưởng body
       });
 
       return res.status(201).json({
@@ -101,7 +80,7 @@ class CategoriesController {
   // [PUT] /api/categories/:id
   update = async (req, res) => {
     try {
-      const tenantId = this.getTenantId(req);
+      const tenantId = req.tenantId;
       const { id } = req.params;
 
       const updatedCategory = await this.categoriesService.updateCategory(id, tenantId, req.body);
@@ -122,7 +101,7 @@ class CategoriesController {
   // [DELETE] /api/categories/:id
   delete = async (req, res) => {
     try {
-      const tenantId = this.getTenantId(req);
+      const tenantId = req.tenantId;
       const { id } = req.params;
 
       await this.categoriesService.deleteCategory(id, tenantId);
