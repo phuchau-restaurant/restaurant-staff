@@ -1,29 +1,35 @@
-// backend/routers/categories.routes.js
+// backend/src/routers/categories.routes.js
 import express from 'express';
-import CategoriesController from '../controllers/Categories/categoriesController.js';
-
+// Import controller đã được lắp ráp sẵn (đã có service & repo bên trong) từ Container
+import { categoriesController } from '../containers/categoriesContainer.js'; 
+import { tenantMiddleware } from '../middlewares/tenantMiddleware.js';
+import { errorMiddleware } from '../middlewares/errorMiddleware.js';
 const router = express.Router();
 
-/**
- * Định nghĩa các Routes cho Categories
- * Base URL: /api/categories (sẽ được cấu hình bên server.js)
- */
 
-// Lấy danh sách (GET /api/categories)
-// Có thể thêm query: ?active=true
-// Yêu cầu Header: x-tenant-id
-router.get('/', (req, res) => CategoriesController.getAll(req, res));
+// Áp dụng middleware cho TOÀN BỘ các route bên dưới
+router.use(tenantMiddleware);
 
-// Lấy chi tiết (GET /api/categories/:id)
-router.get('/:id', (req, res) => CategoriesController.getById(req, res));
+// --- ĐỊNH NGHĨA CÁC ROUTE ---
 
-// Tạo mới (POST /api/categories)
-router.post('/', (req, res) => CategoriesController.create(req, res));
+// 1. Lấy danh sách (có thể kèm filter ?active=true)
+// [GET] /api/categories
+router.get('/', categoriesController.getAll);
 
-// Cập nhật (PUT /api/categories/:id)
-router.put('/:id', (req, res) => CategoriesController.update(req, res));
+// 2. Lấy chi tiết một category theo ID
+// [GET] /api/categories/:id
+router.get('/:id', categoriesController.getById);
 
-// Xóa (DELETE /api/categories/:id)
-router.delete('/:id', (req, res) => CategoriesController.delete(req, res));
+// 3. Tạo mới
+// [POST] /api/categories
+router.post('/', categoriesController.create);
+
+// 4. Cập nhật thông tin (Cần ID để biết sửa cái nào)
+// [PUT] /api/categories/:id
+router.put('/:id', categoriesController.update);
+
+// 5. Xóa (Cần ID để biết xóa cái nào)
+// [DELETE] /api/categories/:id
+router.delete('/:id', categoriesController.delete);
 
 export default router;

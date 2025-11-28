@@ -1,87 +1,63 @@
 //backend/controllers/Categories/categoriesControllers.js
-import CategoriesService from "../../services/Categories/categoriesService.js";
+
+//Ko cần import - nhận service thông qua constructor: 
+  //ko cần: import CategoriesService from "../../services/Categories/categoriesService.js";
 
 // Thêm dòng này để kiểm tra ngay lập tức khi chạy server:
 //console.log('Loaded .env from:', envPath);
 
 class CategoriesController {
-
-  /**
-   * Helper: Lấy Tenant ID từ Request
-   * ------------------------------------------------
-   * TRONG THỰC TẾ: TenantID nên được lấy từ JWT Token (req.user.tenant_id) sau khi qua Middleware xác thực.
-   * TẠM THỜI: sẽ lấy từ Header 'x-tenant-id' để tiện test API.
-   */
-  getTenantId(req) {
-    // Ưu tiên 1: Lấy từ User đã đăng nhập (nếu đã cài Auth Middleware)
-    if (req.user && req.user.tenant_id) return req.user.tenant_id;
-
-
-    //TODO: nhớ xóa sau khi hoàn thành Auth Middleware
-    // Ưu tiên 2: Lấy từ Header (Dùng cho Testing/Postman)
-    const tenantIdHeader = req.headers['x-tenant-id'];
-    
-    // Nếu không có -> Báo lỗi ngay. Hệ thống Multi-tenant không được phép thiếu.
-    if (!tenantIdHeader) {
-      throw new Error("Missing Tenant ID header (x-tenant-id)");
+  //inject service vào controller thông qua constructor
+  constructor(categoriesService) {
+      this.categoriesService = categoriesService;
     }
-    return tenantIdHeader;
-  }
 
   // [GET] /api/categories
-  async getAll(req, res) {
+  getAll = async (req, res, next) => {
     try {
-      const tenantId = this.getTenantId(req);
-      // Lấy tham số onlyActive từ query param (ví dụ: ?active=true)
+      // Lấy trực tiếp từ req.tenantId (do Middleware đã gắn vào)
+      const tenantId = req.tenantId;
+      
       const onlyActive = req.query.active === 'true';
 
-      const data = await CategoriesService.getCategoriesByTenant(tenantId, onlyActive);
-      
-      return res.status(200).json({
-        success: true,
-        data: data
-      });
+      // Gọi Service
+      const data = await this.categoriesService.getCategoriesByTenant(tenantId, onlyActive); //sử dụng this vì tại constructor đã inject service vào this.categoriesService
+      return res.status(200).json({ success: true, data });
+
     } catch (error) {
-      return res.status(500).json({
-        success: false,
-        message: error.message
-      });
+      //return res.status(500).json({ success: false, message: error.message });
+      next(error); // in middleware
     }
   }
 
   // [GET] /api/categories/:id
-  async getById(req, res) {
+  getById = async (req, res, next) => {
     try {
-      const tenantId = this.getTenantId(req);
+      const tenantId = req.tenantId;
       const { id } = req.params;
 
-      const data = await CategoriesService.getCategoryById(id, tenantId);
+      const data = await this.categoriesService.getCategoryById(id, tenantId);
 
       return res.status(200).json({
         success: true,
         data: data
       });
     } catch (error) {
-      // Phân loại lỗi: Nếu là "Not found" trả 404, còn lại 500 hoặc 403
-      const status = error.message.includes("not found") ? 404 : 
-                     error.message.includes("Access denied") ? 403 : 500;
+      if (error.message.includes("not found")) error.statusCode = 404;
+      else if (error.message.includes("Access denied")) error.statusCode = 403;
       
-      return res.status(status).json({
-        success: false,
-        message: error.message
-      });
+      next(error);
     }
   }
 
   // [POST] /api/categories
-  async create(req, res) {
+  create = async (req, res, next) => {
     try {
-      const tenantId = this.getTenantId(req);
-      
+      const tenantId = req.tenantId;
       // Gọi Service
-      const newCategory = await CategoriesService.createCategory({
+      const newCategory = await this.categoriesService.createCategory({
         ...req.body,
-        tenant_id: tenantId // Force tenant_id từ header/token, không tin tưởng body
+        tenantId: tenantId // Force tenantId từ header/token, không tin tưởng body
       });
 
       return res.status(201).json({
@@ -90,20 +66,19 @@ class CategoriesController {
         data: newCategory
       });
     } catch (error) {
-      return res.status(400).json({
-        success: false,
-        message: error.message
-      });
+      // gán 400 để middleware biết không phải lỗi server sập
+      error.statusCode = 400;
+      next(error);
     }
   }
 
   // [PUT] /api/categories/:id
-  async update(req, res) {
+  update = async (req, res, next) => {
     try {
-      const tenantId = this.getTenantId(req);
+      const tenantId = req.tenantId;
       const { id } = req.params;
 
-      const updatedCategory = await CategoriesService.updateCategory(id, tenantId, req.body);
+      const updatedCategory = await this.categoriesService.updateCategory(id, tenantId, req.body);
 
       return res.status(200).json({
         success: true,
@@ -111,33 +86,28 @@ class CategoriesController {
         data: updatedCategory
       });
     } catch (error) {
-      return res.status(400).json({
-        success: false,
-        message: error.message
-      });
+      error.statusCode = 400;
+      next(error);
     }
   }
 
   // [DELETE] /api/categories/:id
-  async delete(req, res) {
+  delete = async (req, res, next) => {
     try {
-      const tenantId = this.getTenantId(req);
+      const tenantId = req.tenantId;
       const { id } = req.params;
 
-      await CategoriesService.deleteCategory(id, tenantId);
+      await this.categoriesService.deleteCategory(id, tenantId);
 
       return res.status(200).json({
         success: true,
         message: "Category deleted successfully"
       });
     } catch (error) {
-      return res.status(400).json({
-        success: false,
-        message: error.message
-      });
+        error.statusCode = 400;
+        next(error);
     }
   }
 }
 
-// Export Singleton
-export default new CategoriesController();
+export default CategoriesController;
