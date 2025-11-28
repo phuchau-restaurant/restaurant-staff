@@ -16,6 +16,7 @@ const KitchenScreen = () => {
   const [viewMode, setViewMode] = useState("card");
   const [filterStation, setFilterStation] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [searchOrderId, setSearchOrderId] = useState("");
   const [orders, setOrders] = useState(MOCK_ORDERS);
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -53,6 +54,11 @@ const KitchenScreen = () => {
   const filteredOrders = useMemo(() => {
     return orders
       .filter((order) => {
+        // Tìm kiếm theo orderNumber
+        if (searchOrderId && !order.orderNumber.toLowerCase().includes(searchOrderId.toLowerCase())) {
+          return false;
+        }
+        
         const actualStatus = getOrderStatus(order);
         const statusMatch =
           filterStatus === "all" || actualStatus === filterStatus;
@@ -62,7 +68,7 @@ const KitchenScreen = () => {
         return statusMatch && stationMatch;
       })
       .sort((a, b) => a.orderTime - b.orderTime);
-  }, [orders, filterStation, filterStatus, getOrderStatus]);
+  }, [orders, filterStation, filterStatus, searchOrderId, getOrderStatus]);
 
   // Actions
   const handleStart = (orderId) => {
@@ -105,6 +111,8 @@ const KitchenScreen = () => {
         setFilterStation={setFilterStation}
         filterStatus={filterStatus}
         setFilterStatus={setFilterStatus}
+        searchOrderId={searchOrderId}
+        setSearchOrderId={setSearchOrderId}
         statusOptions={STATUS_OPTIONS}
       />
 
