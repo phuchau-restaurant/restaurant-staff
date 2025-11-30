@@ -11,6 +11,7 @@ const OrdersGrid = ({
   handleComplete, 
   handleCancel, 
   handleRecall,
+  handleCompleteItem,
   viewMode 
 }) => {
   if (orders.length === 0) {
@@ -39,6 +40,7 @@ const OrdersGrid = ({
           handleComplete={handleComplete}
           handleCancel={handleCancel}
           handleRecall={handleRecall}
+          handleCompleteItem={handleCompleteItem}
           viewMode={viewMode}
         />
       ))}

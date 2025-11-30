@@ -1,6 +1,6 @@
 // src/components/OrderCard/OrderDetailModal.jsx
 import React from 'react';
-import { ChefHat, X, User } from 'lucide-react';
+import { ChefHat, X, User, CheckCircle2 } from 'lucide-react';
 import OrderActions from './OrderActions'; // Import component con
 
 const OrderDetailModal = ({ 
@@ -10,7 +10,8 @@ const OrderDetailModal = ({
   elapsed, 
   onClose, 
   // Nhận các function xử lý từ cha để truyền xuống OrderActions
-  handleStart, handleComplete, handleCancel, handleRecall 
+  handleStart, handleComplete, handleCancel, handleRecall,
+  handleCompleteItem
 }) => {
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4" onClick={onClose}>
@@ -56,14 +57,18 @@ const OrderDetailModal = ({
           
           <div className="space-y-4">
             {order.items.map((item) => (
-              <div key={item.id} className="bg-gray-50 p-4 rounded-xl border-2 border-gray-200 flex gap-4 items-center">
+              <div key={item.id} className={`p-4 rounded-xl border-2 flex gap-4 items-center ${
+                item.completed ? 'bg-green-50 border-green-200 opacity-70' : 'bg-gray-50 border-gray-200'
+              }`}>
                 <img 
                   src={item.image} 
                   alt={item.name} 
                   className="w-24 h-24 rounded-xl object-cover shadow-md"
                 />
                 <div className="flex-1">
-                  <h4 className="text-2xl font-bold text-gray-800 mb-1">{item.name}</h4>
+                  <h4 className={`text-2xl font-bold text-gray-800 mb-1 ${
+                    item.completed ? 'line-through' : ''
+                  }`}>{item.name}</h4>
                   <div className="flex items-center gap-3">
                     <span className="bg-orange-500 text-white px-4 py-2 rounded-full text-lg font-bold">
                       Số lượng: x{item.quantity}
@@ -75,6 +80,26 @@ const OrderDetailModal = ({
                     )}
                   </div>
                 </div>
+                {/* Nút hoàn thành món */}
+                {(status === 'cooking' || status === 'late') && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!item.completed) {
+                        handleCompleteItem(order.id, item.id);
+                      }
+                    }}
+                    disabled={item.completed}
+                    className={`shrink-0 self-center p-1.5 rounded-lg border-2 transition-all ${
+                      item.completed
+                        ? 'text-white bg-green-600 cursor-not-allowed'
+                        : 'text-white bg-green-500 hover:shadow-lg hover:scale-110 cursor-pointer'
+                    }`}
+                    title={item.completed ? 'Đã hoàn thành' : 'Đánh dấu hoàn thành'}
+                  >
+                    <CheckCircle2 size={32} />
+                  </button>
+                )}
               </div>
             ))}
           </div>

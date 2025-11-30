@@ -101,6 +101,39 @@ const KitchenScreen = () => {
     alert(`Đã gọi nhân viên phục vụ đến lấy món - Đơn ${orderId}`);
   };
 
+  const handleCompleteItem = (orderId, itemId) => {
+    // Lấy thông tin món trước khi update
+    const order = orders.find(o => o.id === orderId);
+    const item = order?.items.find(i => i.id === itemId);
+    
+    // Chỉ xử lý nếu món tồn tại và chưa hoàn thành
+    if (!item || item.completed) return;
+    
+    // Thông báo trước khi update state
+    alert(`🔔 Đã thông báo nhân viên!\n\nMón: ${item.name} x${item.quantity}\nBàn: ${order.tableNumber}\nĐơn: ${order.orderNumber}\n\n✅ Món đã sẵn sàng để phục vụ!`);
+    
+    // Update state sau khi thông báo
+    setOrders((prev) =>
+      prev.map((o) => {
+        if (o.id === orderId) {
+          const updatedItems = o.items.map((item) =>
+            item.id === itemId ? { ...item, completed: true } : item
+          );
+          
+          // Kiểm tra nếu tất cả món đã hoàn thành thì chuyển status sang completed
+          const allCompleted = updatedItems.every((item) => item.completed);
+          return {
+            ...o,
+            items: updatedItems,
+            status: allCompleted ? "completed" : o.status,
+            completeTime: allCompleted ? new Date() : o.completeTime,
+          };
+        }
+        return o;
+      })
+    );
+  };
+
   return (
     <div className="h-full bg-linear-to-br from-slate-100 to-slate-200 flex flex-col">
       <KitchenHeader
@@ -126,6 +159,7 @@ const KitchenScreen = () => {
           handleComplete={handleComplete}
           handleCancel={handleCancel}
           handleRecall={handleRecall}
+          handleCompleteItem={handleCompleteItem}
           viewMode={viewMode}
         />
       </div>

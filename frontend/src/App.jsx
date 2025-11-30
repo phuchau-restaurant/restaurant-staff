@@ -6,12 +6,19 @@ import VerifyEmailScreen from "./screens/VerifyEmailScreen";
 import DashboardLayout from "./components/Dashboard/DashboardLayout";
 import MenuScreen from "./screens/MenuScreen";
 import KitchenScreen from "./screens/KitchenScreen";
+import WaiterScreen from "./screens/WaiterScreen";
 import TestScreen from "./screens/TestScreen";
+import OnboardingScreen from "./screens/OnboardingScreen";
 
 function App() {
-  const [currentScreen, setCurrentScreen] = useState("test"); // null, 'test', 'dashboard', 'menu', 'kitchen'
+  const [currentScreen, setCurrentScreen] = useState("test"); // null, 'test', 'dashboard', 'menu', 'kitchen', 'onboarding'
   
   const renderScreen = () => {
+    // Hiển thị OnboardingScreen
+    if (currentScreen === "onboarding") {
+      return <OnboardingScreen onComplete={() => setCurrentScreen("dashboard")} />;
+    }
+
     // Hiển thị TestScreen
     if (currentScreen === "test") {
       return <TestScreen onSelectScreen={setCurrentScreen} />;
@@ -50,6 +57,11 @@ function App() {
     // Hiển thị KitchenScreen
     if (currentScreen === "kitchen") {
       return <KitchenScreen />;
+    }
+
+    // Hiển thị WaiterScreen
+    if (currentScreen === "waiter") {
+      return <WaiterScreen />;
     }
     return null;
   }
