@@ -16,11 +16,16 @@ class CustomersController {
       
       const onlyActive = req.query.active === 'true';
       const data = await this.customersService.getCustomersByTenant(tenantId, onlyActive); 
+      const returnData = data.map(item => {
+          const { id, tenantId, ...rest } = item; 
+          
+          return rest; // Chỉ trả về phần còn lại
+      });
       return res.status(200).json({ 
         success: true,
         message: "Customers fetched successfully",
-        total: data.length,
-        data: data
+        total: returnData.length,
+        data: returnData
       });
 
     } catch (error) {
