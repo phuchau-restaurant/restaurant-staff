@@ -1,4 +1,6 @@
 // backend/services/Customers/customersService.js
+import { isValidPhoneNumber } from "../../helpers/validationHelper.js"; 
+import{ isValidFullName } from "../../helpers/validationHelper.js";
 
 class CustomersService {
   constructor(customerRepository) {
@@ -33,6 +35,14 @@ class CustomersService {
     if (!fullName || fullName.trim() === "") throw new Error("Customer full name is required");
     if (!phoneNumber || phoneNumber.trim() === "") throw new Error("Customer phone number is required");
     if (isNaN(loyaltyPoints) || loyaltyPoints < 0) { loyaltyPoints = 0; }
+
+    //Business rule
+    if (!isValidPhoneNumber(phoneNumber.trim())) {
+      throw new Error("Invalid phone number format");
+    }
+    if (!isValidFullName(fullName.trim())) {
+      throw new Error("Invalid full name format");
+    }
 
     const existing = await this.customerRepo.findByPhoneNumber(tenantId, phoneNumber.trim());
     if (existing && existing.length > 0) {
@@ -88,9 +98,17 @@ class CustomersService {
    * Bắt buộc customer cần có số điện thoại
    */
   async updateCustomer(id, tenantId, updates) {
-    await this.getCustomerById(id, tenantId);
+    await this.getCustomerById(id, tenantId); //throw error if not found
 
     if (updates.phoneNumber) {
+        //Business rule
+        if (!isValidPhoneNumber(updates.phoneNumber.trim())) {
+        throw new Error("Invalid phone number format");
+        }
+        if (!isValidFullName(updates.fullName.trim())) {
+        throw new Error("Invalid full name format");
+        }
+
        const existing = await this.customerRepo.findByPhoneNumber(tenantId, updates.phoneNumber.trim());
        const isDuplicate = existing.some(cust => cust.id !== id && cust.phoneNumber === updates.phoneNumber.trim());
        if (isDuplicate) {

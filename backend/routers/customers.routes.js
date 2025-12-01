@@ -12,7 +12,7 @@ router.use(tenantMiddleware);
 
 router.get('/', customersController.getAll);
 router.get('/:id', customersController.getById);
-router.post('/login', customersController.findByPhoneNumberLogin);
+router.post('/login', customersController.customerLogin);
 router.post('/', customersController.create);
 router.put('/:id', customersController.update);
 router.delete('/:id', customersController.delete);

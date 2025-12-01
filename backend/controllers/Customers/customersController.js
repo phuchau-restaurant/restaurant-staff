@@ -50,10 +50,10 @@ class CustomersController {
     }
   }
   // for [POST] /api/customers/login
-  findByPhoneNumberLogin = async (req, res, next) => {
+  customerLogin = async (req, res, next) => {
+    const tenantId = req.tenantId;
+    const { phoneNumber, fullName } = req.body; //must be body, not query or params
     try {
-      const tenantId = req.tenantId;
-      const { phoneNumber } = req.body; //must be body, not query or params
       const data = await this.customersService.findCustomerByPhoneNumber(tenantId, phoneNumber);
       return res.status(200).json({ 
             message: "Customer fetched successfully",
@@ -62,7 +62,19 @@ class CustomersController {
             data :data
         });
     } catch (error) {
-        if (error.message.includes("not found")) error.statusCode = 404;
+        //if not found ->Creat new customer
+        if (error.message.includes("not found")) { 
+            const anotherData = await this.customersService.createCustomer({
+                tenantId,
+                phoneNumber,
+                fullName
+            });
+            return res.status(201).json({ 
+                message: "New customer created successfully",
+                success: true, 
+                data: anotherData
+            });
+        }
         else if (error.message.includes("Access denied")) error.statusCode = 403;
       next(error);
     }
