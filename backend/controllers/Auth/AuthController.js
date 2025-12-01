@@ -49,6 +49,45 @@ class AuthController {
   };
 
   /**
+   * [POST] /api/auth/forgot-password
+   * Xử lý yêu cầu quên mật khẩu
+   */
+  forgotPassword = async (req, res, next) => {
+    try {
+      const { email } = req.body;
+      const tenantId = req.tenantId; // Giả sử tenantId được lấy từ middleware
+
+      const result = await this.authService.forgotPassword(email, tenantId);
+
+      return res.status(200).json({
+        success: true,
+        message: result.message,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * [POST] /api/auth/reset-password
+   * Xử lý đặt lại mật khẩu mới
+   */
+  resetPassword = async (req, res, next) => {
+    try {
+      const { token, newPassword } = req.body;
+      await this.authService.resetPassword(token, newPassword);
+
+      return res.status(200).json({
+        success: true,
+        message: "Password has been reset successfully.",
+      });
+    } catch (error) {
+      error.statusCode = 400;
+      next(error);
+    }
+  };
+
+  /**
    * [POST] /api/auth/logout
    * Xử lý yêu cầu đăng xuất
    */
