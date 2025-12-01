@@ -1,7 +1,7 @@
+@import "https://fonts.googleapis.com/css2?family=Assistant:wght@200..800&family=Oswald:wght@200..700&family=Smooch+Sans:wght@100..900&display=swap";
 @import "https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap";
 @import "https://fonts.googleapis.com/css2?family=Assistant:wght@200..800&family=Oswald:wght@200..700&display=swap";
 @import "tailwindcss";
-@import "https://fonts.googleapis.com/css2?family=Assistant:wght@200..800&family=Oswald:wght@200..700&family=Smooch+Sans:wght@100..900&display=swap";
 
 @theme {
   --font-oswald: 'Oswald', sans-serif;
