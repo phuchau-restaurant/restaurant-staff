@@ -1,25 +1,29 @@
 //Nơi khởi động Express App
 
-import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 
 // Import các routes
-import categoriesRoutes from './routers/categories.routes.js';
-import { connectDatabase } from './configs/database.js';
+
+import { connectDatabase } from "./configs/database.js";
+import categoriesRoutes from "./routers/categories.routes.js";
+import usersRoutes from "./routers/users.routes.js";
+import authRoutes from "./routers/auth.routes.js";
 import menusRoutes from './routers/menus.routes.js';
 import customersRoutes from './routers/customers.routes.js';
 
-//Import middlewares 
-import { errorMiddleware } from './middlewares/errorMiddleware.js';
-import { requestLogger } from './middlewares/loggerMiddleware.js';
+
+//Import middlewares
+import { errorMiddleware } from "./middlewares/errorMiddleware.js";
+import { requestLogger } from "./middlewares/loggerMiddleware.js";
 
 // Cấu hình môi trường
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -32,10 +36,12 @@ app.use(requestLogger);
 
 // --- ROUTES ---
 // Gắn route categories vào đường dẫn gốc /api/categories
-app.use('/api/categories', categoriesRoutes);
+app.use("/api/categories", categoriesRoutes);
+app.use("/api/users", usersRoutes);
+app.use("/api/auth", authRoutes);
 // Route kiểm tra server sống hay chết
-app.get('/', (req, res) => {
-  res.send('🚀 Server is running...');
+app.get("/", (req, res) => {
+  res.send("🚀 Server is running...");
 });
 app.use('/api/menus', menusRoutes); 
 app.use('/api/customers', customersRoutes);
@@ -52,7 +58,6 @@ const startServer = async () => {
   // 2. Chạy server
   app.listen(PORT, () => {
     console.log(`\n✅ Server đang chạy tại: http://localhost:${PORT}`);
-    console.log(`👉 Test API Categories tại: http://localhost:${PORT}/api/categories`);
   });
 };
 
