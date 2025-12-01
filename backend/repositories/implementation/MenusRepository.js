@@ -8,7 +8,7 @@ import { Menus } from "../../models/Menus.js";
 export class MenusRepository extends BaseRepository {
   constructor() {
     // Mapping: [id, tenant_id, category_id, name, description, price, img_url, is_available]
-    super("menu_items", "id"); 
+    super("dishes", "id"); 
   }
   /**
    * Tìm category theo tên (Bắt buộc phải có tenant_id để tránh lộ data)

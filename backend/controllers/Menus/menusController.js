@@ -14,11 +14,17 @@ class MenusController {
 
       const data = await this.menusService.getMenusByTenant(tenantId, categoryId, onlyAvailable);
       
+      // Lọc bỏ id và tenantId từ danh sách
+      const returnData = data.map(item => {
+          const { id, tenantId, ...rest } = item; 
+          return rest; 
+      });
+
       return res.status(200).json({ 
         success: true,
         message: "Menus fetched successfully",
-        total: data.length,
-        data: data
+        total: returnData.length,
+        data: returnData
       });
     } catch (error) {
       next(error);
@@ -32,10 +38,13 @@ class MenusController {
       const { id } = req.params;
       const data = await this.menusService.getMenuById(id, tenantId);
       
+      // Lọc bỏ id và tenantId
+      const { id: _id, tenantId: _tid, ...returnData } = data;
+
       return res.status(200).json({ 
         success: true,
         message: "Menu fetched successfully",
-        data: data
+        data: returnData
       });
     } catch (error) {
       if (error.message.includes("not found")) error.statusCode = 404;
@@ -53,10 +62,13 @@ class MenusController {
         tenantId: tenantId // Force tenantId
       });
 
+      // Lọc bỏ id và tenantId
+      const { id: _id, tenantId: _tid, ...returnData } = newMenu;
+
       return res.status(201).json({ 
         success: true, 
         message: "Menu item created successfully", 
-        data: newMenu 
+        data: returnData 
       });
     } catch (error) {
       error.statusCode = 400;
@@ -71,10 +83,13 @@ class MenusController {
       const { id } = req.params;
       const updatedMenu = await this.menusService.updateMenu(id, tenantId, req.body);
 
+      // Lọc bỏ id và tenantId
+      const { id: _id, tenantId: _tid, ...returnData } = updatedMenu;
+
       return res.status(200).json({ 
         success: true, 
         message: "Menu item updated", 
-        data: updatedMenu 
+        data: returnData 
       });
     } catch (error) {
       error.statusCode = 400;
