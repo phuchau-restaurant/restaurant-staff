@@ -22,11 +22,18 @@ class CategoriesController {
 
       // Gọi Service
       const data = await this.categoriesService.getCategoriesByTenant(tenantId, onlyActive); //sử dụng this vì tại constructor đã inject service vào this.categoriesService
+      
+      // Lọc bỏ id và tenantId từ danh sách
+      const returnData = data.map(item => {
+          const { id, tenantId, ...rest } = item; 
+          return rest; 
+      });
+
       return res.status(200).json({ 
         message: "Categories fetched successfully",
         success: true, 
-        total: data.length,
-        data: data
+        total: returnData.length,
+        data: returnData
        });
 
     } catch (error) {
@@ -43,10 +50,13 @@ class CategoriesController {
 
       const data = await this.categoriesService.getCategoryById(id, tenantId);
 
+      // Lọc bỏ id và tenantId (Object destructuring)
+      const { id: _id, tenantId: _tid, ...returnData } = data;
+
       return res.status(200).json({
         success: true,
         message: "Category fetched successfully",
-        data: data
+        data: returnData
       });
     } catch (error) {
       if (error.message.includes("not found")) error.statusCode = 404;
@@ -66,10 +76,13 @@ class CategoriesController {
         tenantId: tenantId // Force tenantId từ header/token, không tin tưởng body
       });
 
+      // Lọc bỏ id và tenantId
+      const { id: _id, tenantId: _tid, ...returnData } = newCategory;
+
       return res.status(201).json({
         success: true,
         message: "Category created successfully",
-        data: newCategory
+        data: returnData
       });
     } catch (error) {
       // gán 400 để middleware biết không phải lỗi server sập
@@ -86,10 +99,13 @@ class CategoriesController {
 
       const updatedCategory = await this.categoriesService.updateCategory(id, tenantId, req.body);
 
+      // Lọc bỏ id và tenantId
+      const { id: _id, tenantId: _tid, ...returnData } = updatedCategory;
+
       return res.status(200).json({
         success: true,
         message: "Category updated successfully",
-        data: updatedCategory
+        data: returnData
       });
     } catch (error) {
       error.statusCode = 400;

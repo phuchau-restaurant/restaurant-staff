@@ -40,12 +40,13 @@ class CustomersController {
       const { id } = req.params;
 
       const data = await this.customersService.getCustomerById(id, tenantId);
-
+      //destructucting to remove sensitive info
+    const { id: _id, tenantId: _tid, ...returnData } = data;
       return res.status(200).json({
         message: "Customer fetched successfully",
         success: true,
-        total: data.length,
-        data: data
+        total: returnData.length,
+        data: returnData
       });
     } catch (error) {
       if (error.message.includes("not found")) error.statusCode = 404;
@@ -63,11 +64,12 @@ class CustomersController {
       if (data.fullName !== fullName) {
         throw new Error("Customer name does not match");
       }
+      const { id: _id, tenantId: _tid, ...returnData } = data;
       return res.status(200).json({ 
             message: "Customer fetched successfully",
             success: true, 
-            total: data.length,
-            data :data
+            total: returnData.length,
+            data :returnData
         });
     } catch (error) {
         //if not found ->Creat new customer
@@ -77,10 +79,11 @@ class CustomersController {
                 phoneNumber,
                 fullName
             });
+        const { id: _id, tenantId: _tid, ...returnData } = anotherData;
             return res.status(201).json({ 
                 message: "New customer created successfully",
                 success: true, 
-                data: anotherData
+                data: returnData
             });
         }
         else if (error.message.includes("Access denied")) error.statusCode = 403;
@@ -97,11 +100,11 @@ class CustomersController {
         ...req.body,
         tenantId: tenantId 
       });
-
+      const { id: _id, tenantId: _tid, ...returnData } = newCustomer;
       return res.status(201).json({
         success: true,
         message: "Customer created successfully",
-        data: newCustomer
+        data: returnData
       });
     } catch (error) {
       // gán 400 để middleware biết không phải lỗi server sập
@@ -117,11 +120,11 @@ class CustomersController {
       const { id } = req.params;
 
       const updatedCustomer = await this.customersService.updateCustomer(id, tenantId, req.body);
-
+      const { id: _id, tenantId: _tid, ...returnData } = updatedCustomer;
       return res.status(200).json({
         success: true,
         message: "Customer updated successfully",
-        data: updatedCustomer
+        data: returnData
       });
     } catch (error) {
       error.statusCode = 400;
