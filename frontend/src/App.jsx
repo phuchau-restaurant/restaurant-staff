@@ -9,6 +9,7 @@ import KitchenScreen from "./screens/KitchenScreen";
 import WaiterScreen from "./screens/WaiterScreen";
 import TestScreen from "./screens/TestScreen";
 import OnboardingScreen from "./screens/OnboardingScreen";
+import CustomerLoginScreen from "./screens/CustomerLoginScreen";
 
 function App() {
   const [currentScreen, setCurrentScreen] = useState("test"); // null, 'test', 'dashboard', 'menu', 'kitchen', 'onboarding'
@@ -62,6 +63,10 @@ function App() {
     // Hiển thị WaiterScreen
     if (currentScreen === "waiter") {
       return <WaiterScreen />;
+    }
+
+    if (currentScreen === "customer-login-screen") {
+      return <CustomerLoginScreen onSelectScreen={setCurrentScreen} />;
     }
     return null;
   }
