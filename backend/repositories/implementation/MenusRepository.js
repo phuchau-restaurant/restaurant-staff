@@ -1,46 +1,41 @@
-// backend/repositories/implementation/CategoriesRepository.js
+// backend/repositories/implementation/MenusRepository.js
 import { BaseRepository } from "./BaseRepository.js";
 import { supabase } from "../../configs/database.js";
-import { Categories } from "../../models/Categories.js";
+import { Menus } from "../../models/Menus.js";
 
 //Các hàm đc override cần trả về Model, không phải raw data.
 
-export class CategoryRepository extends BaseRepository {
+export class MenusRepository extends BaseRepository {
   constructor() {
-    // Mapping: [id, tenant_id, name, display_order, is_active]
-    super("categories", "id"); 
+    // Mapping: [id, tenant_id, category_id, name, description, price, img_url, is_available]
+    super("menu_items", "id"); 
   }
   /**
    * Tìm category theo tên (Bắt buộc phải có tenant_id để tránh lộ data)
    * @param {string} tenantId - ID của nhà hàng/thuê bao
    * @param {string} name - Tên cần tìm
    */
-
+//
   async create(data) {
-    // Chuyển đổi dữ liệu đầu vào thành Model để sử dụng mapping ngược bằng toPersistence
-    const categoryEntity = new Categories(data);
+    const menuEntity = new Menus(data);
 
-    // Chuyển đổi Model thành format của Database (toPersistence)
-    const dbPayload = categoryEntity.toPersistence(); 
-    // dbPayload lúc này sẽ là: { tenant_id: ..., display_order: ... }
+    const dbPayload = menuEntity.toPersistence(); 
 
-    // Gọi Supabase với payload đã map đúng tên cột
     const { data: result, error } = await supabase
       .from(this.tableName)
-      .insert([dbPayload]) // Gửi snake_case xuống DB
+      .insert([dbPayload]) 
       .select();
 
     if (error) throw new Error(`Create failed: ${error.message}`);
     
     //  Map kết quả trả về ngược lại thành Model để trả lên Service
-    return result?.[0] ? new Categories(result[0]) : null;
+    return result?.[0] ? new Menus(result[0]) : null;
   }
 
 async update(id, updates) {
     //"Clean Payload"  
-
-    const categoryEntity = new Categories(updates);
-    const dbPayload = categoryEntity.toPersistence();
+    const menuEntity = new Menus(updates);
+    const dbPayload = menuEntity.toPersistence();
 
     // Loại bỏ các key có giá trị undefined -> Vì default value của is_active có thể không đc truyền vào
     // lọc sạch object dbPayload.
@@ -55,10 +50,10 @@ async update(id, updates) {
       .eq(this.primaryKey, id)
       .select();
 
-    if (error) throw new Error(`[Category] Update failed: ${error.message}`);
+    if (error) throw new Error(`[Menu] Update failed: ${error.message}`);
     
     //mapping return model
-    return data?.[0] ? new Categories(data[0]) : null;
+    return data?.[0] ? new Menus(data[0]) : null;
   }
 
   async findByName(tenantId, name) {
@@ -72,24 +67,18 @@ async update(id, updates) {
 
     if (error) throw new Error(`FindByName failed: ${error.message}`);
     // return model not raw
-    return data.map(item => new Categories(item)) || [];
+    return data.map(item => new Menus(item)) || [];
   }
 
 // override thêm getById để trả về Model
 async getById(id) {
     const rawData = await super.getById(id); // Gọi cha lấy raw data
-    return rawData ? new Categories(rawData) : null; // Map sang Model
+    return rawData ? new Menus(rawData) : null; // Map sang Model
 }
-
-  async getAll(filters = {}) {
-    // 1. Gọi cha để lấy dữ liệu thô từ DB (Snake_case)
-    const rawData = await super.getAll(filters);    
-    // 2. Map sang Model (CamelCase) để đồng bộ với toàn hệ thống
-    return rawData.map(item => new Categories(item));
+ async getAll(filters = {}) {
+    // Gọi hàm cha để lấy data thô (đã xử lý logic filter)
+    const rawData = await super.getAll(filters);
+    // Map sang Model
+    return rawData.map(item => new Menus(item));
   }
- 
 }
-// LƯU Ý QUAN TRỌNG:
-// KHÔNG export "new SupabaseCategoryRepository()" ở đây như kiến trúc 3 lớp.
-// Vì ta muốn tiêm (Inject) nó ở bên ngoài.
-// -> Chỉ export class thôi.

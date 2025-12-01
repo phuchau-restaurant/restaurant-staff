@@ -7,10 +7,14 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 // Import các routes
+
 import { connectDatabase } from "./configs/database.js";
 import categoriesRoutes from "./routers/categories.routes.js";
 import usersRoutes from "./routers/users.routes.js";
 import authRoutes from "./routers/auth.routes.js";
+import menusRoutes from './routers/menus.routes.js';
+import customersRoutes from './routers/customers.routes.js';
+
 
 //Import middlewares
 import { errorMiddleware } from "./middlewares/errorMiddleware.js";
@@ -39,6 +43,9 @@ app.use("/api/auth", authRoutes);
 app.get("/", (req, res) => {
   res.send("🚀 Server is running...");
 });
+app.use('/api/menus', menusRoutes); 
+app.use('/api/customers', customersRoutes);
+
 // --- ERROR HANDLING  ---
 // Nếu controller gọi next(error), nó sẽ nhảy thẳng xuống đây
 app.use(errorMiddleware);

@@ -22,7 +22,12 @@ class CategoriesController {
 
       // Gọi Service
       const data = await this.categoriesService.getCategoriesByTenant(tenantId, onlyActive); //sử dụng this vì tại constructor đã inject service vào this.categoriesService
-      return res.status(200).json({ success: true, data });
+      return res.status(200).json({ 
+        message: "Categories fetched successfully",
+        success: true, 
+        total: data.length,
+        data: data
+       });
 
     } catch (error) {
       //return res.status(500).json({ success: false, message: error.message });
@@ -40,6 +45,7 @@ class CategoriesController {
 
       return res.status(200).json({
         success: true,
+        message: "Category fetched successfully",
         data: data
       });
     } catch (error) {
