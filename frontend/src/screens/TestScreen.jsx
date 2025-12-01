@@ -44,6 +44,13 @@ const TestScreen = ({ onSelectScreen }) => {
           >
             Waiter Screen
           </button>
+
+          <button
+            onClick={() => onSelectScreen("customer-login-screen")}
+            className="px-6 py-3 bg-pink-400 text-white font-semibold rounded-lg hover:bg-orange-600 transition-colors shadow-sm"
+          >
+            Customer Login Screen
+          </button>
         </div>
       </div>
     </div>
