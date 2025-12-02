@@ -41,16 +41,17 @@ app.use(requestLogger);
 app.use("/api/categories", categoriesRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/auth", authRoutes);
-// Route kiểm tra server sống hay chết
-app.get("/", (req, res) => {
-  res.send("🚀 Server is running...");
-});
 app.use('/api/menus', menusRoutes); 
 app.use('/api/customers', customersRoutes);
 app.use('/api/orders', ordersRoutes);
 
 //route nghiệp vụ cho kitchen
 app.use('/api/kitchen', kitchenRoutes);
+
+// Route kiểm tra server sống hay chết
+app.get("/", (req, res) => {
+  res.send("🚀 Server is running...");
+});
 
 // --- ERROR HANDLING  ---
 // Nếu controller gọi next(error), nó sẽ nhảy thẳng xuống đây
