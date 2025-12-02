@@ -7,9 +7,10 @@ import {
   Utensils,
   Coffee,
   Cookie,
+  LogOut,
 } from "lucide-react";
+import MenuItem from "../components/Menu/MenuItem";
 
-// --- Dữ liệu giả lập (Mock Data) ---
 const CATEGORIES = [
   { id: "all", name: "Tất cả", icon: <Utensils size={20} /> },
   { id: "burger", name: "Burger", icon: <Utensils size={20} /> },
@@ -21,6 +22,7 @@ const PRODUCTS = [
   {
     id: 1,
     name: "Bò Phô Mai Đặc Biệt",
+    description: "Burger bò phô mai kẹp thịt bò nướng và rau tươi",
     price: 69000,
     category: "burger",
     image:
@@ -29,6 +31,7 @@ const PRODUCTS = [
   {
     id: 2,
     name: "Gà Giòn Cay",
+    description: "Ức gà chiên cay, khoai tây và sốt đặc biệt",
     price: 55000,
     category: "burger",
     image:
@@ -37,6 +40,7 @@ const PRODUCTS = [
   {
     id: 3,
     name: "Trà Đào Cam Sả",
+    description: "Trà đào thanh mát pha cam và sả tươi",
     price: 45000,
     category: "drink",
     image:
@@ -45,6 +49,7 @@ const PRODUCTS = [
   {
     id: 4,
     name: "Cà Phê Sữa Đá",
+    description: "Cà phê rang xay pha cùng sữa đặc béo mịn",
     price: 35000,
     category: "drink",
     image:
@@ -53,6 +58,7 @@ const PRODUCTS = [
   {
     id: 5,
     name: "Bánh Kem Dâu",
+    description: "Cốt bánh mềm, kem ngậy và dâu tươi",
     price: 40000,
     category: "dessert",
     image:
@@ -61,6 +67,7 @@ const PRODUCTS = [
   {
     id: 6,
     name: "Khoai Tây Chiên",
+    description: "Khoai tây chiên vàng giòn, chấm sốt đậm đà",
     price: 25000,
     category: "dessert",
     image:
@@ -68,19 +75,35 @@ const PRODUCTS = [
   },
 ];
 
+const CUSTOMER = {
+  name: "Nguyễn Thảo Vy",
+  loyaltyPoints: 1280,
+};
+
+const AVATARS = [
+  "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=200&q=80",
+  "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=200&q=80",
+  "https://images.unsplash.com/photo-1463453091185-61582044d556?w=200&q=80",
+  "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200&q=80",
+  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80",
+];
+
 const MenuScreen = () => {
   const [activeCategory, setActiveCategory] = useState("all");
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
-  // Lọc sản phẩm theo danh mục
+  const randomAvatar = useMemo(() => {
+    const index = Math.floor(Math.random() * AVATARS.length);
+    return AVATARS[index];
+  }, []);
+
   const filteredProducts = useMemo(() => {
     return activeCategory === "all"
       ? PRODUCTS
       : PRODUCTS.filter((p) => p.category === activeCategory);
   }, [activeCategory]);
 
-  // Thêm vào giỏ hàng
   const addToCart = (product) => {
     setCart((prev) => {
       const existing = prev.find((item) => item.id === product.id);
@@ -93,7 +116,6 @@ const MenuScreen = () => {
     });
   };
 
-  // Giảm số lượng / Xóa món
   const removeFromCart = (productId) => {
     setCart((prev) => {
       return prev
@@ -107,7 +129,22 @@ const MenuScreen = () => {
     });
   };
 
-  // Tổng tiền và tổng số lượng
+  const setQuantity = (product, newQty) => {
+    if (newQty <= 0) {
+      setCart((prev) => prev.filter((item) => item.id !== product.id));
+    } else {
+      setCart((prev) => {
+        const existing = prev.find((item) => item.id === product.id);
+        if (existing) {
+          return prev.map((item) =>
+            item.id === product.id ? { ...item, qty: newQty } : item
+          );
+        }
+        return [...prev, { ...product, qty: newQty }];
+      });
+    }
+  };
+
   const totalAmount = cart.reduce(
     (sum, item) => sum + item.price * item.qty,
     0
@@ -120,8 +157,7 @@ const MenuScreen = () => {
   };
 
   return (
-    <div className="flex h-screen bg-linear-to-br from-amber-50 via-orange-50 to-red-50 font-sans overflow-hidden relative">
-      {/* Overlay mờ khi giỏ hàng mở */}
+    <div className="flex h-screen bg-linear-to-br from-amber-50 via-orange-50 to-red-50 font-sans overflow-hidden relative select-none">
       {isCartOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-30 transition-opacity duration-300"
@@ -129,7 +165,6 @@ const MenuScreen = () => {
         />
       )}
 
-      {/* Sidebar danh mục */}
       <div className="w-24 bg-white border-r flex flex-col items-center py-6 space-y-4 shadow-sm z-10">
         <img
           src="/images/logo.png"
@@ -152,73 +187,55 @@ const MenuScreen = () => {
         ))}
       </div>
 
-      {/* Main Grid sản phẩm */}
-      <div className="flex-1 overflow-y-auto p-6 flex flex-col h-screen">
-        <header className="mb-6 flex justify-between items-center shrink-0">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-800">Thực Đơn</h1>
-            <p className="text-gray-500">Thứ 5, 20/11/2025</p>
-          </div>
-          <div className="bg-white px-4 py-2 rounded-full shadow-sm text-sm font-medium text-amber-600 border border-amber-100">
-            Bàn số: 05
+      <div className="flex-1 overflow-y-auto flex flex-col h-screen">
+        <header className="px-6 py-4 shrink-0">
+          <div className="flex justify-between items-center">
+            <div className="space-y-2">
+              <div className="bg-amber inline-flex px-4 py-2 rounded-full shadow-sm text-sm font-semibold text-amber-700 border border-amber-100">
+                Bàn số: 05
+              </div>
+            </div>
+            <div className="flex items-center gap-3 bg-gray-50 rounded-full pl-3 pr-2 py-2 border border-gray-200">
+              <div className="relative">
+                <img
+                  src={randomAvatar}
+                  alt="Avatar khách hàng"
+                  className="w-10 h-10 rounded-full object-cover border-2 border-orange-200 shadow-sm"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-gray-800 truncate">
+                  {CUSTOMER.name}
+                </p>
+                <p className="text-xs text-amber-600 font-bold">
+                  Loyalty: {CUSTOMER.loyaltyPoints} điểm
+                </p>
+              </div>
+              <button
+                onClick={() => alert("Đăng xuất")}
+                className="flex items-center gap-1 bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm"
+              >
+                <LogOut size={14} />
+                Logout
+              </button>
+            </div>
           </div>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 auto-rows-fr pb-6">
+        <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 auto-rows-fr pb-6">
           {filteredProducts.map((product) => (
-            <div
+            <MenuItem
               key={product.id}
-              className="bg-white rounded-2xl p-3 shadow-sm hover:shadow-md transition-all hover:-translate-y-1 border border-transparent group flex flex-col"
-            >
-              <div className="aspect-square w-full rounded-xl overflow-hidden mb-3">
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                />
-              </div>
-              <div className="flex items-center justify-between gap-2 mt-auto">
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-gray-800 text-sm truncate">
-                    {product.name}
-                  </h3>
-                  <p className="text-amber-600 font-bold mt-1">
-                    {product.price.toLocaleString("vi-VN")}đ
-                  </p>
-                </div>
-                {getItemQuantity(product.id) > 0 ? (
-                  <div className="flex items-center border-2 border-orange-500 rounded-full overflow-hidden shadow-lg shrink-0">
-                    <div
-                      onClick={() => removeFromCart(product.id)}
-                      className="bg-orange-100 text-gray-800 px-3 py-2.5 border-r-2 border-orange-600 hover:bg-orange-200 transition-all cursor-pointer"
-                    >
-                      <Minus size={16} />
-                    </div>
-                    <span className="bg-white text-orange-600 font-bold text-base min-w-10 text-center">
-                      {getItemQuantity(product.id)}
-                    </span>
-                    <div
-                      onClick={() => addToCart(product)}
-                      className="bg-orange-500 text-white px-3 py-2.5 border-l-2 border-orange-600 hover:bg-orange-600 transition-all cursor-pointer"
-                    >
-                      <Plus size={16} />
-                    </div>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => addToCart(product)}
-                    className="bg-linear-to-br from-orange-400 to-orange-600 p-2 rounded-full shadow-md shadow-orange-300/40 text-white hover:shadow-lg hover:shadow-orange-400/60 hover:scale-110 transition-all duration-300 shrink-0"
-                  >
-                    <Plus size={18} />
-                  </button>
-                )}
-              </div>
-            </div>
+              product={product}
+              quantity={getItemQuantity(product.id)}
+              onAdd={() => addToCart(product)}
+              onRemove={() => removeFromCart(product.id)}
+              onQuantityChange={setQuantity}
+            />
           ))}
         </div>
       </div>
 
-      {/* Nút giỏ hàng nổi */}
       {!isCartOpen && totalItems > 0 && (
         <button
           onClick={() => setIsCartOpen(true)}
@@ -233,13 +250,12 @@ const MenuScreen = () => {
           <div className="flex flex-col items-start">
             <span className="text-xs opacity-90">Tổng cộng</span>
             <span className="font-bold text-lg">
-              {totalAmount.toLocaleString("vi-VN")}đ
+              {totalAmount.toLocaleString("vi-VN")}₫
             </span>
           </div>
         </button>
       )}
 
-      {/* Giỏ hàng slide-out */}
       <div
         className={`fixed top-0 right-0 h-screen w-96 bg-white shadow-2xl flex flex-col border-l z-40 transition-transform duration-300 ${
           isCartOpen ? "translate-x-0" : "translate-x-full"
@@ -247,13 +263,13 @@ const MenuScreen = () => {
       >
         <div className="p-6 border-b bg-gray-50 flex items-center justify-between">
           <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-            <ShoppingCart className="text-amber-500" /> Đơn Hàng
+            <ShoppingCart className="text-amber-500" /> Đơn hàng
           </h2>
           <button
             onClick={() => setIsCartOpen(false)}
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
-            ✕
+            Đóng
           </button>
         </div>
 
@@ -281,7 +297,7 @@ const MenuScreen = () => {
                     {item.name}
                   </h4>
                   <p className="text-xs text-gray-500">
-                    {item.price.toLocaleString("vi-VN")}đ
+                    {item.price.toLocaleString("vi-VN")}₫
                   </p>
                 </div>
                 <div className="flex items-center border-2 border-orange-500 rounded-full overflow-hidden shadow-lg">
@@ -310,7 +326,7 @@ const MenuScreen = () => {
           <div className="flex justify-between items-center mb-4">
             <span className="text-gray-500">Tổng cộng</span>
             <span className="text-2xl font-bold text-gray-800">
-              {totalAmount.toLocaleString("vi-VN")}đ
+              {totalAmount.toLocaleString("vi-VN")}₫
             </span>
           </div>
           <button
@@ -321,10 +337,10 @@ const MenuScreen = () => {
             }`}
             disabled={cart.length === 0}
             onClick={() =>
-              alert(`Đã gửi đơn hàng: ${totalAmount.toLocaleString("vi-VN")}đ`)
+              alert(`Đã gửi đơn hàng: ${totalAmount.toLocaleString("vi-VN")}₫`)
             }
           >
-            Thanh Toán Ngay
+            Đặt món ngay
           </button>
         </div>
       </div>
