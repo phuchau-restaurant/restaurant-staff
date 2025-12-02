@@ -87,6 +87,98 @@ class OrdersService {
       
       return { order, details };
   }
+  async updateOrder(id, tenantId, updates) {
+    const currentOrder = await this.getOrderById(id, tenantId);
+
+    if (updates.status === 'completed' && currentOrder.order.status !== 'completed') {
+        updates.completedAt = new Date(); // TODO: Date hay Date utc ?
+    }
+
+    // 3. Gọi Repo update
+    return await this.ordersRepo.update(id, updates);
+  }
+
+  async deleteOrder(id, tenantId) {
+    await this.getOrderById(id, tenantId);
+
+    // 2. Xóa dữ liệu con trước (OrderDetails)
+    // Để tránh lỗi Foreign Key Constraint nếu DB không có Cascade Delete
+    await this.orderDetailsRepo.deleteByOrderId(id);
+
+    // 3. Xóa dữ liệu cha (Order)
+    return await this.ordersRepo.delete(id);
+  }
+
+
+  //GET all orders for kitchen view
+  async getAllOrders(tenantId, filters = {}) {
+    //check tenantId
+    if (!tenantId) throw new Error("Tenant ID is required");
+
+    // Thêm filter tenantId vào filters
+    filters.tenant_id = tenantId;
+    return await this.ordersRepo.getAll(filters);
+  }
+
+
+  /**
+   * API cho Bếp/Bar
+   * @param {string} tenantId 
+   * @param {string} orderStatus - Trạng thái đơn (VD: pending)
+   * @param {string} itemStatus - (Optional) Trạng thái món (VD: pending, ready)
+   */
+  async getKitchenOrders(tenantId, orderStatus, itemStatus = null) {
+
+    const orders = await this.ordersRepo.getAll({ 
+        tenant_id: tenantId, 
+        status: orderStatus //filter order by status
+    });
+
+    if (!orders || orders.length === 0) return [];
+
+    //  Lấy danh sách các order_id
+    const orderIds = orders.map(o => o.id);
+
+    // Lấy toàn bộ OrderDetails của các đơn này
+    // và lọc theo itemStatus nếu có
+    const allDetails = await this.orderDetailsRepo.getByOrderIds(orderIds, itemStatus);
+
+    // Lấy thông tin Tên món ăn (Dishes/Menus)
+    // Lấy ra tất cả dishId từ list chi tiết -> theo api contact
+    const dishIds = allDetails.map(d => d.dishId);
+    const dishesInfo = await this.menusRepo.getByIds(dishIds);
+
+    // Ghép dữ liệu lại theo cấu trúc yêu cầu
+    const result = orders.map(order => {
+        // Lọc ra các món (order items) thuộc đơn hàng này
+        const myItems = allDetails.filter(d => d.orderId === order.id);
+
+        // Nếu lọc itemStatus (ví dụ lấy món 'pending') mà đơn này không còn món nào pending
+        // thì bỏ qua đơn này (return null để filter sau)
+        if (myItems.length === 0 && itemStatus) return null;
+
+        return {
+            orderId: order.id,
+            tableId: order.tableId,
+            //displayOrder: order.displayOrder, // Thêm cái này cho bếp dễ đọc mã đơn
+            note: order.note ? order.note : "...", // Có thể thêm note chung của order nếu có
+            created_at: order.createdAt,
+            dishes: myItems.map(item => {
+                // Tìm tên món ăn
+                const dish = dishesInfo.find(d => d.id === item.dishId);
+                return {
+                    dishId: item.dishId,
+                    name: dish ? dish.name : "Unknown Dish", // Map tên
+                    quantity: item.quantity,
+                    note: item.note, // Note riêng của món (ít hành...)
+                    status: item.status // Trạng thái của món (pending/served)
+                };
+            })
+        };
+    }).filter(item => item !== null); // Loại bỏ các đơn rỗng (do lọc itemStatus)
+
+    return result;
+  }
 }
 
 export default OrdersService;

@@ -15,6 +15,7 @@ import authRoutes from "./routers/auth.routes.js";
 import menusRoutes from './routers/menus.routes.js';
 import customersRoutes from './routers/customers.routes.js';
 import ordersRoutes from './routers/orders.routes.js';
+import kitchenRoutes from './routers/kitchen.routes.js';
 
 
 //Import middlewares
@@ -47,6 +48,9 @@ app.get("/", (req, res) => {
 app.use('/api/menus', menusRoutes); 
 app.use('/api/customers', customersRoutes);
 app.use('/api/orders', ordersRoutes);
+
+//route nghiệp vụ cho kitchen
+app.use('/api/kitchen', kitchenRoutes);
 
 // --- ERROR HANDLING  ---
 // Nếu controller gọi next(error), nó sẽ nhảy thẳng xuống đây

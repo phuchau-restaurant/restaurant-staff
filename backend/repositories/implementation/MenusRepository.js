@@ -81,4 +81,24 @@ async getById(id) {
     // Map sang Model
     return rawData.map(item => new Menus(item));
   }
+
+
+  ///<summary>
+  /// Lấy danh sách món ăn theo danh sách ID
+  ///</summary>
+  async getByIds(ids) {
+    if (ids.length === 0) return [];
+
+    // Lọc trùng ID trước khi query để tối ưu
+    const uniqueIds = [...new Set(ids)];
+
+    const { data, error } = await supabase
+      .from(this.tableName) // 'dishes' table
+      .select("*")
+      .in('id', uniqueIds);
+
+    if (error) throw new Error(`[Menus] GetByIds failed: ${error.message}`);
+    
+    return data.map(item => new Menus(item)); 
+  }
 }

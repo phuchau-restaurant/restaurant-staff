@@ -7,10 +7,7 @@ const router = express.Router();
 // Bắt buộc có TenantID
 router.use(tenantMiddleware);
 
-router.get('/', ordersController.getAll);
-router.post('/', ordersController.create);
-router.get('/:id', ordersController.getById);
-router.put('/:id', ordersController.update);
-router.delete('/:id', ordersController.delete);
+// GET /api/kitchen/orders
+router.get('/orders', ordersController.getForKitchen);
 
 export default router;
