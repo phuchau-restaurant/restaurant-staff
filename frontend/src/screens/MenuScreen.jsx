@@ -88,10 +88,62 @@ const AVATARS = [
   "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80",
 ];
 
+
+
+
 const MenuScreen = () => {
   const [activeCategory, setActiveCategory] = useState("all");
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+
+  const submitOrder = async () => {
+    try {
+      const payload = {
+        tableId: 5,
+        customerId: 1,
+        dishes: cart.map(item => ({
+          dishId: item.id,
+          quantity: item.qty,
+          description: item.name
+        }))
+      };
+
+      console.log("📦 Gửi payload:", payload);
+
+      const response = await fetch("http://localhost:3000/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      // Đọc response dạng text trước
+      const raw = await response.text();
+      console.log("📥 Raw API response:", raw);
+
+      // Nếu không phải JSON → báo lỗi server
+      let result;
+      try {
+        result = JSON.parse(raw);
+      } catch (e) {
+        throw new Error("API trả về HTML thay vì JSON. Có thể sai URL hoặc server lỗi.");
+      }
+
+      if (!response.ok) {
+        throw new Error(result.message || "Gửi đơn hàng thất bại");
+      }
+
+      alert("🎉 Đặt món thành công!");
+      setCart([]);
+      setIsCartOpen(false);
+
+    } catch (err) {
+      console.error("❌ Lỗi đặt món:", err);
+      alert("Đặt món thất bại: " + err.message);
+    }
+  };
+
+
+
 
   const randomAvatar = useMemo(() => {
     const index = Math.floor(Math.random() * AVATARS.length);
@@ -336,9 +388,8 @@ const MenuScreen = () => {
                 : "bg-gray-300 text-gray-500 cursor-not-allowed"
             }`}
             disabled={cart.length === 0}
-            onClick={() =>
-              alert(`Đã gửi đơn hàng: ${totalAmount.toLocaleString("vi-VN")}₫`)
-            }
+            onClick={submitOrder}
+
           >
             Đặt món ngay
           </button>
