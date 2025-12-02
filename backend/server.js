@@ -39,12 +39,12 @@ app.use(requestLogger);
 app.use("/api/categories", categoriesRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/auth", authRoutes);
+app.use('/api/menus', menusRoutes); 
+app.use('/api/customers', customersRoutes);
 // Route kiểm tra server sống hay chết
 app.get("/", (req, res) => {
   res.send("🚀 Server is running...");
 });
-app.use('/api/menus', menusRoutes); 
-app.use('/api/customers', customersRoutes);
 
 // --- ERROR HANDLING  ---
 // Nếu controller gọi next(error), nó sẽ nhảy thẳng xuống đây
