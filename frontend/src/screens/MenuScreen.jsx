@@ -110,7 +110,7 @@ const MenuScreen = () => {
 
       console.log("📦 Gửi payload:", payload);
 
-      const response = await fetch("http://localhost:3000/api/orders", {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/orders}`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-tenant-id":"019abac9-846f-75d0-8dfd-bcf9c9457866" },
         body: JSON.stringify(payload),
