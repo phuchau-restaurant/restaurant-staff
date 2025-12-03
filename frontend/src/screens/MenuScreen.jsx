@@ -192,7 +192,7 @@ const MenuScreen = () => {
         <img
           src="/images/logo.png"
           alt="Logo"
-          className="w-16 h-16 object-contain mb-4"
+          className="w-20 h-20 object-contain mb-4"
         />
         {CATEGORIES.map((cat) => (
           <button

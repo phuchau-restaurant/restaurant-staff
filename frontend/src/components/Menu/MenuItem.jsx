@@ -37,7 +37,7 @@ const MenuItem = ({ product, quantity, onAdd, onRemove, onQuantityChange }) => {
 
 
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all hover:-translate-y-1 border border-transparent flex flex-col h-full">
+    <div className="bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow hover:-translate-y-1 border border-transparent flex flex-col h-full">
       <div className="w-full h-60 rounded-[2px] overflow-hidden mb-2">
         <img
           src={product.imgUrl}
@@ -61,10 +61,10 @@ const MenuItem = ({ product, quantity, onAdd, onRemove, onQuantityChange }) => {
             {product.price.toLocaleString("vi-VN")}đ
           </p>
           {quantity > 0 ? (
-            <div className="flex items-center border-2 border-orange-500 rounded-full overflow-hidden shadow-lg shrink-0">
+            <div className="flex items-center border-2 border-orange-500 rounded-full overflow-hidden shadow-lg shrink-0 h-[42px]">
               <div
                 onClick={onRemove}
-                className="bg-orange-100 text-gray-800 px-2 py-2.5 border-r-2 border-orange-600 hover:bg-orange-200 transition-all cursor-pointer"
+                className="bg-orange-100 text-gray-800 px-2 h-full flex items-center border-r-2 border-orange-600 hover:bg-orange-200 active:bg-orange-300 transition-colors cursor-pointer"
               >
                 <Minus size={16} />
               </div>
@@ -76,19 +76,19 @@ const MenuItem = ({ product, quantity, onAdd, onRemove, onQuantityChange }) => {
                   onBlur={handleInputBlur}
                   onKeyDown={handleInputKeyDown}
                   autoFocus
-                  className="bg-white text-orange-600 font-bold text-base w-10 text-center outline-none"
+                  className="bg-white text-orange-600 font-bold text-base w-10 text-center outline-none h-full"
                 />
               ) : (
                 <span
                   onClick={handleQuantityClick}
-                  className="bg-white text-orange-600 font-bold text-base min-w-10 text-center cursor-pointer transition-colors"
+                  className="bg-white text-orange-600 font-bold text-base min-w-10 text-center cursor-pointer hover:bg-orange-50 active:bg-orange-100 transition-colors h-full flex items-center justify-center"
                 >
                   {quantity}
                 </span>
               )}
               <div
                 onClick={onAdd}
-                className="bg-orange-500 text-white px-2 py-2.5 border-l-2 border-orange-600 hover:bg-orange-600 transition-all cursor-pointer"
+                className="bg-orange-500 text-white px-2 h-full flex items-center border-l-2 border-orange-600 hover:bg-orange-600 active:bg-orange-700 transition-colors cursor-pointer"
               >
                 <Plus size={16} />
               </div>
@@ -96,7 +96,7 @@ const MenuItem = ({ product, quantity, onAdd, onRemove, onQuantityChange }) => {
           ) : (
             <button
               onClick={onAdd}
-              className="bg-linear-to-br from-orange-400 to-orange-600 p-2 rounded-full shadow-md shadow-orange-300/40 text-white hover:shadow-lg hover:shadow-orange-400/60 hover:scale-110 transition-all duration-300 shrink-0"
+              className="bg-linear-to-br from-orange-400 to-orange-600 p-2 rounded-full shadow-md shadow-orange-300/40 text-white hover:shadow-lg hover:shadow-orange-400/60 active:scale-95 transition-all duration-300 shrink-0 w-[42px] h-[42px] flex items-center justify-center"
             >
               <Plus size={18} />
             </button>

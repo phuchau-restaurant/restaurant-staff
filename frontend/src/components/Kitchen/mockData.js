@@ -9,7 +9,7 @@ export const MOCK_ORDERS = [
         name: 'Bò Phô Mai Đặc Biệt', 
         quantity: 2, 
         image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200&q=80', 
-        notes: 'Ít cay, không hành', 
+        notes: 'Ít cay, không hành, aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 
         station: 'grill',
         completed: true  // Ready - có thể phục vụ
       },
