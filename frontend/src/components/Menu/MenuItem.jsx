@@ -39,7 +39,8 @@ const MenuItem = ({ product, quantity, onAdd, onRemove, onQuantityChange }) => {
     <div className="bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all hover:-translate-y-1 border border-transparent flex flex-col h-full">
       <div className="w-full h-60 rounded-[2px] overflow-hidden mb-2">
         <img
-          src={product.image}
+          // src={product.image}
+          src="https://core.afg.vn/uploads/images/Rib-Eye-Steak---Al-Fresco-min.jpg"
           alt={product.name}
           className="w-full h-full object-cover transition-transform duration-500"
         />

@@ -1,5 +1,5 @@
 // src/screens/MenuScreen.jsx
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   ShoppingCart,
   Plus,
@@ -11,68 +11,18 @@ import {
 } from "lucide-react";
 import MenuItem from "../components/Menu/MenuItem";
 
+// Map categoryId → category name
+const CATEGORY_MAP = {
+  1: "burger",
+  2: "drink",
+  3: "dessert",
+};
+
 const CATEGORIES = [
   { id: "all", name: "Tất cả", icon: <Utensils size={20} /> },
-  { id: "burger", name: "Burger", icon: <Utensils size={20} /> },
+  { id: "burger", name: "Món khai vị", icon: <Utensils size={20} /> },
   { id: "drink", name: "Đồ uống", icon: <Coffee size={20} /> },
-  { id: "dessert", name: "Tráng miệng", icon: <Cookie size={20} /> },
-];
-
-const PRODUCTS = [
-  {
-    id: 1,
-    name: "Bò Phô Mai Đặc Biệt",
-    description: "Burger bò phô mai kẹp thịt bò nướng và rau tươi",
-    price: 69000,
-    category: "burger",
-    image:
-      "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&q=80",
-  },
-  {
-    id: 2,
-    name: "Gà Giòn Cay",
-    description: "Ức gà chiên cay, khoai tây và sốt đặc biệt",
-    price: 55000,
-    category: "burger",
-    image:
-      "https://images.unsplash.com/photo-1615557960916-5f4791effe9d?w=500&q=80",
-  },
-  {
-    id: 3,
-    name: "Trà Đào Cam Sả",
-    description: "Trà đào thanh mát pha cam và sả tươi",
-    price: 45000,
-    category: "drink",
-    image:
-      "https://images.unsplash.com/photo-1544145945-f90425340c7e?w=500&q=80",
-  },
-  {
-    id: 4,
-    name: "Cà Phê Sữa Đá",
-    description: "Cà phê rang xay pha cùng sữa đặc béo mịn",
-    price: 35000,
-    category: "drink",
-    image:
-      "https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=500&q=80",
-  },
-  {
-    id: 5,
-    name: "Bánh Kem Dâu",
-    description: "Cốt bánh mềm, kem ngậy và dâu tươi",
-    price: 40000,
-    category: "dessert",
-    image:
-      "https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=500&q=80",
-  },
-  {
-    id: 6,
-    name: "Khoai Tây Chiên",
-    description: "Khoai tây chiên vàng giòn, chấm sốt đậm đà",
-    price: 25000,
-    category: "dessert",
-    image:
-      "https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?w=500&q=80",
-  },
+  { id: "dessert", name: "Món chính", icon: <Cookie size={20} /> },
 ];
 
 const CUSTOMER = {
@@ -88,44 +38,80 @@ const AVATARS = [
   "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80",
 ];
 
-
-
-
 const MenuScreen = () => {
   const [activeCategory, setActiveCategory] = useState("all");
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [products, setProducts] = useState([]);
 
+  // 🚀 Fetch menu từ API
+  useEffect(() => {
+    const fetchMenus = async () => {
+      try {
+        const res = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/api/menus`,
+          {
+            headers: { "x-tenant-id": "019abac9-846f-75d0-8dfd-bcf9c9457866" },
+          }
+        );
+
+        const json = await res.json();
+
+        if (!json.success) throw new Error("Lấy menu thất bại");
+
+        const mapped = json.data.map((item, index) => ({
+          id: index + 1,
+          name: item.name,
+          description: item.description || "Không có mô tả",
+          price: item.price,
+          category: CATEGORY_MAP[item.categoryId] || "burger",
+          image: "https://via.placeholder.com/300?text=Food+Image",
+        }));
+
+        setProducts(mapped);
+      } catch (err) {
+        console.error("❌ Lỗi fetch menu:", err);
+      }
+    };
+
+    fetchMenus();
+  }, []);
+
+  // Submit order (giữ nguyên)
   const submitOrder = async () => {
     try {
       const payload = {
         tableId: 7,
         customerId: 1,
-        dishes: cart.map(item => ({
+        dishes: cart.map((item) => ({
           dishId: item.id,
           quantity: item.qty,
-          description: item.name
-        }))
+          description: item.name,
+        })),
       };
 
       console.log("📦 Gửi payload:", payload);
 
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/orders}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-tenant-id":"019abac9-846f-75d0-8dfd-bcf9c9457866" },
-        body: JSON.stringify(payload),
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/orders`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-tenant-id": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
 
-      // Đọc response dạng text trước
       const raw = await response.text();
       console.log("📥 Raw API response:", raw);
 
-      // Nếu không phải JSON → báo lỗi server
       let result;
       try {
         result = JSON.parse(raw);
       } catch (e) {
-        throw new Error("API trả về HTML thay vì JSON. Có thể sai URL hoặc server lỗi.");
+        throw new Error("API trả về HTML thay vì JSON.");
       }
 
       if (!response.ok) {
@@ -135,27 +121,25 @@ const MenuScreen = () => {
       alert("🎉 Đặt món thành công!");
       setCart([]);
       setIsCartOpen(false);
-
     } catch (err) {
       console.error("❌ Lỗi đặt món:", err);
       alert("Đặt món thất bại: " + err.message);
     }
   };
 
-
-
-
   const randomAvatar = useMemo(() => {
     const index = Math.floor(Math.random() * AVATARS.length);
     return AVATARS[index];
   }, []);
 
+  // 🟠 Filter theo category
   const filteredProducts = useMemo(() => {
     return activeCategory === "all"
-      ? PRODUCTS
-      : PRODUCTS.filter((p) => p.category === activeCategory);
-  }, [activeCategory]);
+      ? products
+      : products.filter((p) => p.category === activeCategory);
+  }, [activeCategory, products]);
 
+  // Cart actions
   const addToCart = (product) => {
     setCart((prev) => {
       const existing = prev.find((item) => item.id === product.id);
@@ -169,45 +153,32 @@ const MenuScreen = () => {
   };
 
   const removeFromCart = (productId) => {
-    setCart((prev) => {
-      return prev
-        .map((item) => {
-          if (item.id === productId) {
-            return { ...item, qty: item.qty - 1 };
-          }
-          return item;
-        })
-        .filter((item) => item.qty > 0);
-    });
+    setCart((prev) =>
+      prev
+        .map((item) =>
+          item.id === productId ? { ...item, qty: item.qty - 1 } : item
+        )
+        .filter((item) => item.qty > 0)
+    );
   };
 
   const setQuantity = (product, newQty) => {
     if (newQty <= 0) {
-      setCart((prev) => prev.filter((item) => item.id !== product.id));
+      setCart((prev) => prev.filter((i) => i.id !== product.id));
     } else {
-      setCart((prev) => {
-        const existing = prev.find((item) => item.id === product.id);
-        if (existing) {
-          return prev.map((item) =>
-            item.id === product.id ? { ...item, qty: newQty } : item
-          );
-        }
-        return [...prev, { ...product, qty: newQty }];
-      });
+      setCart((prev) =>
+        prev.map((i) => (i.id === product.id ? { ...i, qty: newQty } : i))
+      );
     }
   };
 
-  const totalAmount = cart.reduce(
-    (sum, item) => sum + item.price * item.qty,
-    0
-  );
+  const totalAmount = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
   const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
 
   const getItemQuantity = (productId) => {
     const item = cart.find((i) => i.id === productId);
     return item ? item.qty : 0;
   };
-
   return (
     <div className="flex h-screen bg-linear-to-br from-amber-50 via-orange-50 to-red-50 font-sans overflow-hidden relative select-none">
       {isCartOpen && (
