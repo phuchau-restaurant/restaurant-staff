@@ -65,7 +65,7 @@ const MenuScreen = () => {
           description: item.description || "Không có mô tả",
           price: item.price,
           category: CATEGORY_MAP[item.categoryId] || "burger",
-          image: "https://via.placeholder.com/300?text=Food+Image",
+          imgUrl: item.imgUrl,
         }));
 
         setProducts(mapped);
@@ -311,7 +311,7 @@ const MenuScreen = () => {
                 className="flex items-center gap-3 bg-amber-50 p-3 rounded-xl border-2 border-amber-200 shadow-sm"
               >
                 <img
-                  src={item.image}
+                  src={item.imgUrl}
                   alt={item.name}
                   className="w-12 h-12 rounded-md object-cover"
                 />
