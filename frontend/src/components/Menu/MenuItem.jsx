@@ -47,17 +47,17 @@ const MenuItem = ({ product, quantity, onAdd, onRemove, onQuantityChange }) => {
       </div>
       <div className="flex-1 flex flex-col">
         <div className="flex-1 min-w-0 mb-3">
-          <h3 className="font-bold text-gray-800 text-xl mb-1">
+          <h3 className="font-bold text-gray-800 text-2xl mb-1 font-oswald">
             {product.name}
           </h3>
           {product.description && (
-            <p className="text-gray-500 text-sm line-clamp-2">
+            <p className="text-gray-500 text-md line-clamp-2 font-assistant">
               {product.description}
             </p>
           )}
         </div>
         <div className="flex items-center justify-between gap-2">
-          <p className="text-amber-600 text-[20px] font-bold">
+          <p className="text-amber-600 text-[30px] font-smooch-sans font-bold">
             {product.price.toLocaleString("vi-VN")}đ
           </p>
           {quantity > 0 ? (
@@ -81,7 +81,7 @@ const MenuItem = ({ product, quantity, onAdd, onRemove, onQuantityChange }) => {
               ) : (
                 <span
                   onClick={handleQuantityClick}
-                  className="bg-white text-orange-600 font-bold text-base min-w-10 text-center cursor-pointer hover:bg-orange-50 active:bg-orange-100 transition-colors h-full flex items-center justify-center"
+                  className="bg-white text-orange-600 font-bold text-base min-w-10 text-center cursor-pointer transition-colors h-full flex items-center justify-center"
                 >
                   {quantity}
                 </span>

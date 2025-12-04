@@ -10,6 +10,7 @@ import {
   LogOut,
 } from "lucide-react";
 import MenuItem from "../components/Menu/MenuItem";
+import CartItem from "../components/Cart/CartItem";
 
 // Map categoryId → category name
 const CATEGORY_MAP = {
@@ -31,11 +32,12 @@ const CUSTOMER = {
 };
 
 const AVATARS = [
-  "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=200&q=80",
-  "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=200&q=80",
-  "https://images.unsplash.com/photo-1463453091185-61582044d556?w=200&q=80",
-  "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200&q=80",
-  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80",
+  "/images/avatar/avt1.svg",
+  "/images/avatar/avt2.svg",
+  "/images/avatar/avt3.svg",
+  "/images/avatar/avt4.svg",
+  "/images/avatar/avt5.svg",
+  "/images/avatar/avt6.svg",
 ];
 
 const MenuScreen = () => {
@@ -43,9 +45,35 @@ const MenuScreen = () => {
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [products, setProducts] = useState([]);
+  const [tableInfo, setTableInfo] = useState({ id: null, number: "..." });
 
   // 🚀 Fetch menu từ API
   useEffect(() => {
+    // Lấy tableId từ URL params (ví dụ: ?tableId=7)
+    const params = new URLSearchParams(window.location.search);
+    const tableIdFromUrl = params.get("tableId");
+    
+    if (tableIdFromUrl) {
+      // Fetch thông tin bàn từ API
+      fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tables/${tableIdFromUrl}`, {
+        headers: { "x-tenant-id": "019abac9-846f-75d0-8dfd-bcf9c9457866" },
+      })
+        .then((res) => res.json())
+        .then((json) => {
+          if (json.success && json.data) {
+            setTableInfo({ id: json.data.id, number: json.data.tableNumber });
+          } else {
+            setTableInfo({ id: tableIdFromUrl, number: tableIdFromUrl });
+          }
+        })
+        .catch(() => {
+          setTableInfo({ id: tableIdFromUrl, number: tableIdFromUrl });
+        });
+    } else {
+      // Mặc định nếu không có tableId
+      setTableInfo({ id: 1, number: "01" });
+    }
+
     const fetchMenus = async () => {
       try {
         const res = await fetch(
@@ -81,12 +109,13 @@ const MenuScreen = () => {
   const submitOrder = async () => {
     try {
       const payload = {
-        tableId: 7,
+        tableId: tableInfo.id,
         customerId: 1,
         dishes: cart.map((item) => ({
           dishId: item.id,
           quantity: item.qty,
           description: item.name,
+          note: item.note?.trim() || null,
         })),
       };
 
@@ -148,7 +177,7 @@ const MenuScreen = () => {
           item.id === product.id ? { ...item, qty: item.qty + 1 } : item
         );
       }
-      return [...prev, { ...product, qty: 1 }];
+      return [...prev, { ...product, qty: 1, note: "" }];
     });
   };
 
@@ -170,6 +199,12 @@ const MenuScreen = () => {
         prev.map((i) => (i.id === product.id ? { ...i, qty: newQty } : i))
       );
     }
+  };
+
+  const updateItemNote = (itemId, note) => {
+    setCart((prev) =>
+      prev.map((item) => (item.id === itemId ? { ...item, note } : item))
+    );
   };
 
   const totalAmount = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
@@ -214,8 +249,8 @@ const MenuScreen = () => {
         <header className="px-6 py-4 shrink-0">
           <div className="flex justify-between items-center">
             <div className="space-y-2">
-              <div className="bg-amber inline-flex px-4 py-2 rounded-full shadow-sm text-sm font-semibold text-amber-700 border border-amber-100">
-                Bàn số: 05
+              <div className="bg-gradient-to-r from-blue-500 to-blue-600 inline-flex px-5 py-3 rounded-full shadow-md text-md font-bold text-white">
+                Bàn số: {tableInfo.number}
               </div>
             </div>
             <div className="flex items-center gap-3 bg-gray-50 rounded-full pl-3 pr-2 py-2 border border-gray-200">
@@ -280,7 +315,7 @@ const MenuScreen = () => {
       )}
 
       <div
-        className={`fixed top-0 right-0 h-screen w-96 bg-white shadow-2xl flex flex-col border-l z-40 transition-transform duration-300 ${
+        className={`fixed top-0 right-0 h-screen w-full lg:w-120 bg-white shadow-2xl flex flex-col border-l z-40 transition-transform duration-300 ${
           isCartOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -306,41 +341,14 @@ const MenuScreen = () => {
             </div>
           ) : (
             cart.map((item) => (
-              <div
+              <CartItem
                 key={item.id}
-                className="flex items-center gap-3 bg-amber-50 p-3 rounded-xl border-2 border-amber-200 shadow-sm"
-              >
-                <img
-                  src={item.imgUrl}
-                  alt={item.name}
-                  className="w-12 h-12 rounded-md object-cover"
-                />
-                <div className="flex-1">
-                  <h4 className="text-sm font-semibold text-gray-800 truncate">
-                    {item.name}
-                  </h4>
-                  <p className="text-xs text-gray-500">
-                    {item.price.toLocaleString("vi-VN")}₫
-                  </p>
-                </div>
-                <div className="flex items-center border-2 border-orange-500 rounded-full overflow-hidden shadow-lg">
-                  <div
-                    onClick={() => removeFromCart(item.id)}
-                    className="bg-orange-100 text-gray-800 px-2.5 py-1.5 border-r-2 border-orange-400 hover:bg-orange-200 transition-all cursor-pointer"
-                  >
-                    <Minus size={12} />
-                  </div>
-                  <span className="bg-white text-orange-600 font-bold text-sm min-w-8 text-center">
-                    {item.qty}
-                  </span>
-                  <div
-                    onClick={() => addToCart(item)}
-                    className="bg-orange-500 text-white px-2.5 py-1.5 hover:bg-orange-600 transition-all cursor-pointer"
-                  >
-                    <Plus size={12} />
-                  </div>
-                </div>
-              </div>
+                item={item}
+                onAdd={() => addToCart(item)}
+                onRemove={() => removeFromCart(item.id)}
+                onQuantityChange={setQuantity}
+                onNoteChange={updateItemNote}
+              />
             ))
           )}
         </div>
