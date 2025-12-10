@@ -49,7 +49,7 @@ class CategoriesService {
             .some(cat => cat.name.toLowerCase() === name.trim().toLowerCase());
       if (isExactMatch) {
         throw new Error(`Category '${name}' already exists in this tenant`);
-      }
+      } 
     }
 
     // chuẩn bị dữ liệu 

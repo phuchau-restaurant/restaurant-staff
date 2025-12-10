@@ -1,5 +1,7 @@
 // src/App.jsx
-import React, { useState } from "react";
+import React from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { CustomerProvider } from "./contexts/CustomerContext";
 import HomeScreen from "./screens/HomeScreen";
 import Register from "./screens/RegisterScreen";
 import VerifyEmailScreen from "./screens/VerifyEmailScreen";
@@ -12,66 +14,44 @@ import OnboardingScreen from "./screens/OnboardingScreen";
 import CustomerLoginScreen from "./screens/CustomerLoginScreen";
 
 function App() {
-  const [currentScreen, setCurrentScreen] = useState("test"); // null, 'test', 'dashboard', 'menu', 'kitchen', 'onboarding'
-  
-  const renderScreen = () => {
-    // Hiển thị OnboardingScreen
-    if (currentScreen === "onboarding") {
-      return <OnboardingScreen onComplete={() => setCurrentScreen("dashboard")} />;
-    }
+  return (
+    <BrowserRouter>
+      <div className="h-screen w-screen">
+        <Routes>
+          <Route path="/" element={<Navigate to="/customer/login" replace />} />
 
-    // Hiển thị TestScreen
-    if (currentScreen === "test") {
-      return <TestScreen onSelectScreen={setCurrentScreen} />;
-    }
+          {/* Customer Flow */}
+          <Route
+            path="/customer/*"
+            element={
+              <CustomerProvider>
+                <Routes>
+                  <Route path="login" element={<CustomerLoginScreen />} />
+                  <Route path="menu" element={<MenuScreen />} />
+                  <Route
+                    path="*"
+                    element={<Navigate to="/customer/login" replace />}
+                  />
+                </Routes>
+              </CustomerProvider>
+            }
+          />
 
-    // Hiển thị Login (HomeScreen)
-    if (currentScreen === "login") {
-      return <HomeScreen onSelectScreen={setCurrentScreen} />
-    }
+          {/* Admin/Staff Flow */}
+          <Route path="/login" element={<HomeScreen />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/verify-email" element={<VerifyEmailScreen />} />
+          <Route path="/onboarding" element={<OnboardingScreen />} />
+          <Route path="/dashboard" element={<DashboardLayout />} />
+          <Route path="/test" element={<TestScreen />} />
+          <Route path="/kitchen" element={<KitchenScreen />} />
+          <Route path="/waiter" element={<WaiterScreen />} />
 
-    // Hiển thị Register
-    if (currentScreen === "register") {
-      return <Register onSelectScreen={setCurrentScreen} />
-    }
-
-    // Hiển thị Verify Email
-    if (currentScreen === "verify-email") {
-      return <VerifyEmailScreen onSelectScreen={setCurrentScreen} />
-    }
-
-    // Nếu chưa chọn màn hình, hiển thị HomeScreen
-    if (!currentScreen) {
-      return <HomeScreen onSelectScreen={setCurrentScreen} />;
-    }
-
-    // Hiển thị DashboardLayout (bao gồm sidebar và nội dung có thể thay đổi)
-    if (currentScreen === "dashboard") {
-      return <DashboardLayout />;
-    }
-  
-    // Hiển thị MenuScreen
-    if (currentScreen === "menu") {
-      return <MenuScreen />;
-    }
-  
-    // Hiển thị KitchenScreen
-    if (currentScreen === "kitchen") {
-      return <KitchenScreen />;
-    }
-
-    // Hiển thị WaiterScreen
-    if (currentScreen === "waiter") {
-      return <WaiterScreen />;
-    }
-
-    if (currentScreen === "customer-login-screen") {
-      return <CustomerLoginScreen onSelectScreen={setCurrentScreen} />;
-    }
-    return null;
-  }
-
-  return <div className="h-screen w-screen">{renderScreen()}</div>;
+          <Route path="*" element={<Navigate to="/customer/login" replace />} />
+        </Routes>
+      </div>
+    </BrowserRouter>
+  );
 }
 
 export default App;

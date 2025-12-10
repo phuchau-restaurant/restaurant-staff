@@ -7,6 +7,7 @@ export class Categories {
     this.name = data.name;
     this.displayOrder = data.display_order || data.displayOrder;
     this.isActive = data.is_active !== undefined ? data.is_active : data.isActive;
+    this.urlIcon = data.url_icon || data.urlIcon;
 
     // Đảm bảo isActive luôn là boolean hoặc undefined
     if (data.is_active !== undefined) this.isActive = data.is_active;

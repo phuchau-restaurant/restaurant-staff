@@ -1,37 +1,21 @@
 // src/screens/MenuScreen.jsx
 import React, { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useCustomer } from "../contexts/CustomerContext";
 import {
   ShoppingCart,
-  Plus,
-  Minus,
   Utensils,
-  Coffee,
-  Cookie,
   LogOut,
 } from "lucide-react";
 import MenuItem from "../components/Menu/MenuItem";
 import CartItem from "../components/Cart/CartItem";
 
-// Map categoryId → category name
-const CATEGORY_MAP = {
-  1: "burger",
-  2: "drink",
-  3: "dessert",
+const defaultCustomer = {
+  name: "Khách hàng",
+  loyaltyPoints: 0,
 };
 
-const CATEGORIES = [
-  { id: "all", name: "Tất cả", icon: <Utensils size={20} /> },
-  { id: "burger", name: "Món khai vị", icon: <Utensils size={20} /> },
-  { id: "drink", name: "Đồ uống", icon: <Coffee size={20} /> },
-  { id: "dessert", name: "Món chính", icon: <Cookie size={20} /> },
-];
-
-const CUSTOMER = {
-  name: "Nguyễn Thảo Vy",
-  loyaltyPoints: 1280,
-};
-
-const AVATARS = [
+const FALLBACK_AVATARS = [
   "/images/avatar/avt1.svg",
   "/images/avatar/avt2.svg",
   "/images/avatar/avt3.svg",
@@ -41,39 +25,84 @@ const AVATARS = [
 ];
 
 const MenuScreen = () => {
+  const navigate = useNavigate();
+  const { customer, tableInfo, logout, updateTable } = useCustomer();
+
   const [activeCategory, setActiveCategory] = useState("all");
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [products, setProducts] = useState([]);
-  const [tableInfo, setTableInfo] = useState({ id: null, number: "..." });
+  const [categories, setCategories] = useState([]);
 
-  // 🚀 Fetch menu từ API
+  // Fetch categories and menu
   useEffect(() => {
-    // Lấy tableId từ URL params (ví dụ: ?tableId=7)
     const params = new URLSearchParams(window.location.search);
     const tableIdFromUrl = params.get("tableId");
-    
+
+    // Fetch table info
     if (tableIdFromUrl) {
-      // Fetch thông tin bàn từ API
-      fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tables/${tableIdFromUrl}`, {
-        headers: { "x-tenant-id": "019abac9-846f-75d0-8dfd-bcf9c9457866" },
-      })
+      fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/tables/${tableIdFromUrl}`,
+        {
+          headers: { "x-tenant-id": "019abac9-846f-75d0-8dfd-bcf9c9457866" },
+        }
+      )
         .then((res) => res.json())
         .then((json) => {
           if (json.success && json.data) {
-            setTableInfo({ id: json.data.id, number: json.data.tableNumber });
+            updateTable({ id: json.data.id, number: json.data.tableNumber });
           } else {
-            setTableInfo({ id: tableIdFromUrl, number: tableIdFromUrl });
+            updateTable({ id: tableIdFromUrl, number: tableIdFromUrl });
           }
         })
         .catch(() => {
-          setTableInfo({ id: tableIdFromUrl, number: tableIdFromUrl });
+          updateTable({ id: tableIdFromUrl, number: tableIdFromUrl });
         });
-    } else {
-      // Mặc định nếu không có tableId
-      setTableInfo({ id: 1, number: "01" });
     }
 
+    // Fetch categories
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/api/categories`,
+          {
+            headers: { "x-tenant-id": "019abac9-846f-75d0-8dfd-bcf9c9457866" },
+          }
+        );
+
+        const json = await res.json();
+
+        if (json.success) {
+          const mappedCategories = [
+            {
+              id: "all",
+              name: "Tất cả",
+              iconUrl: null, // fallback to Utensils icon
+            },
+          ];
+
+          json.data
+            .filter((cat) => cat.isActive)
+            .sort((a, b) => a.displayOrder - b.displayOrder)
+            .forEach((cat) => {
+              mappedCategories.push({
+                id: cat.name.toLowerCase().replace(/\s+/g, "-"),
+                name: cat.name,
+                iconUrl: cat.urlIcon,
+              });
+            });
+
+          setCategories(mappedCategories);
+        }
+      } catch (err) {
+        console.error("❌ Lỗi fetch categories:", err);
+        setCategories([
+          { id: "all", name: "Tất cả", iconUrl: null },
+        ]);
+      }
+    };
+
+    // Fetch menus
     const fetchMenus = async () => {
       try {
         const res = await fetch(
@@ -92,7 +121,9 @@ const MenuScreen = () => {
           name: item.name,
           description: item.description || "Không có mô tả",
           price: item.price,
-          category: CATEGORY_MAP[item.categoryId] || "burger",
+          category:
+            item.categoryName?.toLowerCase().replace(/\s+/g, "-") ||
+            "appetizers",
           imgUrl: item.imgUrl,
         }));
 
@@ -102,6 +133,7 @@ const MenuScreen = () => {
       }
     };
 
+    fetchCategories();
     fetchMenus();
   }, []);
 
@@ -119,8 +151,6 @@ const MenuScreen = () => {
         })),
       };
 
-      console.log("📦 Gửi payload:", payload);
-
       const response = await fetch(
         `${import.meta.env.VITE_BACKEND_URL}/api/orders`,
         {
@@ -134,7 +164,6 @@ const MenuScreen = () => {
       );
 
       const raw = await response.text();
-      console.log("📥 Raw API response:", raw);
 
       let result;
       try {
@@ -156,10 +185,18 @@ const MenuScreen = () => {
     }
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate("/customer/login", { replace: true });
+  };
+
   const randomAvatar = useMemo(() => {
-    const index = Math.floor(Math.random() * AVATARS.length);
-    return AVATARS[index];
+    const index = Math.floor(Math.random() * FALLBACK_AVATARS.length);
+    return FALLBACK_AVATARS[index];
   }, []);
+
+  // hiển thị customer từ context hoặc default
+  const displayCustomer = customer || defaultCustomer;
 
   // 🟠 Filter theo category
   const filteredProducts = useMemo(() => {
@@ -207,7 +244,10 @@ const MenuScreen = () => {
     );
   };
 
-  const totalAmount = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const totalAmount = cart.reduce(
+    (sum, item) => sum + item.price * item.qty,
+    0
+  );
   const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
 
   const getItemQuantity = (productId) => {
@@ -223,24 +263,40 @@ const MenuScreen = () => {
         />
       )}
 
-      <div className="w-24 bg-white border-r flex flex-col items-center py-6 space-y-4 shadow-sm z-10">
+      <div className="w-30 bg-white border-r flex flex-col items-center py-6 space-y-4 shadow-sm z-10">
         <img
           src="/images/logo.png"
           alt="Logo"
           className="w-20 h-20 object-contain mb-4"
         />
-        {CATEGORIES.map((cat) => (
+        {categories.map((cat) => (
           <button
             key={cat.id}
             onClick={() => setActiveCategory(cat.id)}
-            className={`flex flex-col items-center justify-center w-16 h-16 rounded-xl transition-all duration-300 ${
+            className={`flex flex-col items-center justify-center w-20 h-20 rounded-xl transition-all duration-300 ${
               activeCategory === cat.id
-                ? "bg-linear-to-br from-orange-400 to-orange-600 text-white shadow-lg shadow-orange-300/50 scale-105 hover:shadow-xl hover:shadow-orange-400/60"
-                : "text-gray-400 hover:bg-linear-to-br hover:from-orange-50 hover:to-orange-100 hover:text-orange-600 hover:scale-105"
+                ? "bg-gradient-to-br from-orange-400 to-orange-600 text-white shadow-lg shadow-orange-300/50 scale-105 hover:shadow-xl hover:shadow-orange-400/60"
+                : "text-gray-400 hover:bg-gradient-to-br hover:from-orange-50 hover:to-orange-100 hover:text-orange-600 hover:scale-105"
             }`}
           >
-            <div className="mb-1">{cat.icon}</div>
-            <span className="text-[10px] font-bold">{cat.name}</span>
+            <div className="mb-1">
+              {cat.iconUrl ? (
+                <img
+                  src={cat.iconUrl}
+                  alt={cat.name}
+                  className="w-8 h-8 object-contain"
+                  style={{
+                    filter:
+                      activeCategory === cat.id
+                        ? "brightness(0) invert(1)"
+                        : "brightness(0) saturate(100%) invert(75%) sepia(0%) saturate(0%) hue-rotate(180deg)",
+                  }}
+                />
+              ) : (
+                <Utensils size={20} />
+              )}
+            </div>
+            <span className="text-[12px] font-bold">{cat.name}</span>
           </button>
         ))}
       </div>
@@ -250,7 +306,7 @@ const MenuScreen = () => {
           <div className="flex justify-between items-center">
             <div className="space-y-2">
               <div className="bg-gradient-to-r from-blue-500 to-blue-600 inline-flex px-5 py-3 rounded-full shadow-md text-md font-bold text-white">
-                Bàn số: {tableInfo.number}
+                Bàn số: {tableInfo?.number || "..."}
               </div>
             </div>
             <div className="flex items-center gap-3 bg-gray-50 rounded-full pl-3 pr-2 py-2 border border-gray-200">
@@ -263,14 +319,14 @@ const MenuScreen = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-gray-800 truncate">
-                  {CUSTOMER.name}
+                  {displayCustomer.name}
                 </p>
                 <p className="text-xs text-amber-600 font-bold">
-                  Loyalty: {CUSTOMER.loyaltyPoints} điểm
+                  Loyalty: {displayCustomer.loyaltyPoints} điểm
                 </p>
               </div>
               <button
-                onClick={() => alert("Đăng xuất")}
+                onClick={handleLogout}
                 className="flex items-center gap-1 bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm"
               >
                 <LogOut size={14} />
@@ -353,6 +409,7 @@ const MenuScreen = () => {
           )}
         </div>
 
+
         <div className="p-6 bg-gray-50 border-t">
           <div className="flex justify-between items-center mb-4">
             <span className="text-gray-500">Tổng cộng</span>
@@ -368,7 +425,6 @@ const MenuScreen = () => {
             }`}
             disabled={cart.length === 0}
             onClick={submitOrder}
-
           >
             Đặt món ngay
           </button>
