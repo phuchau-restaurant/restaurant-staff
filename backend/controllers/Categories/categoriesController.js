@@ -23,17 +23,12 @@ class CategoriesController {
       // Gọi Service
       const data = await this.categoriesService.getCategoriesByTenant(tenantId, onlyActive); //sử dụng this vì tại constructor đã inject service vào this.categoriesService
       
-      // Lọc bỏ id và tenantId từ danh sách
-      const returnData = data.map(item => {
-          const { id, tenantId, ...rest } = item; 
-          return rest; 
-      });
 
       return res.status(200).json({ 
         message: "Categories fetched successfully",
         success: true, 
-        total: returnData.length,
-        data: returnData
+        total: data.length,
+        data: data
        });
 
     } catch (error) {

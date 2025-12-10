@@ -25,7 +25,8 @@ export class Categories {
       tenant_id: this.tenantId,
       name: this.name,
       display_order: this.displayOrder,
-      is_active: this.isActive
+      is_active: this.isActive,
+      id: this.id,
     };
   }
 }

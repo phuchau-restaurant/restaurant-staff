@@ -81,12 +81,13 @@ async getById(id) {
     return rawData ? new Categories(rawData) : null; // Map sang Model
 }
 
-  async getAll(filters = {}) {
-    // 1. Gọi cha để lấy dữ liệu thô từ DB (Snake_case)
-    const rawData = await super.getAll(filters);    
-    // 2. Map sang Model (CamelCase) để đồng bộ với toàn hệ thống
-    return rawData.map(item => new Categories(item));
-  }
+async getAll(filters = {}) {
+  // 1. Gọi cha để lấy dữ liệu thô từ DB (Snake_case)
+  const rawData = await super.getAll(filters);    
+  
+  // 2. Map sang Model (CamelCase) để đồng bộ với toàn hệ thống
+  return rawData.map(item => new Categories(item));
+}
  
 }
 // LƯU Ý QUAN TRỌNG:

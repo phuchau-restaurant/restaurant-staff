@@ -60,7 +60,7 @@ const MenuScreen = () => {
         if (json.success) {
           const mappedCategories = [
             {
-              id: "all",
+              id: "0",
               name: "Tất cả",
               iconUrl: null,
               categoryId: null,
@@ -78,7 +78,7 @@ const MenuScreen = () => {
                 id: catId,
                 name: cat.name,
                 iconUrl: cat.urlIcon,
-                categoryId: cat.id, // store API categoryId
+                categoryId: cat.id,
               });
               idMap[catId] = cat.id;
             });
@@ -104,7 +104,8 @@ const MenuScreen = () => {
         const baseUrl = `${import.meta.env.VITE_BACKEND_URL}/api/menus`;
         const url = new URL(baseUrl);
 
-        if (activeCategory !== "all") {
+        // Chỉ thêm categoryId khi KHÔNG phải "0" (Tất cả)
+        if (activeCategory !== "0") {
           const categoryId = categoryIdMap[activeCategory];
           if (categoryId) {
             url.searchParams.append("categoryId", categoryId);
@@ -130,7 +131,6 @@ const MenuScreen = () => {
           name: item.name,
           description: item.description || "Không có mô tả",
           price: item.price,
-          // Dùng categoryId từ API response để map về category id string
           category: getCategoryNameById(item.categoryId),
           imgUrl: item.imgUrl,
           isAvailable: item.isAvailable,
@@ -142,10 +142,8 @@ const MenuScreen = () => {
       }
     };
 
-    // Chỉ gọi API khi:
-    // 1. Đang chọn "all"
-    // 2. HOẶC đang chọn danh mục khác VÀ đã load xong danh sách ID (categoryIdMap có dữ liệu)
-    if (activeCategory === "all" || categoryIdMap[activeCategory]) {
+    // Gọi API khi chọn "0" (Tất cả) hoặc khi có categoryId hợp lệ
+    if (activeCategory === "0" || categoryIdMap[activeCategory]) {
       fetchMenus();
     }
   }, [activeCategory, categoryIdMap, categories]);
