@@ -1,5 +1,6 @@
 //backend/services/Orders/ordersService.js
 import OrdersStatus from '../../constants/orderStatus.js';
+import OrderDetailStatus from '../../constants/orderDetailStatus.js';
 class OrdersService {
   // Inject 3 Repo: Orders, OrderDetails và Menus (để check giá món)
   constructor(ordersRepo, orderDetailsRepo, menusRepo) {
@@ -191,6 +192,35 @@ class OrdersService {
     }).filter(item => item !== null); // Loại bỏ các đơn rỗng
 
     return result;
+  }
+
+  async updateDishStatus(tenantId, orderId, orderDetailId, newStatus) {
+    // 1. Kiểm tra đơn hàng cha có tồn tại và thuộc tenant không
+    // (Bước này quan trọng để bảo mật, tránh hacker đoán ID)
+    await this.getOrderById(orderId, tenantId);
+
+    // 2. Cập nhật trạng thái món ăn (Gọi OrderDetailsRepository)
+    // Lưu ý: Repository của bạn cần có hàm update (như bài trước chúng ta đã làm)
+    const updatedItem = await this.orderDetailsRepo.update(orderDetailId, { status: newStatus });
+
+    if (!updatedItem) {
+        throw new Error("Order detail not found or update failed");
+    }
+
+    // --- LOGIC MỞ RỘNG (OPTIONAL) ---
+    // Ví dụ: Nếu trạng thái là 'served' (đã phục vụ), kiểm tra xem cả đơn đã xong chưa?
+    
+    if (newStatus === OrderDetailStatus.SERVED) {
+        const allItems = await this.orderDetailsRepo.getByOrderId(orderId);
+        const allServed = allItems.every(item => item.status === OrderDetailStatus.SERVED || item.status === OrderDetailStatus.CANCELLED);
+        
+        if (allServed) {
+            // Tự động update trạng thái đơn hàng cha thành 'completed'
+            await this.ordersRepo.update(orderId, { status: OrdersStatus.COMPLETED, completedAt: new Date() });
+        }
+    }
+
+    return updatedItem;
   }
 }
 

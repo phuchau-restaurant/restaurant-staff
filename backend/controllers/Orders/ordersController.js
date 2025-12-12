@@ -1,5 +1,6 @@
 // backend/controllers/Orders/ordersController.js
 import OrderStatus from '../../constants/orderStatus.js';
+import OrderDetailStatus from '../../constants/orderDetailStatus.js';
 
 class OrdersController {
   constructor(ordersService) {
@@ -65,6 +66,41 @@ class OrdersController {
     }
   }
 
+  // [PUT] /api/kitchen/orders/:orderId/:orderDetailId
+  // Cập nhật trạng thái một món ăn cụ thể
+  updateOrderDetailStatus = async (req, res, next) => {
+    try {
+      const tenantId = req.tenantId;
+      const { orderId, orderDetailId } = req.params;
+      const { status } = req.body; // Ví dụ: 'Ready', 'Served', 'Cancelled' hoặc OrderStatus.READY, .SERVED, .CANCELLED 
+      console.log("Updating order detail:", { orderId, orderDetailId, status });
+      if (!status) {
+        return res.status(400).json({
+          success: false,
+          message: "Status is required in request body"
+        });
+      }
+      if (!Object.values(OrderDetailStatus).includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid status value: ${status}`
+        });
+      }
+
+      // Gọi Service (Hàm mới)
+      const updatedDetail = await this.ordersService.updateDishStatus(tenantId, orderId, orderDetailId, status);
+      // Clean Response
+      const cleanedDetail = (({ tenantId, ...rest }) => rest)(updatedDetail);
+      return res.status(200).json({
+        success: true,
+        message: `Order detail status ${status} updated successfully`,
+        data: cleanedDetail
+      });
+    } catch (error) {
+      error.statusCode = 400;
+      next(error);
+    }
+  }
 
   // [GET] /api/orders/:id
   getById = async (req, res, next) => {
