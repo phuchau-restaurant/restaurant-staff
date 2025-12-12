@@ -1,3 +1,6 @@
+// backend/controllers/Orders/ordersController.js
+import OrderStatus from '../../constants/orderStatus.js';
+
 class OrdersController {
   constructor(ordersService) {
     this.ordersService = ordersService;
@@ -16,13 +19,10 @@ class OrdersController {
         customerId,
         dishes
       });
-
-      // --- CLEAN RESPONSE (Lọc bỏ id, tenantId) ---
       
       // 1. Clean Order Info
       const { id: _oid, tenantId: _tid, ...orderData } = result.order;
       
-      // 2. Clean Details Info (Map qua từng item)
       const detailsData = result.details.map(d => {
          const { id, tenantId, orderId, ...rest } = d;
          return rest;
@@ -38,7 +38,6 @@ class OrdersController {
         }
       });
     } catch (error) {
-      // Lỗi validation hoặc logic
       error.statusCode = 400;
       next(error);
     }
@@ -137,21 +136,32 @@ class OrdersController {
       next(error);
     }
   }
-  // [GET] /api/kitchen/orders?status= <orderStatus> &item_status= <itemStatus>
+  // [GET] /api/kitchen/orders?status= <orderStatus> & categoryId = <Id> & itemStatus = <itemStatus>
   getForKitchen = async (req, res, next) => {
     try {
       const tenantId = req.tenantId;
-      const { status, item_status } = req.query; // Lấy query param
+      const { status, categoryId, itemStatus } = req.query; // Lấy query param
 
-      // Mặc định nếu không truyền status thì lấy 'pending'
-      const orderStatus = status || 'pending';
-      const itemStatus = item_status || null; // Nếu null thì lấy hết món
-
-      const data = await this.ordersService.getKitchenOrders(tenantId, orderStatus, itemStatus);
-
+      const orderStatus = status ;//|| OrderStatus.PENDING;
+      if(status && !Object.values(OrderStatus).includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid order status: ${status}`
+        });
+      }
+      
+      const data = await this.ordersService.getKitchenOrders(tenantId, orderStatus, categoryId, itemStatus);
+      // Clean Response
+      // const cleanedData = data.map(order => {
+      //     const { id: _oid, tenantId: _tid, ...orderInfo } = order;
+      // });
+      const isOrderStatus = orderStatus ? ` with status ${orderStatus}` : '';
+      const isItemStatus = itemStatus ? ` and item status ${itemStatus}` : '';
+      const categoryInfo = categoryId ? ` in category Id = ${categoryId}` : '';
+      const message = `Get orders${isOrderStatus}${categoryInfo}${isItemStatus} successfully`;
       return res.status(200).json({
         success: true,
-        message: `Get ${orderStatus} orders successfully`,
+        message: message,
         total: data.length,
         data: data
       });

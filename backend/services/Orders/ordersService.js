@@ -1,3 +1,5 @@
+//backend/services/Orders/ordersService.js
+import OrdersStatus from '../../constants/orderStatus.js';
 class OrdersService {
   // Inject 3 Repo: Orders, OrderDetails và Menus (để check giá món)
   constructor(ordersRepo, orderDetailsRepo, menusRepo) {
@@ -43,7 +45,7 @@ class OrdersService {
         quantity,
         unitPrice,
         note: description, // Map description từ API vào note
-        status: 'pending'
+        status: OrdersStatus.PENDING
       });
     }
 
@@ -52,7 +54,7 @@ class OrdersService {
       tenantId,
       tableId,
       customerId,
-      status: 'pending',
+      status: OrdersStatus.PENDING,
       totalAmount: calculatedTotalAmount,
       // Tạo mã đơn hiển thị (ví dụ đơn giản)
       displayOrder: `ORD-${Date.now().toString().slice(-6)}` 
@@ -127,7 +129,7 @@ class OrdersService {
    * @param {string} orderStatus - Trạng thái đơn (VD: pending)
    * @param {string} itemStatus - (Optional) Trạng thái món (VD: pending, ready)
    */
-  async getKitchenOrders(tenantId, orderStatus, itemStatus = null) {
+  async getKitchenOrders(tenantId, orderStatus, categoryId = null, itemStatus = null) {
 
     const orders = await this.ordersRepo.getAll({ 
         tenant_id: tenantId, 
@@ -153,29 +155,40 @@ class OrdersService {
         // Lọc ra các món (order items) thuộc đơn hàng này
         const myItems = allDetails.filter(d => d.orderId === order.id);
 
-        // Nếu lọc itemStatus (ví dụ lấy món 'pending') mà đơn này không còn món nào pending
-        // thì bỏ qua đơn này (return null để filter sau)
-        if (myItems.length === 0 && itemStatus) return null;
+       // Map sang format hiển thị và lọc Category
+        const visibleDishes = myItems.map(item => {
+            const dish = dishesInfo.find(d => d.id === item.dishId);
+            
+            // --- LỌC CATEGORY ---
+            // Nếu có yêu cầu categoryId nhưng món này không khớp -> Bỏ qua
+            if (categoryId && dish && String(dish.categoryId) !== String(categoryId)) {
+                return null; // comment dòng này để trả về tất cả các món
+            }
+
+            return {
+                dishId: item.dishId,
+                name: dish ? dish.name : "Unknown Dish",
+                quantity: item.quantity,
+                note: item.note,
+                status: item.status,
+                // Trả về categoryId để frontend tiện debug nếu cần
+                categoryId: dish ? dish.categoryId : null 
+            };
+        }).filter(d => d !== null); // Loại bỏ các món bị null (do không khớp category)
+
+        // --- KIỂM TRA RỖNG ---
+        // 1. Nếu lọc itemStatus mà không còn món nào -> Bỏ qua đơn
+        // 2. HOẶC: Nếu lọc categoryId mà đơn này không có món nào thuộc category đó -> Bỏ qua đơn
+        if (visibleDishes.length === 0) return null;
 
         return {
             orderId: order.id,
             tableId: order.tableId,
-            //displayOrder: order.displayOrder, // Thêm cái này cho bếp dễ đọc mã đơn
-            note: order.note ? order.note : "...", // Có thể thêm note chung của order nếu có
-            created_at: order.createdAt,
-            dishes: myItems.map(item => {
-                // Tìm tên món ăn
-                const dish = dishesInfo.find(d => d.id === item.dishId);
-                return {
-                    dishId: item.dishId,
-                    name: dish ? dish.name : "Unknown Dish", // Map tên
-                    quantity: item.quantity,
-                    note: item.note, // Note riêng của món (ít hành...)
-                    status: item.status // Trạng thái của món (pending/served)
-                };
-            })
+            note: order.note || "...",
+            createdAt: order.createdAt,
+            dishes: visibleDishes // Chỉ trả về các món đã lọc
         };
-    }).filter(item => item !== null); // Loại bỏ các đơn rỗng (do lọc itemStatus)
+    }).filter(item => item !== null); // Loại bỏ các đơn rỗng
 
     return result;
   }
