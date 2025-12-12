@@ -1,3 +1,6 @@
+//backend/services/Orders/ordersService.js
+import OrdersStatus from '../../constants/orderStatus.js';
+import OrderDetailStatus from '../../constants/orderDetailStatus.js';
 class OrdersService {
   // Inject 3 Repo: Orders, OrderDetails và Menus (để check giá món)
   constructor(ordersRepo, orderDetailsRepo, menusRepo) {
@@ -43,7 +46,7 @@ class OrdersService {
         quantity,
         unitPrice,
         note: description, // Map description từ API vào note
-        status: 'pending'
+        status: null
       });
     }
 
@@ -52,7 +55,7 @@ class OrdersService {
       tenantId,
       tableId,
       customerId,
-      status: 'pending',
+      status: OrdersStatus.UNSUBMIT, // Mặc định khi tạo là 'Unsubmit'
       totalAmount: calculatedTotalAmount,
       // Tạo mã đơn hiển thị (ví dụ đơn giản)
       displayOrder: `ORD-${Date.now().toString().slice(-6)}` 
@@ -90,9 +93,33 @@ class OrdersService {
   async updateOrder(id, tenantId, updates) {
     const currentOrder = await this.getOrderById(id, tenantId);
 
-    if (updates.status === 'completed' && currentOrder.order.status !== 'completed') {
-        updates.completedAt = new Date(); // TODO: Date hay Date utc ?
+    // Kiểm tra logic nghiệp vụ
+
+    // IF OrderStatus == Pending -> All OrderDetail status = Pending
+    if (updates.status === OrdersStatus.PENDING && currentOrder.order.status !== OrdersStatus.PENDING) {
+      console.log()
+      await this.orderDetailsRepo.updateByOrderId(id, { status: OrderDetailStatus.PENDING });
     }
+
+    // IF OrderStatus == Completed
+    else if (updates.status === OrdersStatus.COMPLETED && currentOrder.order.status !== OrdersStatus.COMPLETED) {
+      // All OrderDetail.Status != ORDER_DETAIL_STATUS.PENDING
+      const allDetails = currentOrder.details;
+      const allServed = allDetails.every(
+        item => item.status !== OrderDetailStatus.PENDING // Ready, Served, Cancelled
+      );
+      if (!allServed) {
+        throw new Error("Cannot complete order: there are still pending dishes");
+      }
+      updates.completedAt = new Date(); // TODO: Date hay Date utc ?
+    }
+
+    // IF OrderStatus == Cancelled -> All OrderDetail = Cancelled
+    else if (updates.status === OrdersStatus.CANCELLED && currentOrder.order.status !== OrdersStatus.CANCELLED) {
+      await this.orderDetailsRepo.updateByOrderId(id, { status: OrderDetailStatus.CANCELLED });
+    }
+
+    
 
     // 3. Gọi Repo update
     return await this.ordersRepo.update(id, updates);
@@ -127,7 +154,7 @@ class OrdersService {
    * @param {string} orderStatus - Trạng thái đơn (VD: pending)
    * @param {string} itemStatus - (Optional) Trạng thái món (VD: pending, ready)
    */
-  async getKitchenOrders(tenantId, orderStatus, itemStatus = null) {
+  async getKitchenOrders(tenantId, orderStatus, categoryId = null, itemStatus = null) {
 
     const orders = await this.ordersRepo.getAll({ 
         tenant_id: tenantId, 
@@ -153,31 +180,71 @@ class OrdersService {
         // Lọc ra các món (order items) thuộc đơn hàng này
         const myItems = allDetails.filter(d => d.orderId === order.id);
 
-        // Nếu lọc itemStatus (ví dụ lấy món 'pending') mà đơn này không còn món nào pending
-        // thì bỏ qua đơn này (return null để filter sau)
-        if (myItems.length === 0 && itemStatus) return null;
+       // Map sang format hiển thị và lọc Category
+        const visibleDishes = myItems.map(item => {
+            const dish = dishesInfo.find(d => d.id === item.dishId);
+            
+            // --- LỌC CATEGORY ---
+            // Nếu có yêu cầu categoryId nhưng món này không khớp -> Bỏ qua
+            if (categoryId && dish && String(dish.categoryId) !== String(categoryId)) {
+                return null; // comment dòng này để trả về tất cả các món
+            }
+
+            return {
+                dishId: item.dishId,
+                name: dish ? dish.name : "Unknown Dish",
+                quantity: item.quantity,
+                note: item.note,
+                status: item.status,
+                // Trả về categoryId để frontend tiện debug nếu cần
+                categoryId: dish ? dish.categoryId : null 
+            };
+        }).filter(d => d !== null); // Loại bỏ các món bị null (do không khớp category)
+
+        // --- KIỂM TRA RỖNG ---
+        // 1. Nếu lọc itemStatus mà không còn món nào -> Bỏ qua đơn
+        // 2. HOẶC: Nếu lọc categoryId mà đơn này không có món nào thuộc category đó -> Bỏ qua đơn
+        if (visibleDishes.length === 0) return null;
 
         return {
             orderId: order.id,
             tableId: order.tableId,
-            //displayOrder: order.displayOrder, // Thêm cái này cho bếp dễ đọc mã đơn
-            note: order.note ? order.note : "...", // Có thể thêm note chung của order nếu có
-            created_at: order.createdAt,
-            dishes: myItems.map(item => {
-                // Tìm tên món ăn
-                const dish = dishesInfo.find(d => d.id === item.dishId);
-                return {
-                    dishId: item.dishId,
-                    name: dish ? dish.name : "Unknown Dish", // Map tên
-                    quantity: item.quantity,
-                    note: item.note, // Note riêng của món (ít hành...)
-                    status: item.status // Trạng thái của món (pending/served)
-                };
-            })
+            note: order.note || "...",
+            createdAt: order.createdAt,
+            dishes: visibleDishes // Chỉ trả về các món đã lọc
         };
-    }).filter(item => item !== null); // Loại bỏ các đơn rỗng (do lọc itemStatus)
+    }).filter(item => item !== null); // Loại bỏ các đơn rỗng
 
     return result;
+  }
+
+  async updateDishStatus(tenantId, orderId, orderDetailId, newStatus) {
+    // 1. Kiểm tra đơn hàng cha có tồn tại và thuộc tenant không
+    // (Bước này quan trọng để bảo mật, tránh hacker đoán ID)
+    await this.getOrderById(orderId, tenantId);
+
+    // 2. Cập nhật trạng thái món ăn (Gọi OrderDetailsRepository)
+    // Lưu ý: Repository của bạn cần có hàm update (như bài trước chúng ta đã làm)
+    const updatedItem = await this.orderDetailsRepo.update(orderDetailId, { status: newStatus });
+
+    if (!updatedItem) {
+        throw new Error("Order detail not found or update failed");
+    }
+
+    // --- LOGIC MỞ RỘNG (OPTIONAL) ---
+    // Ví dụ: Nếu trạng thái là 'served' (đã phục vụ), kiểm tra xem cả đơn đã xong chưa?
+    
+    if (newStatus === OrderDetailStatus.SERVED) {
+        const allItems = await this.orderDetailsRepo.getByOrderId(orderId);
+        const allServed = allItems.every(item => item.status === OrderDetailStatus.SERVED || item.status === OrderDetailStatus.CANCELLED);
+        
+        if (allServed) {
+            // Tự động update trạng thái đơn hàng cha thành 'completed'
+            await this.ordersRepo.update(orderId, { status: OrdersStatus.COMPLETED, completedAt: new Date() });
+        }
+    }
+
+    return updatedItem;
   }
 }
 

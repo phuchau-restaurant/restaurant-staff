@@ -7,7 +7,7 @@ export class OrderDetails {
     this.quantity = data.quantity;
     this.unitPrice = data.unit_price || data.unitPrice;
     this.note = data.note || data.description || ""; // API gửi description, nhưng DB lưu note
-    this.status = data.status || 'pending';
+    this.status = data.status;
   }
 
   toPersistence() {

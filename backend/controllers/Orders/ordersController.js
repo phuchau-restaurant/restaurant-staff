@@ -1,3 +1,7 @@
+// backend/controllers/Orders/ordersController.js
+import OrderStatus from '../../constants/orderStatus.js';
+import OrderDetailStatus from '../../constants/orderDetailStatus.js';
+
 class OrdersController {
   constructor(ordersService) {
     this.ordersService = ordersService;
@@ -16,13 +20,10 @@ class OrdersController {
         customerId,
         dishes
       });
-
-      // --- CLEAN RESPONSE (Lọc bỏ id, tenantId) ---
       
       // 1. Clean Order Info
       const { id: _oid, tenantId: _tid, ...orderData } = result.order;
       
-      // 2. Clean Details Info (Map qua từng item)
       const detailsData = result.details.map(d => {
          const { id, tenantId, orderId, ...rest } = d;
          return rest;
@@ -38,7 +39,6 @@ class OrdersController {
         }
       });
     } catch (error) {
-      // Lỗi validation hoặc logic
       error.statusCode = 400;
       next(error);
     }
@@ -48,16 +48,24 @@ class OrdersController {
     try {
       const tenantId = req.tenantId;
       const { id } = req.params;
+      const {status} = req.body;
+      // Validate status nếu có
+      if (status && !Object.values(OrderStatus).includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid order status value: ${status}`
+        });
+      }
 
       // req.body chứa các trường muốn sửa: { status: 'completed', tableId: 5 ... }
       const updatedOrder = await this.ordersService.updateOrder(id, tenantId, req.body);
 
       // Clean Response (Destructuring)
       const { id: _oid, tenantId: _tid, ...returnData } = updatedOrder;
-
+      const mess = status ? `Order status updated to ${status}` : `Order updated successfully`;
       return res.status(200).json({
+        message: mess,
         success: true,
-        message: "Order updated successfully",
         data: returnData
       });
     } catch (error) {
@@ -66,6 +74,41 @@ class OrdersController {
     }
   }
 
+  // [PUT] /api/kitchen/orders/:orderId/:orderDetailId
+  // Cập nhật trạng thái một món ăn cụ thể
+  updateOrderDetailStatus = async (req, res, next) => {
+    try {
+      const tenantId = req.tenantId;
+      const { orderId, orderDetailId } = req.params;
+      const { status } = req.body; // Ví dụ: 'Ready', 'Served', 'Cancelled' hoặc OrderStatus.READY, .SERVED, .CANCELLED 
+      console.log("Updating order detail:", { orderId, orderDetailId, status });
+      if (!status) {
+        return res.status(400).json({
+          success: false,
+          message: "Status is required in request body"
+        });
+      }
+      if (!Object.values(OrderDetailStatus).includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid status value: ${status}`
+        });
+      }
+
+      // Gọi Service (Hàm mới)
+      const updatedDetail = await this.ordersService.updateDishStatus(tenantId, orderId, orderDetailId, status);
+      // Clean Response
+      const cleanedDetail = (({ tenantId, ...rest }) => rest)(updatedDetail);
+      return res.status(200).json({
+        success: true,
+        message: `Order detail status ${status} updated successfully`,
+        data: cleanedDetail
+      });
+    } catch (error) {
+      error.statusCode = 400;
+      next(error);
+    }
+  }
 
   // [GET] /api/orders/:id
   getById = async (req, res, next) => {
@@ -137,21 +180,32 @@ class OrdersController {
       next(error);
     }
   }
-  // [GET] /api/kitchen/orders?status= <orderStatus> &item_status= <itemStatus>
+  // [GET] /api/kitchen/orders?status= <orderStatus> & categoryId = <Id> & itemStatus = <itemStatus>
   getForKitchen = async (req, res, next) => {
     try {
       const tenantId = req.tenantId;
-      const { status, item_status } = req.query; // Lấy query param
+      const { status, categoryId, itemStatus } = req.query; // Lấy query param
 
-      // Mặc định nếu không truyền status thì lấy 'pending'
-      const orderStatus = status || 'pending';
-      const itemStatus = item_status || null; // Nếu null thì lấy hết món
-
-      const data = await this.ordersService.getKitchenOrders(tenantId, orderStatus, itemStatus);
-
+      const orderStatus = status ;//|| OrderStatus.PENDING;
+      if(status && !Object.values(OrderStatus).includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid order status: ${status}`
+        });
+      }
+      
+      const data = await this.ordersService.getKitchenOrders(tenantId, orderStatus, categoryId, itemStatus);
+      // Clean Response
+      // const cleanedData = data.map(order => {
+      //     const { id: _oid, tenantId: _tid, ...orderInfo } = order;
+      // });
+      const isOrderStatus = orderStatus ? ` with status ${orderStatus}` : '';
+      const isItemStatus = itemStatus ? ` and item status ${itemStatus}` : '';
+      const categoryInfo = categoryId ? ` in category Id = ${categoryId}` : '';
+      const message = `Get orders${isOrderStatus}${categoryInfo}${isItemStatus} successfully`;
       return res.status(200).json({
         success: true,
-        message: `Get ${orderStatus} orders successfully`,
+        message: message,
         total: data.length,
         data: data
       });

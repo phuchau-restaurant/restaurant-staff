@@ -4,7 +4,7 @@ export class Orders {
     this.tenantId = data.tenant_id || data.tenantId;
     this.tableId = data.table_id || data.tableId;
     this.customerId = data.customer_id || data.customerId;
-    this.status = data.status || 'pending';
+    this.status = data.status || 'Unsubmit';
     this.totalAmount = data.total_amount || data.totalAmount || 0;
     this.createdAt = data.created_at || data.createdAt;
     this.completedAt = data.completed_at || data.completedAt;
