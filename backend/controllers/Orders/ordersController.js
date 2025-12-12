@@ -48,16 +48,24 @@ class OrdersController {
     try {
       const tenantId = req.tenantId;
       const { id } = req.params;
+      const {status} = req.body;
+      // Validate status nếu có
+      if (status && !Object.values(OrderStatus).includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid order status value: ${status}`
+        });
+      }
 
       // req.body chứa các trường muốn sửa: { status: 'completed', tableId: 5 ... }
       const updatedOrder = await this.ordersService.updateOrder(id, tenantId, req.body);
 
       // Clean Response (Destructuring)
       const { id: _oid, tenantId: _tid, ...returnData } = updatedOrder;
-
+      const mess = status ? `Order status updated to ${status}` : `Order updated successfully`;
       return res.status(200).json({
+        message: mess,
         success: true,
-        message: "Order updated successfully",
         data: returnData
       });
     } catch (error) {

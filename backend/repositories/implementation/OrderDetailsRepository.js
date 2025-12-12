@@ -74,13 +74,13 @@ export class OrderDetailsRepository extends BaseRepository {
     if (error) throw new Error(`[OrderDetails] DeleteByOrderId failed: ${error.message}`);
     return true;
   }
-  async update(id, updates) {
+
+  async updateById(id, updates) {
     const entity = new OrderDetails(updates); 
     const dbPayload = entity.toPersistence(); 
-    
+
     // Clean payload (bỏ undefined)
     Object.keys(dbPayload).forEach(key => dbPayload[key] === undefined && delete dbPayload[key]);
-
     const { data, error } = await supabase
       .from(this.tableName)
       .update(dbPayload)
@@ -89,5 +89,24 @@ export class OrderDetailsRepository extends BaseRepository {
 
     if (error) throw new Error(error.message);
     return data?.[0] ? new OrderDetails(data[0]) : null;
+  }
+  //Update all order details by orderId
+  async updateByOrderId(orderId, updates) {
+    const entity = new OrderDetails(updates); 
+    const dbPayload = entity.toPersistence();
+
+    // Clean payload (bỏ undefined)
+    Object.keys(dbPayload).forEach(
+      key => dbPayload[key] === undefined 
+      && delete dbPayload[key]
+    );
+    
+    const { data, error } = await supabase
+      .from(this.tableName)
+      .update(dbPayload)
+      .eq("order_id", orderId)
+      .select();
+    if (error) throw new Error(error.message);
+    return data.map(item => new OrderDetails(item));
   }
 }

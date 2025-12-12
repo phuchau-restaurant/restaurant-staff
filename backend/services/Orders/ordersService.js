@@ -46,7 +46,7 @@ class OrdersService {
         quantity,
         unitPrice,
         note: description, // Map description từ API vào note
-        status: OrdersStatus.PENDING
+        status: null
       });
     }
 
@@ -55,7 +55,7 @@ class OrdersService {
       tenantId,
       tableId,
       customerId,
-      status: OrdersStatus.PENDING,
+      status: OrdersStatus.UNSUBMIT, // Mặc định khi tạo là 'Unsubmit'
       totalAmount: calculatedTotalAmount,
       // Tạo mã đơn hiển thị (ví dụ đơn giản)
       displayOrder: `ORD-${Date.now().toString().slice(-6)}` 
@@ -93,9 +93,33 @@ class OrdersService {
   async updateOrder(id, tenantId, updates) {
     const currentOrder = await this.getOrderById(id, tenantId);
 
-    if (updates.status === 'completed' && currentOrder.order.status !== 'completed') {
-        updates.completedAt = new Date(); // TODO: Date hay Date utc ?
+    // Kiểm tra logic nghiệp vụ
+
+    // IF OrderStatus == Pending -> All OrderDetail status = Pending
+    if (updates.status === OrdersStatus.PENDING && currentOrder.order.status !== OrdersStatus.PENDING) {
+      console.log()
+      await this.orderDetailsRepo.updateByOrderId(id, { status: OrderDetailStatus.PENDING });
     }
+
+    // IF OrderStatus == Completed
+    else if (updates.status === OrdersStatus.COMPLETED && currentOrder.order.status !== OrdersStatus.COMPLETED) {
+      // All OrderDetail.Status != ORDER_DETAIL_STATUS.PENDING
+      const allDetails = currentOrder.details;
+      const allServed = allDetails.every(
+        item => item.status !== OrderDetailStatus.PENDING // Ready, Served, Cancelled
+      );
+      if (!allServed) {
+        throw new Error("Cannot complete order: there are still pending dishes");
+      }
+      updates.completedAt = new Date(); // TODO: Date hay Date utc ?
+    }
+
+    // IF OrderStatus == Cancelled -> All OrderDetail = Cancelled
+    else if (updates.status === OrdersStatus.CANCELLED && currentOrder.order.status !== OrdersStatus.CANCELLED) {
+      await this.orderDetailsRepo.updateByOrderId(id, { status: OrderDetailStatus.CANCELLED });
+    }
+
+    
 
     // 3. Gọi Repo update
     return await this.ordersRepo.update(id, updates);
