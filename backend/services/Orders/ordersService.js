@@ -197,7 +197,8 @@ class OrdersService {
                 note: item.note,
                 status: item.status,
                 // Trả về categoryId để frontend tiện debug nếu cần
-                categoryId: dish ? dish.categoryId : null 
+                categoryId: dish ? dish.categoryId : null ,
+                image: dish ? dish.imgUrl : null
             };
         }).filter(d => d !== null); // Loại bỏ các món bị null (do không khớp category)
 

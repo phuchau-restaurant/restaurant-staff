@@ -177,18 +177,6 @@ const HomeScreen = () => {
               Quên mật khẩu?
             </button>
           </div>
-
-          {/* BOTTOM SIGNUP */}
-          <div className="flex justify-center items-center gap-10 mt-4">
-            <span className="text-blue-500 text-sm">Chưa có tài khoản?</span>
-            <button
-              type="button"
-              onClick={() => navigate("/register")}
-              className="font-bold text-blue-600 text-sm hover:underline"
-            >
-              Đăng ký ngay
-            </button>
-          </div>
         </form>
       </div>
 
