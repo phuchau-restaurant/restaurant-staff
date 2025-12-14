@@ -67,7 +67,6 @@ const KitchenScreen = () => {
 
         const data = await res.json();
         console.log("Kitchen orders API response:", data); // Debug: xem response từ API
-
         if (data.success) {
           // Map API data to component format
           const mappedOrders = data.data.map((order) => {
@@ -90,6 +89,7 @@ const KitchenScreen = () => {
               status: orderStatus,
               items: allDishes.map((dish) => ({
                 id: dish.dishId,
+                order_detail_id: dish.order_detail_id,
                 dishId: dish.dishId,
                 name: dish.name,
                 quantity: dish.quantity,
@@ -303,7 +303,7 @@ const KitchenScreen = () => {
     }
   };
 
-  const handleCompleteItem = (orderId, itemId) => {
+  const handleCompleteItem = async (orderId, itemId) => {
     // Lấy thông tin món trước khi update
     const order = orders.find((o) => o.id === orderId);
     const item = order?.items.find((i) => i.id === itemId);
@@ -316,6 +316,26 @@ const KitchenScreen = () => {
       `🔔 Đã thông báo nhân viên!\n\nMón: ${item.name} x${item.quantity}\nBàn: ${order.tableNumber}\nĐơn: ${order.orderNumber}\n\n✅ Món đã sẵn sàng để phục vụ!`
     );
 
+    const res = await fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/api/kitchen/orders/${orderId}/${
+        item.order_detail_id
+      }`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+        },
+        body: JSON.stringify({ status: "Ready" }),
+      }
+    );
+
+    if (!res.ok) {
+      console.error("Failed to update order item status");
+      alert("Không thể cập nhật trạng thái món ăn");
+      return;
+    }
+
     // Update state sau khi thông báo
     setOrders((prev) =>
       prev.map((o) => {
@@ -326,10 +346,15 @@ const KitchenScreen = () => {
 
           // Kiểm tra nếu tất cả món đã hoàn thành thì chuyển status sang completed
           const allCompleted = updatedItems.every((item) => item.completed);
+
+          if (allCompleted) {
+            handleComplete(orderId);
+          }
+
           return {
             ...o,
             items: updatedItems,
-            status: allCompleted ? "completed" : o.status,
+            status: allCompleted ? "Completed" : o.status,
             completeTime: allCompleted ? new Date() : o.completeTime,
           };
         }
