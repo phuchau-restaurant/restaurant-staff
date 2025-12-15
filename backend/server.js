@@ -46,6 +46,7 @@ app.use('/api/menus', menusRoutes);
 app.use('/api/customers', customersRoutes);
 app.use('/api/orders', ordersRoutes);
 app.use('/api/appsettings', appSettingsRoutes); 
+app.use('/api/admin', adminRoutes); 
 
 //route nghiệp vụ cho kitchen
 app.use('/api/kitchen', kitchenRoutes);

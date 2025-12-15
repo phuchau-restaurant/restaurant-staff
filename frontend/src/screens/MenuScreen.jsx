@@ -25,16 +25,11 @@ const MenuScreen = () => {
 
   // Fetch categories and menu
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const tableIdFromUrl = params.get("tableId");
-
-    // Chỉ lấy tableId từ URL, không gọi API
-    if (tableIdFromUrl) {
-      updateTable({ id: tableIdFromUrl, number: tableIdFromUrl });
-    } else {
-      // Không có tableId trong URL, dùng mặc định
-      console.warn("⚠️ Không có tableId trong URL, dùng bàn mặc định");
-      updateTable({ id: 1, number: "01" });
+    // Kiểm tra đã login và có thông tin bàn chưa
+    if (!tableInfo || !tableInfo.id) {
+      alert("⚠️ Vui lòng đăng nhập trước!");
+      navigate("/customer/login");
+      return;
     }
 
     // Fetch categories

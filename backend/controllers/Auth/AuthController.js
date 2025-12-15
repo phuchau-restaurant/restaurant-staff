@@ -16,25 +16,12 @@ class AuthController {
       const tenantId = req.tenantId;
 
       // Gọi Service để xác thực
-      const user = await this.authService.login(email, password, tenantId);
-
-      // TODO: Tạo JWT token và trả về
-      // const token = generateToken(user);
-      // return res.status(200).json({
-      //   success: true,
-      //   message: "Login successful",
-      //   data: {
-      //     user,
-      //     token
-      //   }
-      // });
+      const result = await this.authService.login(email, password, tenantId);
 
       return res.status(200).json({
         success: true,
         message: "Login successful",
-        data: {
-          user,
-        },
+        data: result,
       });
     } catch (error) {
       if (

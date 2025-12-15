@@ -14,12 +14,77 @@ import {
 
 const CustomerLoginScreen = () => {
   const navigate = useNavigate();
-  const { login } = useCustomer();
+  const { login, updateTable } = useCustomer();
 
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [tableInfo, setTableInfo] = useState(null);
+  const [tokenVerified, setTokenVerified] = useState(false);
+
+  // Verify QR token khi component mount (BẮT BUỘC PHẢI CÓ TOKEN)
+  React.useEffect(() => {
+    const verifyQRToken = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get("token");
+
+      // BẮT BUỘC phải có token trong URL - không cho phép truy cập trực tiếp
+      if (!token) {
+        alert("⚠️ Vui lòng quét mã QR để truy cập!");
+        navigate("/");
+        return;
+      }
+
+      // Nếu đã verify token này rồi, bỏ qua
+      const storedToken = localStorage.getItem("qrToken");
+      if (storedToken === token && tokenVerified) {
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        const response = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/api/admin/qr/verify`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ token }),
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          alert(data.message || "QR code không hợp lệ hoặc đã hết hạn!");
+          navigate("/");
+          return;
+        }
+
+        // Lưu thông tin bàn, token và tenantId
+        setTableInfo(data.data);
+        updateTable({
+          id: data.data.tableId,
+          number: data.data.tableNumber,
+        });
+        localStorage.setItem("qrToken", token);
+        localStorage.setItem("tableInfo", JSON.stringify(data.data));
+        localStorage.setItem("tenantId", data.data.tenantId); // Lưu tenantId để dùng cho các API call
+        setTokenVerified(true);
+      } catch (error) {
+        console.error("QR verify error:", error);
+        alert("Không thể xác thực QR code!");
+        navigate("/");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    verifyQRToken();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // CHỈ CHẠY 1 LẦN khi mount
 
   // Hàm kiểm tra số điện thoại hợp lệ
   const isValidPhone = (value) => {
@@ -44,13 +109,16 @@ const CustomerLoginScreen = () => {
     setIsLoading(true);
 
     try {
+      // Lấy tenantId từ localStorage (đã lưu khi verify QR)
+      const tenantId = localStorage.getItem("tenantId");
+
       const response = await fetch(
         `${import.meta.env.VITE_BACKEND_URL}/api/customers/login`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+            "x-tenant-id": tenantId || import.meta.env.VITE_TENANT_ID,
           },
           body: JSON.stringify({
             phoneNumber: phone,
@@ -70,9 +138,8 @@ const CustomerLoginScreen = () => {
       // lưu thông tin customer vào context
       login(data.data);
 
-      // chuyển sang menu
-      //Mai mốt đổi tableId thành quét QR code
-      navigate("/customer/menu?tableId=7");
+      // chuyển sang menu với thông tin bàn đã verify
+      navigate("/customer/menu");
     } catch (error) {
       console.error("Login error:", error);
       alert("Không thể kết nối server!");
@@ -80,6 +147,21 @@ const CustomerLoginScreen = () => {
 
     setIsLoading(false);
   };
+
+  // Hiển thị loading khi đang verify token
+  if (!tokenVerified) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-400 via-red-400 to-pink-500 flex items-center justify-center">
+        <div className="text-white text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-white mx-auto mb-4"></div>
+          <p className="text-xl font-semibold">Đang xác thực QR code...</p>
+          {tableInfo && (
+            <p className="text-sm mt-2">Bàn số: {tableInfo.tableNumber}</p>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-400 via-red-400 to-pink-500 flex items-center justify-center p-4 relative overflow-hidden">
@@ -127,8 +209,6 @@ const CustomerLoginScreen = () => {
               <div className="relative bg-white p-12 rounded-full shadow-2xl transform hover:rotate-12 hover:scale-110 transition-all duration-500">
                 <Utensils className="w-32 h-32 text-orange-500 animate-bounce-slow" />
               </div>
-
-              
             </div>
 
             {/* Decorative dots */}
@@ -148,7 +228,14 @@ const CustomerLoginScreen = () => {
               <h3 className="text-4xl font-bold bg-gradient-to-r p-2 from-orange-600 to-red-600 bg-clip-text text-transparent">
                 Nhập thông tin
               </h3>
-              <p className="text-gray-600">Mời bạn nhập thông tin để bắt đầu đặt món</p>
+              <p className="text-gray-600">
+                Mời bạn nhập thông tin để bắt đầu đặt món
+              </p>
+              {tableInfo && (
+                <div className="mt-3 inline-block bg-orange-100 text-orange-700 px-4 py-2 rounded-full text-sm font-semibold">
+                  🍽️ Bàn số: {tableInfo.tableNumber}
+                </div>
+              )}
             </div>
 
             <form className="space-y-6" onSubmit={handleLogin}>

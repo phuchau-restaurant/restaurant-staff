@@ -1,6 +1,7 @@
 // backend/services/Auth/AuthService.js
-import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
+import bcrypt from "bcryptjs";
+import crypto from "crypto";
+import { generateToken } from "../../utils/jwt.js";
 
 class AuthService {
   // Constructor Injection: Nhận vào UsersRepository
@@ -12,7 +13,7 @@ class AuthService {
    * Đăng nhập người dùng
    * @param {string} email - Email của người dùng
    * @param {string} password - Mật khẩu người dùng
-   * @returns {Object} - Trả về thông tin user nếu đăng nhập thành công
+   * @returns {Object} - Trả về thông tin user và token nếu đăng nhập thành công
    */
   async login(email, password, tenantId) {
     // 1. Validate dữ liệu đầu vào
@@ -43,9 +44,20 @@ class AuthService {
       throw new Error("Invalid email or password");
     }
 
-    // 5. Trả về user info (không trả mật khẩu/passwordHash)
+    // 5. Tạo JWT token
+    const token = generateToken({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      tenantId: user.tenantId,
+    });
+
+    // 6. Trả về user info và token (không trả mật khẩu/passwordHash)
     const { passwordHash: _, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+    return {
+      user: userWithoutPassword,
+      token,
+    };
   }
 
   /**
@@ -66,13 +78,13 @@ class AuthService {
     }
 
     // 1. Tạo một token ngẫu nhiên
-    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetToken = crypto.randomBytes(32).toString("hex");
 
     // 2. Hash token và lưu vào DB
     const passwordResetToken = crypto
-      .createHash('sha256')
+      .createHash("sha256")
       .update(resetToken)
-      .digest('hex');
+      .digest("hex");
 
     // 3. Đặt thời gian hết hạn (ví dụ: 10 phút)
     const passwordResetExpires = new Date(Date.now() + 10 * 60 * 1000);
@@ -89,7 +101,10 @@ class AuthService {
     console.log(`Reset token for ${email}: ${resetToken}`); // In ra để test
     // Ví dụ: await emailService.sendPasswordResetEmail(user.email, resetToken);
 
-    return { message: "If your email is registered, you will receive a password reset link." };
+    return {
+      message:
+        "If your email is registered, you will receive a password reset link.",
+    };
   }
 
   /**
@@ -111,7 +126,9 @@ class AuthService {
     // Logic này khá phức tạp, tôi sẽ để lại comment để bạn có thể phát triển thêm.
     // Bạn sẽ cần thêm một phương thức trong UsersRepository để tìm user bằng `passwordResetToken`.
 
-    throw new Error("Reset password functionality is not fully implemented yet.");
+    throw new Error(
+      "Reset password functionality is not fully implemented yet."
+    );
   }
 
   /**
