@@ -1,24 +1,42 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Mail, Lock, Home } from "lucide-react";
+import { Mail, Lock, Home, Eye, EyeOff } from "lucide-react";
 
 // --- COMPONENT: HOMESCREEN ---
 const HomeScreen = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
-
-    if (!email.trim() || !password.trim()) {
-      setError("Vui lòng nhập email và mật khẩu");
+    
+    // Reset errors
+    setEmailError("");
+    setPasswordError("");
+    
+    // Validate email
+    if (!email.trim()) {
+      setEmailError("Vui lòng nhập email");
+      return;
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      setEmailError("Email không đúng định dạng");
+      return;
+    }
+    
+    // Validate password
+    if (!password.trim()) {
+      setPasswordError("Vui lòng nhập mật khẩu");
       return;
     }
 
-    setError("");
     setIsLoading(true);
 
     try {
@@ -40,7 +58,15 @@ const HomeScreen = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.message || "Đăng nhập thất bại");
+        // Xác định loại lỗi và hiển thị đúng vị trí
+        const errorMsg = data.message || "Đăng nhập thất bại";
+        if (errorMsg.toLowerCase().includes("email")) {
+          setEmailError(errorMsg);
+        } else if (errorMsg.toLowerCase().includes("password") || errorMsg.toLowerCase().includes("mật khẩu")) {
+          setPasswordError(errorMsg);
+        } else {
+          setPasswordError(errorMsg);
+        }
         setIsLoading(false);
         return;
       }
@@ -63,11 +89,11 @@ const HomeScreen = () => {
           navigate("/dashboard");
         }
       } else {
-        setError("Dữ liệu đăng nhập không hợp lệ");
+        setPasswordError("Dữ liệu đăng nhập không hợp lệ");
       }
     } catch (err) {
       console.error("Login error:", err);
-      setError("Không thể kết nối đến server");
+      setPasswordError("Không thể kết nối đến server");
     }
 
     setIsLoading(false);
@@ -109,13 +135,6 @@ const HomeScreen = () => {
           <p className="text-gray-500 font-medium">Hệ thống quản lý nhà hàng</p>
         </div>
 
-        {/* Error Message */}
-        {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg mb-4">
-            <p className="text-red-700 text-sm font-medium">{error}</p>
-          </div>
-        )}
-
         {/* Form Inputs */}
         <form onSubmit={handleLogin} className="space-y-6">
           {/* Email */}
@@ -127,12 +146,24 @@ const HomeScreen = () => {
               <input
                 type="text"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full border-2 border-blue-200 rounded-xl px-4 py-3 text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all bg-white"
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setEmailError("");
+                }}
+                className={`w-full border-2 rounded-xl px-4 py-3 text-gray-700 focus:outline-none transition-all bg-white ${
+                  emailError
+                    ? "border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-100"
+                    : "border-blue-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                }`}
                 placeholder="Nhập email của bạn..."
               />
-              <Mail className="absolute right-4 top-3.5 w-5 h-5 text-blue-300" />
+              <Mail className={`absolute right-4 top-3.5 w-5 h-5 ${
+                emailError ? "text-red-400" : "text-blue-300"
+              }`} />
             </div>
+            {emailError && (
+              <p className="text-red-600 text-sm ml-1">{emailError}</p>
+            )}
           </div>
 
           {/* Password */}
@@ -142,14 +173,34 @@ const HomeScreen = () => {
             </label>
             <div className="relative">
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full border-2 border-blue-200 rounded-xl px-4 py-3 text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all bg-white"
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setPasswordError("");
+                }}
+                className={`w-full border-2 rounded-xl px-4 py-3 pr-12 text-gray-700 focus:outline-none transition-all bg-white ${
+                  passwordError
+                    ? "border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-100"
+                    : "border-blue-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                }`}
                 placeholder="••••••••"
               />
-              <Lock className="absolute right-4 top-3.5 w-5 h-5 text-blue-300" />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-3.5 text-blue-400 hover:text-blue-600 transition-colors"
+              >
+                {showPassword ? (
+                  <EyeOff className="w-5 h-5" />
+                ) : (
+                  <Eye className="w-5 h-5" />
+                )}
+              </button>
             </div>
+            {passwordError && (
+              <p className="text-red-600 text-sm ml-1">{passwordError}</p>
+            )}
           </div>
 
           {/* LOGIN + FORGOT IN 1 ROW */}
