@@ -352,12 +352,9 @@ export default class AdminService {
         throw error;
       }
 
-      // 2. Tạo archive
-      const archive = archiver("zip", {
-        zlib: { level: 9 }, // Compression level
-      });
+      // 2. Generate tất cả QR codes trước
+      const qrFiles = [];
 
-      // 3. Generate QR cho từng bàn và add vào ZIP
       for (const table of tables) {
         // Tạo URL từ qr_token
         const tokenPayload = {
@@ -376,14 +373,24 @@ export default class AdminService {
         // Generate theo format
         if (format === "png" || format === "all") {
           const pngResult = await this._generateQRPNG(table, customerLoginUrl);
-          archive.append(pngResult.buffer, { name: pngResult.filename });
+          qrFiles.push(pngResult);
         }
 
         if (format === "pdf" || format === "all") {
           const pdfResult = await this._generateQRPDF(table, customerLoginUrl);
-          archive.append(pdfResult.buffer, { name: pdfResult.filename });
+          qrFiles.push(pdfResult);
         }
       }
+
+      // 3. Tạo archive và add tất cả files
+      const archive = archiver("zip", {
+        zlib: { level: 9 }, // Compression level
+      });
+
+      // Add all files to archive
+      qrFiles.forEach((file) => {
+        archive.append(file.buffer, { name: file.filename });
+      });
 
       // Tạo filename phù hợp
       let filename = "qr-codes-all-tables";
