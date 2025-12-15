@@ -12,6 +12,9 @@ import WaiterScreen from "./screens/WaiterScreen";
 import TestScreen from "./screens/TestScreen";
 import OnboardingScreen from "./screens/OnboardingScreen";
 import CustomerLoginScreen from "./screens/CustomerLoginScreen";
+import TablesScreen from "./screens/TablesScreen";
+import TableFormScreen from "./screens/TableFormScreen";
+import QRManagementScreen from "./screens/QRManagementScreen";
 
 function App() {
   return (
@@ -51,6 +54,10 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/tables" element={<TablesScreen />} />
+          <Route path="/tables/new" element={<TableFormScreen />} />
+          <Route path="/tables/edit/:id" element={<TableFormScreen />} />
+          <Route path="/tables/qr" element={<QRManagementScreen />} />
           <Route
             path="/test"
             element={
