@@ -46,7 +46,7 @@ class TablesController {
 
       return res.status(200).json({
         success: true,
-        message: `Table with id '${id}' fetched successfully`,
+        message: `Table with id ${id} fetched successfully`,
         data: returnData
       });
     } catch (error) {
@@ -90,7 +90,7 @@ class TablesController {
 
       return res.status(200).json({
         success: true,
-        message: `Table with id '${id}' updated successfully`,
+        message: `Table with id ${id} updated successfully`,
         data: returnData
       });
     } catch (error) {
@@ -114,7 +114,7 @@ class TablesController {
 
       return res.status(200).json({
         success: true,
-        message: `Table with id '${id}' status updated successfully`,
+        message: `Table with id ${id} status updated successfully`,
         data: returnData
       });
     } catch (error) {
