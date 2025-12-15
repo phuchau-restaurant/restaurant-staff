@@ -4,7 +4,6 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { CustomerProvider } from "./contexts/CustomerContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import HomeScreen from "./screens/HomeScreen";
-import Register from "./screens/RegisterScreen";
 import VerifyEmailScreen from "./screens/VerifyEmailScreen";
 import DashboardLayout from "./components/Dashboard/DashboardLayout";
 import MenuScreen from "./screens/MenuScreen";
@@ -40,7 +39,6 @@ function App() {
 
           {/* Admin/Staff Flow */}
           <Route path="/login" element={<HomeScreen />} />
-          <Route path="/register" element={<Register />} />
           <Route path="/verify-email" element={<VerifyEmailScreen />} />
           <Route path="/onboarding" element={<OnboardingScreen />} />
 
