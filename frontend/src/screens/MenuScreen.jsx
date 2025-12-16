@@ -347,8 +347,9 @@ const MenuScreen = () => {
             onClick={() => setActiveCategory(cat.id)}
             className={`flex flex-col items-center justify-center w-20 h-20 rounded-xl transition-all duration-300 ${
               activeCategory === cat.id
-                ? "bg-gradient-to-br from-orange-400 to-orange-600 text-white shadow-lg shadow-orange-300/50 scale-105 hover:shadow-xl hover:shadow-orange-400/60"
-                : "text-gray-400 hover:bg-gradient-to-br hover:from-orange-50 hover:to-orange-100 hover:text-orange-600 hover:scale-105"
+                  ? "bg-gradient-to-br from-orange-400 to-orange-600 text-white shadow-lg shadow-orange-300/50 scale-105"
+                  : "text-gray-400"
+
             }`}
           >
             <div className="mb-1">

@@ -30,7 +30,7 @@ const CustomerLoginScreen = () => {
   // Verify QR token khi component mount (BẮT BUỘC PHẢI CÓ TOKEN)
   React.useEffect(() => {
     let timeoutId;
-    
+
     const verifyQRToken = async () => {
       const params = new URLSearchParams(window.location.search);
       const token = params.get("token");
@@ -101,7 +101,7 @@ const CustomerLoginScreen = () => {
     };
 
     verifyQRToken();
-    
+
     // Cleanup timeout khi component unmount
     return () => {
       if (timeoutId) {
@@ -176,12 +176,15 @@ const CustomerLoginScreen = () => {
   // Hiển thị loading khi đang verify token
   if (!tokenVerified) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-400 via-red-400 to-pink-500 flex items-center justify-center">
-        <div className="text-white text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-white mx-auto mb-4"></div>
+      // Changed: Background softer (orange-50) instead of gradient red/pink
+      <div className="min-h-screen bg-orange-50 flex items-center justify-center">
+        <div className="text-orange-600 text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-orange-500 mx-auto mb-4"></div>
           <p className="text-xl font-semibold">Đang xác thực QR code...</p>
           {tableInfo && (
-            <p className="text-sm mt-2">Bàn số: {tableInfo.tableNumber}</p>
+            <p className="text-sm mt-2 text-gray-600">
+              Bàn số: {tableInfo.tableNumber}
+            </p>
           )}
         </div>
       </div>
@@ -189,28 +192,29 @@ const CustomerLoginScreen = () => {
   }
 
   return (
+    // Changed: Main background to soft orange/white
     <motion.div
-      className="min-h-screen bg-gradient-to-br from-orange-400 via-red-400 to-pink-500 flex items-center justify-center p-4 relative overflow-hidden"
+      className="min-h-screen bg-orange-50 flex items-center justify-center p-4 relative overflow-hidden"
       initial={{ opacity: 1 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0.2 }}
       transition={{ duration: 0.7 }}
     >
-      {/* Animated background elements */}
+      {/* Animated background elements - Changed colors to soft yellow/orange */}
       <motion.div
         className="absolute inset-0 overflow-hidden pointer-events-none"
         exit={{ opacity: 0.5, scale: 1.5 }}
         transition={{ duration: 0.7 }}
       >
-        <div className="absolute top-20 left-10 w-72 h-72 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
-        <div className="absolute top-40 right-10 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
-        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-orange-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
+        <div className="absolute top-20 left-10 w-72 h-72 bg-orange-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
+        <div className="absolute top-40 right-10 w-72 h-72 bg-yellow-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-orange-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
       </motion.div>
 
-      <div className="relative bg-white/95 backdrop-blur-xl shadow-2xl rounded-3xl overflow-hidden max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 transform hover:scale-[1.01] transition-transform duration-500">
-        {/* LEFT - Pure Visual */}
+      <div className="relative bg-white shadow-2xl rounded-3xl overflow-hidden max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 transform hover:scale-[1.01] transition-transform duration-500 border border-orange-100">
+        {/* LEFT - Pure Visual - Changed: Gradient from Orange-400 to Orange-500 (No Red/Pink) */}
         <motion.div
-          className="relative bg-gradient-to-br from-orange-500 via-red-500 to-pink-600 flex items-center justify-center p-12 overflow-hidden min-h-[500px]"
+          className="relative bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center p-12 overflow-hidden min-h-[500px]"
           exit={{ x: -800, opacity: 0, scale: 0.8 }}
           transition={{ duration: 0.5, ease: "easeInOut" }}
         >
@@ -221,66 +225,66 @@ const CustomerLoginScreen = () => {
             <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-white/5 rounded-full -translate-x-1/2 -translate-y-1/2 animate-pulse animation-delay-2000"></div>
           </div>
 
-          {/* Floating food icons - tăng số lượng */}
+          {/* Floating food icons */}
           <motion.div
             className="absolute top-20 left-10 animate-float"
             exit={{ x: -300, y: -200, opacity: 0.5, rotate: -180 }}
             transition={{ duration: 0.6 }}
           >
-            <Utensils className="text-white/30 w-16 h-16 drop-shadow-lg" />
+            <Utensils className="text-white/40 w-16 h-16 drop-shadow-md" />
           </motion.div>
           <motion.div
             className="absolute top-32 right-16 animate-float-delayed"
             exit={{ x: 300, y: -200, opacity: 0, rotate: 180 }}
             transition={{ duration: 0.6 }}
           >
-            <Coffee className="text-white/25 w-14 h-14 drop-shadow-lg" />
+            <Coffee className="text-white/30 w-14 h-14 drop-shadow-md" />
           </motion.div>
           <motion.div
             className="absolute bottom-24 left-20 animate-float animation-delay-1000"
             exit={{ x: -300, y: 200, opacity: 0.5, rotate: -90 }}
             transition={{ duration: 0.6 }}
           >
-            <Cookie className="text-white/30 w-12 h-12 drop-shadow-lg" />
+            <Cookie className="text-white/40 w-12 h-12 drop-shadow-md" />
           </motion.div>
           <motion.div
             className="absolute bottom-32 right-24 animate-float-delayed animation-delay-2000"
             exit={{ x: 300, y: 200, opacity: 0.5, rotate: 90 }}
             transition={{ duration: 0.6 }}
           >
-            <UtensilsCrossed className="text-white/25 w-16 h-16 drop-shadow-lg" />
+            <UtensilsCrossed className="text-white/30 w-16 h-16 drop-shadow-md" />
           </motion.div>
           <motion.div
             className="absolute top-1/2 left-16 animate-float animation-delay-600"
             exit={{ x: -400, opacity: 0.5, scale: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <Sparkles className="text-white/20 w-10 h-10 drop-shadow-lg" />
+            <Sparkles className="text-white/20 w-10 h-10 drop-shadow-md" />
           </motion.div>
 
           {/* Central logo with strong animation */}
           <motion.div className="relative z-10" layoutId="app-logo">
             <div className="relative inline-block">
               {/* Glow effect */}
-              <div className="absolute inset-0 bg-white/30 rounded-full blur-3xl animate-pulse scale-150"></div>
+              <div className="absolute inset-0 bg-white/20 rounded-full blur-3xl animate-pulse scale-150"></div>
 
               {/* Main icon container */}
-              <div className="relative bg-white p-12 rounded-full shadow-2xl transform hover:rotate-12 hover:scale-110 transition-all duration-500">
+              <div className="relative bg-white p-12 rounded-full shadow-xl transform hover:rotate-12 hover:scale-110 transition-all duration-500">
                 <Utensils className="w-32 h-32 text-orange-500 animate-bounce-slow" />
               </div>
             </div>
 
             {/* Decorative dots */}
             <div className="flex justify-center gap-4 mt-12">
-              <div className="w-4 h-4 bg-white/80 rounded-full animate-ping"></div>
-              <div className="w-4 h-4 bg-white/80 rounded-full animate-ping animation-delay-300"></div>
-              <div className="w-4 h-4 bg-white/80 rounded-full animate-ping animation-delay-600"></div>
+              <div className="w-3 h-3 bg-white/80 rounded-full animate-ping"></div>
+              <div className="w-3 h-3 bg-white/80 rounded-full animate-ping animation-delay-300"></div>
+              <div className="w-3 h-3 bg-white/80 rounded-full animate-ping animation-delay-600"></div>
             </div>
           </motion.div>
         </motion.div>
 
         {/* RIGHT - Login Form */}
-        <div className="p-12 flex flex-col justify-center bg-gradient-to-br from-white to-orange-50">
+        <div className="p-12 flex flex-col justify-center bg-white">
           <div className="max-w-md mx-auto w-full space-y-8 animate-fade-in-right">
             {/* Header */}
             <motion.div
@@ -288,14 +292,15 @@ const CustomerLoginScreen = () => {
               exit={{ opacity: 0, y: -100 }}
               transition={{ duration: 0.4 }}
             >
-              <h3 className="text-4xl font-bold bg-gradient-to-r p-2 from-orange-600 to-red-600 bg-clip-text text-transparent">
+              {/* Changed: Text gradient removed, solid orange used */}
+              <h3 className="text-4xl font-bold text-gray-800">
                 Nhập thông tin
               </h3>
-              <p className="text-gray-600">
+              <p className="text-gray-500">
                 Mời bạn nhập thông tin để bắt đầu đặt món
               </p>
               {tableInfo && (
-                <div className="mt-3 inline-block bg-orange-100 text-orange-700 px-4 py-2 rounded-full text-sm font-semibold">
+                <div className="mt-3 inline-block bg-orange-50 text-orange-600 border border-orange-100 px-4 py-2 rounded-full text-sm font-semibold shadow-sm">
                   🍽️ Bàn số: {tableInfo.tableNumber}
                 </div>
               )}
@@ -315,7 +320,7 @@ const CustomerLoginScreen = () => {
                 <div className="relative">
                   <input
                     type="tel"
-                    className="w-full border-2 border-gray-200 rounded-xl px-5 py-4 text-lg focus:ring-4 focus:ring-orange-200 focus:border-orange-500 transition-all duration-300 outline-none group-hover:border-orange-300"
+                    className="w-full border-2 border-gray-100 bg-gray-50 rounded-xl px-5 py-4 text-lg focus:bg-white focus:ring-4 focus:ring-orange-100 focus:border-orange-400 transition-all duration-300 outline-none group-hover:border-orange-200"
                     placeholder="0123 456 789"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
@@ -339,7 +344,7 @@ const CustomerLoginScreen = () => {
                 <div className="relative">
                   <input
                     type="text"
-                    className="w-full border-2 border-gray-200 rounded-xl px-5 py-4 text-lg focus:ring-4 focus:ring-orange-200 focus:border-orange-500 transition-all duration-300 outline-none group-hover:border-orange-300"
+                    className="w-full border-2 border-gray-100 bg-gray-50 rounded-xl px-5 py-4 text-lg focus:bg-white focus:ring-4 focus:ring-orange-100 focus:border-orange-400 transition-all duration-300 outline-none group-hover:border-orange-200"
                     placeholder="Nguyễn Văn A"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
@@ -363,7 +368,8 @@ const CustomerLoginScreen = () => {
                 transition={{ duration: 0.5, delay: 0.1, ease: "easeInOut" }}
                 type="submit"
                 disabled={isLoading}
-                className={`w-full bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 text-white py-4 rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-3 group ${
+                // Changed: Button gradient simplified to Orange only
+                className={`w-full bg-gradient-to-r from-orange-400 to-orange-600 text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-orange-200/50 transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-3 group ${
                   isLoading ? "opacity-70 cursor-not-allowed scale-95" : ""
                 }`}
               >
@@ -383,14 +389,14 @@ const CustomerLoginScreen = () => {
 
             {/* Footer */}
             <motion.div
-              className="text-center pt-6 border-t border-gray-200"
+              className="text-center pt-6 border-t border-gray-100"
               exit={{ opacity: 0, y: 100 }}
               transition={{ duration: 0.4 }}
             >
               <p className="text-gray-400 text-sm">
                 © {new Date().getFullYear()} Restaurant Manager
               </p>
-              <p className="text-orange-600 text-xs mt-2 font-medium">
+              <p className="text-orange-400 text-xs mt-2 font-medium">
                 Powered by HDV Team
               </p>
             </motion.div>
@@ -420,6 +426,15 @@ const CustomerLoginScreen = () => {
           }
           50% {
             transform: translateY(-20px) rotate(5deg);
+          }
+        }
+        @keyframes float-delayed {
+          0%,
+          100% {
+            transform: translateY(0px) rotate(0deg);
+          }
+          50% {
+            transform: translateY(-20px) rotate(-5deg);
           }
         }
         @keyframes bounce-slow {
@@ -478,7 +493,7 @@ const CustomerLoginScreen = () => {
           animation: float 3s ease-in-out infinite;
         }
         .animate-float-delayed {
-          animation: float 3s ease-in-out infinite 1.5s;
+          animation: float-delayed 3s ease-in-out infinite 1.5s;
         }
         .animate-bounce-slow {
           animation: bounce-slow 2s ease-in-out infinite;
@@ -511,7 +526,7 @@ const CustomerLoginScreen = () => {
           animation-delay: 4s;
         }
       `}</style>
-      
+
       {/* Alert Modal */}
       <AlertModal
         isOpen={alert.isOpen}
