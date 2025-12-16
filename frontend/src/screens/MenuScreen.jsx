@@ -16,13 +16,14 @@ const MenuScreen = () => {
   const navigate = useNavigate();
   const { customer, tableInfo, logout, updateTable } = useCustomer();
 
-  const [activeCategory, setActiveCategory] = useState("all");
+  const [activeCategory, setActiveCategory] = useState("0");
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [categoryIdMap, setCategoryIdMap] = useState({});
   const [avatarUrl, setAvatarUrl] = useState([]);
+  const [isLoadingMenu, setIsLoadingMenu] = useState(false);
 
   // Fetch categories and menu
   useEffect(() => {
@@ -144,6 +145,7 @@ const MenuScreen = () => {
     if (activeCategory === "all") return;
 
     const fetchMenus = async () => {
+      setIsLoadingMenu(true);
       try {
         const baseUrl = `${import.meta.env.VITE_BACKEND_URL}/api/menus`;
         const url = new URL(baseUrl);
@@ -183,6 +185,8 @@ const MenuScreen = () => {
         setProducts(mapped);
       } catch (err) {
         console.error("❌ Lỗi fetch menu:", err);
+      } finally {
+        setIsLoadingMenu(false);
       }
     };
 
@@ -412,22 +416,36 @@ const MenuScreen = () => {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.5 }}
         >
-          {products.map((product, index) => (
-            <motion.div
-              key={product.id}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3, delay: 0.6 + index * 0.03 }}
-            >
-              <MenuItem
-                product={product}
-                quantity={getItemQuantity(product.id)}
-                onAdd={() => addToCart(product)}
-                onRemove={() => removeFromCart(product.id)}
-                onQuantityChange={setQuantity}
-              />
-            </motion.div>
-          ))}
+          {isLoadingMenu ? (
+              <div className="col-span-full flex flex-col items-center justify-center h-[60vh]">
+                <div className="relative">
+                  <div className="w-16 h-16 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin"></div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Utensils className="w-6 h-6 text-orange-500 animate-pulse" />
+                  </div>
+                </div>
+                <p className="mt-4 text-gray-500 font-medium">
+                  Đang tải món ăn...
+                </p>
+              </div>
+            ) : (
+            products.map((product, index) => (
+              <motion.div
+                key={product.id}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3, delay: 0.6 + index * 0.03 }}
+              >
+                <MenuItem
+                  product={product}
+                  quantity={getItemQuantity(product.id)}
+                  onAdd={() => addToCart(product)}
+                  onRemove={() => removeFromCart(product.id)}
+                  onQuantityChange={setQuantity}
+                />
+              </motion.div>
+            ))
+          )}
         </motion.div>
       </div>
 
