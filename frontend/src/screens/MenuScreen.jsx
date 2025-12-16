@@ -6,6 +6,8 @@ import { motion } from "framer-motion";
 import { ShoppingCart, Utensils, LogOut } from "lucide-react";
 import MenuItem from "../components/Menu/MenuItem";
 import CartItem from "../components/Cart/CartItem";
+import AlertModal from "../components/Modal/AlertModal";
+import { useAlert } from "../hooks/useAlert";
 
 const defaultCustomer = {
   name: "Khách hàng",
@@ -15,6 +17,7 @@ const defaultCustomer = {
 const MenuScreen = () => {
   const navigate = useNavigate();
   const { customer, tableInfo, logout, updateTable } = useCustomer();
+  const { alert, showSuccess, showError, showWarning, closeAlert } = useAlert();
 
   const [activeCategory, setActiveCategory] = useState("0");
   const [cart, setCart] = useState([]);
@@ -29,8 +32,8 @@ const MenuScreen = () => {
   useEffect(() => {
     // Kiểm tra đã login và có thông tin bàn chưa
     if (!tableInfo || !tableInfo.id) {
-      alert("⚠️ Vui lòng đăng nhập trước!");
-      navigate("/customer/login");
+      showWarning("Vui lòng đăng nhập trước!");
+      setTimeout(() => navigate("/customer/login"), 2000);
       return;
     }
 
@@ -235,12 +238,12 @@ const MenuScreen = () => {
         throw new Error(result.message || "Gửi đơn hàng thất bại");
       }
 
-      alert("Đặt món thành công!");
+      showSuccess("Đặt món thành công!");
       setCart([]);
       setIsCartOpen(false);
     } catch (err) {
       console.error("❌ Lỗi đặt món:", err);
-      alert("Đặt món thất bại: " + err.message);
+      showError("Đặt món thất bại: " + err.message);
     }
   };
 
@@ -417,18 +420,18 @@ const MenuScreen = () => {
           transition={{ duration: 0.5, delay: 0.5 }}
         >
           {isLoadingMenu ? (
-              <div className="col-span-full flex flex-col items-center justify-center h-[60vh]">
-                <div className="relative">
-                  <div className="w-16 h-16 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin"></div>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Utensils className="w-6 h-6 text-orange-500 animate-pulse" />
-                  </div>
+            <div className="col-span-full flex flex-col items-center justify-center h-[60vh]">
+              <div className="relative">
+                <div className="w-16 h-16 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin"></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Utensils className="w-6 h-6 text-orange-500 animate-pulse" />
                 </div>
-                <p className="mt-4 text-gray-500 font-medium">
-                  Đang tải món ăn...
-                </p>
               </div>
-            ) : (
+              <p className="mt-4 text-gray-500 font-medium">
+                Đang tải món ăn...
+              </p>
+            </div>
+          ) : (
             products.map((product, index) => (
               <motion.div
                 key={product.id}
@@ -532,6 +535,15 @@ const MenuScreen = () => {
           </button>
         </div>
       </div>
+
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alert.isOpen}
+        onClose={closeAlert}
+        title={alert.title}
+        message={alert.message}
+        type={alert.type}
+      />
     </motion.div>
   );
 };

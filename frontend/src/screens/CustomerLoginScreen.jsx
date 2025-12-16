@@ -12,10 +12,13 @@ import {
   Cookie,
   UtensilsCrossed,
 } from "lucide-react";
+import AlertModal from "../components/Modal/AlertModal";
+import { useAlert } from "../hooks/useAlert";
 
 const CustomerLoginScreen = () => {
   const navigate = useNavigate();
   const { login, updateTable } = useCustomer();
+  const { alert, showError, showWarning, closeAlert } = useAlert();
 
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
@@ -26,14 +29,16 @@ const CustomerLoginScreen = () => {
 
   // Verify QR token khi component mount (BẮT BUỘC PHẢI CÓ TOKEN)
   React.useEffect(() => {
+    let timeoutId;
+    
     const verifyQRToken = async () => {
       const params = new URLSearchParams(window.location.search);
       const token = params.get("token");
 
       // BẮT BUỘC phải có token trong URL - không cho phép truy cập trực tiếp
       if (!token) {
-        alert("⚠️ Vui lòng quét mã QR để truy cập!");
-        navigate("/");
+        showWarning("Vui lòng quét mã QR để truy cập!");
+        setTimeout(() => navigate("/"), 2000);
         return;
       }
 
@@ -42,6 +47,15 @@ const CustomerLoginScreen = () => {
       if (storedToken === token && tokenVerified) {
         return;
       }
+
+      // Timeout: Nếu sau 10 giây vẫn đang xác thực thì báo lỗi
+      timeoutId = setTimeout(() => {
+        if (!tokenVerified) {
+          setIsLoading(false);
+          showError("Xác thực QR code quá lâu! Vui lòng quét lại mã QR.");
+          setTimeout(() => navigate("/"), 2000);
+        }
+      }, 10000);
 
       try {
         setIsLoading(true);
@@ -59,12 +73,14 @@ const CustomerLoginScreen = () => {
         const data = await response.json();
 
         if (!response.ok) {
-          alert(data.message || "QR code không hợp lệ hoặc đã hết hạn!");
-          navigate("/");
+          clearTimeout(timeoutId);
+          showError(data.message || "QR code không hợp lệ hoặc đã hết hạn!");
+          setTimeout(() => navigate("/"), 2000);
           return;
         }
 
         // Lưu thông tin bàn, token và tenantId
+        clearTimeout(timeoutId);
         setTableInfo(data.data);
         updateTable({
           id: data.data.tableId,
@@ -75,15 +91,23 @@ const CustomerLoginScreen = () => {
         localStorage.setItem("tenantId", data.data.tenantId); // Lưu tenantId để dùng cho các API call
         setTokenVerified(true);
       } catch (error) {
+        clearTimeout(timeoutId);
         console.error("QR verify error:", error);
-        alert("Không thể xác thực QR code!");
-        navigate("/");
+        showError("Không thể xác thực QR code!");
+        setTimeout(() => navigate("/"), 2000);
       } finally {
         setIsLoading(false);
       }
     };
 
     verifyQRToken();
+    
+    // Cleanup timeout khi component unmount
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // CHỈ CHẠY 1 LẦN khi mount
 
@@ -131,7 +155,7 @@ const CustomerLoginScreen = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.message || "Đăng nhập thất bại");
+        showError(data.message || "Đăng nhập thất bại");
         setIsLoading(false);
         return;
       }
@@ -143,7 +167,7 @@ const CustomerLoginScreen = () => {
       navigate("/customer/menu");
     } catch (error) {
       console.error("Login error:", error);
-      alert("Không thể kết nối server!");
+      showError("Không thể kết nối server!");
     }
 
     setIsLoading(false);
@@ -169,14 +193,14 @@ const CustomerLoginScreen = () => {
       className="min-h-screen bg-gradient-to-br from-orange-400 via-red-400 to-pink-500 flex items-center justify-center p-4 relative overflow-hidden"
       initial={{ opacity: 1 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.5 }}
+      exit={{ opacity: 0.2 }}
+      transition={{ duration: 0.7 }}
     >
       {/* Animated background elements */}
       <motion.div
         className="absolute inset-0 overflow-hidden pointer-events-none"
-        exit={{ opacity: 0, scale: 1.5 }}
-        transition={{ duration: 0.4 }}
+        exit={{ opacity: 0.5, scale: 1.5 }}
+        transition={{ duration: 0.7 }}
       >
         <div className="absolute top-20 left-10 w-72 h-72 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
         <div className="absolute top-40 right-10 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
@@ -200,7 +224,7 @@ const CustomerLoginScreen = () => {
           {/* Floating food icons - tăng số lượng */}
           <motion.div
             className="absolute top-20 left-10 animate-float"
-            exit={{ x: -300, y: -200, opacity: 0, rotate: -180 }}
+            exit={{ x: -300, y: -200, opacity: 0.5, rotate: -180 }}
             transition={{ duration: 0.6 }}
           >
             <Utensils className="text-white/30 w-16 h-16 drop-shadow-lg" />
@@ -214,21 +238,21 @@ const CustomerLoginScreen = () => {
           </motion.div>
           <motion.div
             className="absolute bottom-24 left-20 animate-float animation-delay-1000"
-            exit={{ x: -300, y: 200, opacity: 0, rotate: -90 }}
+            exit={{ x: -300, y: 200, opacity: 0.5, rotate: -90 }}
             transition={{ duration: 0.6 }}
           >
             <Cookie className="text-white/30 w-12 h-12 drop-shadow-lg" />
           </motion.div>
           <motion.div
             className="absolute bottom-32 right-24 animate-float-delayed animation-delay-2000"
-            exit={{ x: 300, y: 200, opacity: 0, rotate: 90 }}
+            exit={{ x: 300, y: 200, opacity: 0.5, rotate: 90 }}
             transition={{ duration: 0.6 }}
           >
             <UtensilsCrossed className="text-white/25 w-16 h-16 drop-shadow-lg" />
           </motion.div>
           <motion.div
             className="absolute top-1/2 left-16 animate-float animation-delay-600"
-            exit={{ x: -400, opacity: 0, scale: 0 }}
+            exit={{ x: -400, opacity: 0.5, scale: 0 }}
             transition={{ duration: 0.5 }}
           >
             <Sparkles className="text-white/20 w-10 h-10 drop-shadow-lg" />
@@ -281,7 +305,7 @@ const CustomerLoginScreen = () => {
               {/* Phone Input */}
               <motion.div
                 className="space-y-2 group"
-                exit={{ opacity: 0, x: -400, rotate: -15 }}
+                exit={{ opacity: 0.5, x: -400, rotate: -15 }}
                 transition={{ duration: 0.5, ease: "easeInOut" }}
               >
                 <label className="block text-md font-semibold text-gray-700 flex items-center gap-2">
@@ -305,7 +329,7 @@ const CustomerLoginScreen = () => {
               {/* Name Input */}
               <motion.div
                 className="space-y-2 group"
-                exit={{ opacity: 0, x: 400, rotate: 15 }}
+                exit={{ opacity: 0.5, x: 400, rotate: 15 }}
                 transition={{ duration: 0.5, delay: 0.05, ease: "easeInOut" }}
               >
                 <label className="block text-md font-semibold text-gray-700 flex items-center gap-2">
@@ -487,6 +511,15 @@ const CustomerLoginScreen = () => {
           animation-delay: 4s;
         }
       `}</style>
+      
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alert.isOpen}
+        onClose={closeAlert}
+        title={alert.title}
+        message={alert.message}
+        type={alert.type}
+      />
     </motion.div>
   );
 };

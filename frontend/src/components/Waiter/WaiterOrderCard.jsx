@@ -1,5 +1,14 @@
 import React, { useState } from "react";
-import { Bell, Clock, User, AlertCircle, CheckCircle2, ChefHat } from "lucide-react";
+import {
+  Bell,
+  Clock,
+  User,
+  AlertCircle,
+  CheckCircle2,
+  ChefHat,
+} from "lucide-react";
+import AlertModal from "../Modal/AlertModal";
+import { useAlert } from "../../hooks/useAlert";
 
 const WaiterOrderCard = ({
   order,
@@ -7,6 +16,7 @@ const WaiterOrderCard = ({
   getElapsedTime,
   getOrderStatus,
 }) => {
+  const { alert, showSuccess, closeAlert } = useAlert();
   const [showDetail, setShowDetail] = useState(false);
   const [servedItems, setServedItems] = useState([]);
   const elapsed = getElapsedTime(order.orderTime);
@@ -19,7 +29,7 @@ const WaiterOrderCard = ({
   const handleMarkAsServed = (itemId) => {
     if (!servedItems.includes(itemId)) {
       setServedItems([...servedItems, itemId]);
-      alert(`✅ Đã đánh dấu món phục vụ thành công!`);
+      showSuccess(`Đã đánh dấu món phục vụ thành công!`);
     }
   };
 
@@ -127,7 +137,8 @@ const WaiterOrderCard = ({
                           Phục vụ
                         </button>
                       </>
-                    ) : order.status === "cooking" || order.status === "late" ? (
+                    ) : order.status === "cooking" ||
+                      order.status === "late" ? (
                       <span className="text-blue-600 text-xs font-bold text-center whitespace-nowrap">
                         Pending
                       </span>
@@ -240,7 +251,8 @@ const WaiterOrderCard = ({
                             Phục vụ
                           </button>
                         </>
-                      ) : order.status === "cooking" || order.status === "late" ? (
+                      ) : order.status === "cooking" ||
+                        order.status === "late" ? (
                         <span className="text-blue-600 text-sm font-bold text-center whitespace-nowrap">
                           Pending
                         </span>
@@ -261,6 +273,15 @@ const WaiterOrderCard = ({
           </div>
         </div>
       )}
+
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alert.isOpen}
+        onClose={closeAlert}
+        title={alert.title}
+        message={alert.message}
+        type={alert.type}
+      />
     </>
   );
 };

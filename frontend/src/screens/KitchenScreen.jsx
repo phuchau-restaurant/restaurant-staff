@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import KitchenHeader from "../components/Kitchen/KitchenHeader";
 import OrdersGrid from "../components/Kitchen/OrdersGrid";
+import AlertModal from "../components/Modal/AlertModal";
+import { useAlert } from "../hooks/useAlert";
 
 // Map trạng thái từ tiếng Anh sang tiếng Việt
 const STATUS_MAP = {
@@ -27,6 +29,8 @@ const CATEGORY_OPTIONS = [
 ];
 
 const KitchenScreen = () => {
+  const { alert, showSuccess, showError, showWarning, showInfo, closeAlert } =
+    useAlert();
   const [viewMode, setViewMode] = useState("card");
   const [filterStation, setFilterStation] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -198,11 +202,11 @@ const KitchenScreen = () => {
         );
       } else {
         console.error("Failed to update order status:", data.message);
-        alert("Không thể cập nhật trạng thái đơn hàng");
+        showError("Không thể cập nhật trạng thái đơn hàng");
       }
     } catch (error) {
       console.error("Error updating order status:", error);
-      alert("Lỗi khi cập nhật trạng thái đơn hàng");
+      showError("Lỗi khi cập nhật trạng thái đơn hàng");
     }
   };
 
@@ -232,11 +236,11 @@ const KitchenScreen = () => {
         );
       } else {
         console.error("Failed to update order status:", data.message);
-        alert("Không thể cập nhật trạng thái đơn hàng");
+        showError("Không thể cập nhật trạng thái đơn hàng");
       }
     } catch (error) {
       console.error("Error updating order status:", error);
-      alert("Lỗi khi cập nhật trạng thái đơn hàng");
+      showError("Lỗi khi cập nhật trạng thái đơn hàng");
     }
   };
 
@@ -264,11 +268,11 @@ const KitchenScreen = () => {
         );
       } else {
         console.error("Failed to update order status:", data.message);
-        alert("Không thể hủy đơn hàng");
+        showError("Không thể hủy đơn hàng");
       }
     } catch (error) {
       console.error("Error cancelling order:", error);
-      alert("Lỗi khi hủy đơn hàng");
+      showError("Lỗi khi hủy đơn hàng");
     }
   };
 
@@ -288,18 +292,18 @@ const KitchenScreen = () => {
 
       const data = await res.json();
       if (data.success) {
-        alert(`Đã gọi nhân viên phục vụ đến lấy món - Đơn ${orderId}`);
+        showSuccess(`Đã gọi nhân viên phục vụ đến lấy món - Đơn ${orderId}`);
         // Update local state
         setOrders((prev) =>
           prev.map((o) => (o.id === orderId ? { ...o, status: "Served" } : o))
         );
       } else {
         console.error("Failed to update order status:", data.message);
-        alert("Không thể cập nhật trạng thái đơn hàng");
+        showError("Không thể cập nhật trạng thái đơn hàng");
       }
     } catch (error) {
       console.error("Error updating order status:", error);
-      alert("Lỗi khi cập nhật trạng thái đơn hàng");
+      showError("Lỗi khi cập nhật trạng thái đơn hàng");
     }
   };
 
@@ -312,7 +316,7 @@ const KitchenScreen = () => {
     if (!item || item.completed) return;
 
     // Thông báo trước khi update state
-    alert(
+    showInfo(
       `🔔 Đã thông báo nhân viên!\n\nMón: ${item.name} x${item.quantity}\nBàn: ${order.tableNumber}\nĐơn: ${order.orderNumber}\n\n✅ Món đã sẵn sàng để phục vụ!`
     );
 
@@ -332,7 +336,7 @@ const KitchenScreen = () => {
 
     if (!res.ok) {
       console.error("Failed to update order item status");
-      alert("Không thể cập nhật trạng thái món ăn");
+      showError("Không thể cập nhật trạng thái món ăn");
       return;
     }
 
@@ -402,6 +406,15 @@ const KitchenScreen = () => {
           />
         )}
       </div>
+
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alert.isOpen}
+        onClose={closeAlert}
+        title={alert.title}
+        message={alert.message}
+        type={alert.type}
+      />
     </div>
   );
 };
