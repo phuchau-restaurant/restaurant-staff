@@ -12,7 +12,6 @@ router.post("/qr/verify", adminController.verifyQRToken);
 
 // Bắt buộc có TenantID và phải đăng nhập cho các routes còn lại
 router.use(tenantMiddleware);
-router.use(authMiddleware);
 
 // --- TABLES ROUTES ---
 // GET All (Filter by location, status)
@@ -29,6 +28,8 @@ router.put("/tables/:id", tablesController.update);
 
 // PATCH Status (only)
 router.patch("/tables/:id/status", tablesController.updateStatus);
+
+router.use(authMiddleware);
 
 // Tạo QR code cho bàn (chỉ admin)
 router.post("/tables/:id/qr/generate", adminController.generateTableQR);

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Plus, Filter, Search, Grid, List, QrCode, Users, MapPin, Check, X, Calendar, UserCheck, UserX } from "lucide-react";
 import { getAllTables, updateTable } from "../data/mockTables";
 import TableStatus from "../../constants/tableStatus";
+import TableLocation from "../../constants/tableLocation";
 
 const TablesScreen = () => {
   const navigate = useNavigate();
@@ -12,80 +13,139 @@ const TablesScreen = () => {
   const [viewMode, setViewMode] = useState("grid"); // grid or list
   
   // Filter states
-  const [statusFilter, setStatusFilter] = useState("all"); // all, active, inactive
-  const [areaFilter, setAreaFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState(""); 
+  const [areaFilter, setAreaFilter] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState("tableNumber"); // tableNumber, capacity, createdAt
+  const [sortBy, setSortBy] = useState("tableNumber"); 
   
+  // Status options for filter - from constants
+  const statusOptions = [
+    { value: "", label: "Tất cả trạng thái" },
+    { value: TableStatus.AVAILABLE, label: "Trống" },
+    { value: TableStatus.OCCUPIED, label: "Có khách" },
+    { value: TableStatus.ACTIVE, label: "Hoạt động" },
+    { value: TableStatus.INACTIVE, label: "Không hoạt động" },
+  ];
+
+  
+  const areaOptions = [
+    { value: "", label: "Tất cả khu vực" },
+    ...Object.values(TableLocation).map((loc) => ({
+      value: loc,
+      label: loc,
+    })),
+  ];
+
+
   // Fetch tables from API
   useEffect(() => {
     fetchTables();
   }, []);
 
+  // Refetch when filters change
+  useEffect(() => {
+    fetchTables();
+  }, [statusFilter, areaFilter]);
+
   const fetchTables = async () => {
-    try {
-      setIsLoading(true);
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const data = getAllTables();
-      setTables(data);
+  try {
+    setIsLoading(true);
+
+    const queryParams = new URLSearchParams();
+
+    if (statusFilter) {
+      queryParams.append("status", statusFilter);
+    }
+
+    if (areaFilter) {
+      queryParams.append("location", areaFilter);
+    }
+
+    const url = `${import.meta.env.VITE_BACKEND_URL}/api/admin/tables${
+      queryParams.toString() ? `?${queryParams.toString()}` : ""
+    }`;
+
+    const response = await fetch(url, {
+      headers: {
+        "Content-Type": "application/json",
+        "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+      },
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      setTables(result.data || []);
+    } else {
+      setTables([]);
+    }
     } catch (error) {
-      console.error("Error fetching tables:", error);
+      console.error("Fetch tables error:", error);
+      setTables([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Filter and sort tables
+
+  // Filter and sort tables (client-side for search and sort only)
   useEffect(() => {
     let result = [...tables];
 
-    // Filter by status
-    if (statusFilter !== "all") {
-      result = result.filter((table) =>
-        statusFilter === "active" ? table.isActive : !table.isActive
-      );
-    }
-
-    // Filter by area
-    if (areaFilter !== "all") {
-      result = result.filter((table) => table.area === areaFilter);
-    }
-
-    // Filter by search term
+    // Filter by search term (client-side)
     if (searchTerm) {
       result = result.filter(
         (table) =>
           table.tableNumber.toString().includes(searchTerm) ||
-          table.area?.toLowerCase().includes(searchTerm.toLowerCase())
+          table.location?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    // Sort
+    const parseTableNumber = (value) => {
+      const str = String(value ?? "").trim().toLowerCase();
+
+      // check VIP
+      const isVip = str.includes("vip") ? 1 : 0;
+
+      // lấy số trong chuỗi (table vip 12 -> 12)
+      const match = str.match(/\d+/);
+      const number = match ? Number(match[0]) : 0;
+
+      return { isVip, number };
+    };
+
+    // Sort (client-side)
     result.sort((a, b) => {
       if (sortBy === "tableNumber") {
-        return a.tableNumber - b.tableNumber;
-      } else if (sortBy === "capacity") {
-        return b.capacity - a.capacity;
-      } else if (sortBy === "createdAt") {
-        return new Date(b.createdAt) - new Date(a.createdAt);
+        const A = parseTableNumber(a.tableNumber);
+        const B = parseTableNumber(b.tableNumber);
+
+        // 1️⃣ bàn thường trước – VIP sau
+        if (A.isVip !== B.isVip) {
+          return A.isVip - B.isVip;
+        }
+
+        // 2️⃣ cùng loại → sort theo số tăng dần
+        return A.number - B.number;
       }
+
+      if (sortBy === "capacity") {
+        return a.capacity - b.capacity; // tăng dần
+      }
+
       return 0;
     });
 
     setFilteredTables(result);
-  }, [tables, statusFilter, areaFilter, searchTerm, sortBy]);
+  }, [tables, searchTerm, sortBy]);
 
-  // Get unique areas for filter
-  const areas = [...new Set(tables.map((t) => t.area).filter(Boolean))];
 
   const handleCreateTable = () => {
     navigate("/tables/new");
   };
 
-  const handleEditTable = (id) => {
-    navigate(`/tables/edit/${id}`);
+  const handleEditTable = (table) => {
+    navigate(`/tables/edit/${table.id}`);
   };
 
   const toggleTableStatus = async (tableId, currentStatus) => {
@@ -169,9 +229,11 @@ const TablesScreen = () => {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="all">Tất cả trạng thái</option>
-              <option value="active">Hoạt động</option>
-              <option value="inactive">Không hoạt động</option>
+              {statusOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
             </select>
 
             {/* Area Filter */}
@@ -180,12 +242,11 @@ const TablesScreen = () => {
               onChange={(e) => setAreaFilter(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="all">Tất cả khu vực</option>
-              {areas.map((area) => (
-                <option key={area} value={area}>
-                  {area}
+              {areaOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
                 </option>
-              ))}
+              ))}   
             </select>
 
             {/* Sort */}
@@ -249,7 +310,7 @@ const TablesScreen = () => {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <h3 className="text-2xl font-bold text-gray-800">
-                    Bàn {table.tableNumber}
+                    {table.tableNumber}
                   </h3>
                   <span
                     className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -275,9 +336,9 @@ const TablesScreen = () => {
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2 text-gray-600">
                   <MapPin className="w-4 h-4" />
-                  <span className="text-sm">{table.area || "Chưa xác định"}</span>
+                  <span className="text-sm">{table.location || "Chưa xác định"}</span>
                 </div>
-                {table.hasQR && (
+                {table.qrToken != null && (
                   <QrCode className="w-5 h-5 text-blue-600" />
                 )}
               </div>
