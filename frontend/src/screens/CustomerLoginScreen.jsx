@@ -38,10 +38,10 @@ const CustomerLoginScreen = () => {
       }
 
       // Nếu đã verify token này rồi, bỏ qua
-      const storedToken = localStorage.getItem("qrToken");
-      if (storedToken === token && tokenVerified) {
-        return;
-      }
+      // const storedToken = localStorage.getItem("qrToken");
+      // if (storedToken === token && tokenVerified) {
+      //   return;
+      // }
 
       try {
         setIsLoading(true);
