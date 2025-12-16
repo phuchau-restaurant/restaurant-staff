@@ -1,7 +1,8 @@
 import React from 'react';
 import { 
   Home,
-  ShoppingBag, 
+  ShoppingBag,
+  Table,
   Package, 
   BarChart3, 
   MessageSquare, 
@@ -12,6 +13,7 @@ const Sidebar = ({ activeMenu = 'dashboard', onNavigate }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'orders', label: 'Order Management', icon: ShoppingBag },
+    { id: 'tables', label: 'Table Management', icon: Table },
     { id: 'inventory', label: 'Inventory Management', icon: Package },
     { id: 'sales', label: 'Sales Reports', icon: BarChart3 },
     { id: 'feedback', label: 'Customer Feedback', icon: MessageSquare },

@@ -6,6 +6,7 @@ import InventoryContent from '../../screens/Dashboard/InventoryContent';
 import SalesContent from '../../screens/Dashboard/SalesContent';
 import FeedbackContent from '../../screens/Dashboard/FeedbackContent';
 import CustomersContent from '../../screens/Dashboard/CustomersContent';
+import TablesScreen from '../../screens/TablesScreen';
 
 const DashboardLayout = () => {
   const [activeMenu, setActiveMenu] = useState('dashboard');
@@ -16,6 +17,8 @@ const DashboardLayout = () => {
         return <DashboardContent />;
       case 'orders':
         return <OrdersContent />;
+      case 'tables':
+        return <TablesScreen />;
       case 'inventory':
         return <InventoryContent />;
       case 'sales':
