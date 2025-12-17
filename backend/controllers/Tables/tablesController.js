@@ -19,7 +19,7 @@ class TablesController {
 
       // Clean response
       const returnData = data.map(t => {
-          const { id: _id, tenantId: _tid, ...rest } = t;
+          const { tenantId: _tid, ...rest } = t;
           return rest;
       });
       const locationMess = location ? ` with location '${location}'` : "";

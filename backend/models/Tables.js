@@ -5,6 +5,7 @@ export class Tables {
     this.tenantId = data.tenant_id || data.tenantId;
     this.tableNumber = data.table_number || data.tableNumber;
     this.capacity = data.capacity;
+    this.isVip = data.is_vip || data.isVip || false;
     this.location = data.location;
     this.status = data.status || 'Active'; // Default Active
     this.description = data.description || null;
@@ -26,6 +27,7 @@ export class Tables {
       table_number: this.tableNumber,
       capacity: this.capacity,
       location: this.location,
+      is_vip: this.isVip,
       status: this.status,
       description: this.description,
       qr_token: this.qrToken,
