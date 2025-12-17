@@ -1,7 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { QrCode, Download, Printer, RefreshCw, Eye, ArrowLeft, Grid, List } from "lucide-react";
-import { getAllTables, updateTable } from "../data/mockTables";
+import {
+  QrCode,
+  Download,
+  Printer,
+  RefreshCw,
+  Eye,
+  ArrowLeft,
+  Grid,
+  List,
+} from "lucide-react";
 
 const QRManagementScreen = () => {
   const navigate = useNavigate();
@@ -20,11 +28,37 @@ const QRManagementScreen = () => {
   const fetchTables = async () => {
     try {
       setIsLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 500));
-      const data = getAllTables();
-      setTables(data);
+
+      const url = `${import.meta.env.VITE_BACKEND_URL}/api/admin/tables`;
+
+      const response = await fetch(url, {
+        headers: {
+          "Content-Type": "application/json",
+          "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+        },
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        const tablesData = (result.data || []).map((table) => ({
+          ...table,
+          hasQR: !!table.qrToken,
+          qrCodeUrl: table.qrToken
+            ? `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(
+                table.qrToken
+              )}`
+            : null,
+          qrGeneratedAt: table.qrTokenCreatedAt,
+        }));
+        setTables(tablesData);
+      } else {
+        setTables([]);
+      }
     } catch (error) {
       console.error("Error fetching tables:", error);
+      alert("Có lỗi khi tải danh sách bàn");
+      setTables([]);
     } finally {
       setIsLoading(false);
     }
@@ -42,18 +76,36 @@ const QRManagementScreen = () => {
 
   const confirmRegenerateQR = async () => {
     try {
-      // Update table to regenerate QR
-      await new Promise(resolve => setTimeout(resolve, 300));
-      updateTable(selectedTable.id, { 
-        hasQR: true,
-        qrCodeUrl: `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://restaurant.com/menu?table=${selectedTable.tableNumber}&t=${Date.now()}`,
-        qrGeneratedAt: new Date().toISOString()
+      const url = `${import.meta.env.VITE_BACKEND_URL}/api/admin/tables/${
+        selectedTable.id
+      }/qr/generate`;
+
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Vui lòng đăng nhập lại");
+        navigate("/login");
+        return;
+      }
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+          Authorization: `Bearer ${token}`,
+        },
       });
-      
-      setShowRegenerateConfirm(false);
-      setSelectedTable(null);
-      fetchTables();
-      alert("Đã tạo lại mã QR thành công!");
+
+      const result = await response.json();
+
+      if (result.success || response.ok) {
+        setShowRegenerateConfirm(false);
+        setSelectedTable(null);
+        fetchTables();
+        alert("Đã tạo lại mã QR thành công!");
+      } else {
+        alert(result.message || "Có lỗi xảy ra khi tạo lại mã QR");
+      }
     } catch (error) {
       console.error("Error regenerating QR:", error);
       alert("Có lỗi xảy ra khi tạo lại mã QR");
@@ -68,10 +120,10 @@ const QRManagementScreen = () => {
 
     try {
       // Download image directly
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = table.qrCodeUrl;
       link.download = `QR-Ban-${table.tableNumber}.png`;
-      link.target = '_blank';
+      link.target = "_blank";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -102,7 +154,7 @@ const QRManagementScreen = () => {
       return;
     }
 
-    const printWindow = window.open('', '', 'width=800,height=600');
+    const printWindow = window.open("", "", "width=800,height=600");
     printWindow.document.write(`
       <html>
         <head>
@@ -147,7 +199,7 @@ const QRManagementScreen = () => {
         <body>
           <div class="qr-print">
             <h1>Bàn ${table.tableNumber}</h1>
-            <p>${table.area || ''}</p>
+            <p>${table.area || ""}</p>
             <div class="qr-container">
               <img src="${table.qrCodeUrl}" alt="QR Code" />
             </div>
@@ -186,15 +238,18 @@ const QRManagementScreen = () => {
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <img 
-              src="/images/logo.png" 
-              alt="Restaurant Logo" 
+            <img
+              src="/images/logo.png"
+              alt="Restaurant Logo"
               className="h-16 w-16 object-contain"
             />
             <div>
-              <h1 className="text-3xl font-bold text-gray-800">Quản Lý Mã QR</h1>
+              <h1 className="text-3xl font-bold text-gray-800">
+                Quản Lý Mã QR
+              </h1>
               <p className="text-gray-600 mt-1">
-                Tổng số: {tables.filter(t => t.hasQR).length}/{tables.length} bàn có mã QR
+                Tổng số: {tables.filter((t) => t.hasQR).length}/{tables.length}{" "}
+                bàn có mã QR
               </p>
             </div>
           </div>
@@ -207,7 +262,7 @@ const QRManagementScreen = () => {
               <Download className="w-5 h-5" />
               Tải Tất Cả PDF
             </button>
-            
+
             <div className="flex gap-2 border border-gray-300 rounded-lg p-1">
               <button
                 onClick={() => setViewMode("grid")}
@@ -262,8 +317,8 @@ const QRManagementScreen = () => {
               {/* QR Code Preview */}
               {table.hasQR && table.qrCodeUrl && (
                 <div className="flex justify-center mb-4 bg-gray-50 p-4 rounded-lg">
-                  <img 
-                    src={table.qrCodeUrl} 
+                  <img
+                    src={table.qrCodeUrl}
                     alt={`QR Code Bàn ${table.tableNumber}`}
                     className="w-[180px] h-[180px] object-contain"
                   />
@@ -273,7 +328,10 @@ const QRManagementScreen = () => {
               {/* QR Info */}
               {table.qrGeneratedAt && (
                 <p className="text-xs text-gray-500 text-center mb-4">
-                  Tạo ngày: {new Date(table.qrGeneratedAt || table.createdAt).toLocaleDateString('vi-VN')}
+                  Tạo ngày:{" "}
+                  {new Date(
+                    table.qrGeneratedAt || table.createdAt
+                  ).toLocaleDateString("vi-VN")}
                 </p>
               )}
 
@@ -293,8 +351,9 @@ const QRManagementScreen = () => {
                         onClick={() => handleDownloadPNG(table)}
                         className="flex items-center justify-center gap-1 px-2 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-xs"
                         title="Tải PNG"
-                      > 
-                        <Download className="w-4 h-4" />PNG
+                      >
+                        <Download className="w-4 h-4" />
+                        PNG
                       </button>
                       <button
                         onClick={() => handleDownloadPDF(table)}
@@ -309,7 +368,8 @@ const QRManagementScreen = () => {
                         className="flex items-center justify-center gap-1 px-2 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-xs"
                         title="In"
                       >
-                        <Printer className="w-4 h-4" />PRINT
+                        <Printer className="w-4 h-4" />
+                        PRINT
                       </button>
                     </div>
                     <button
@@ -338,31 +398,49 @@ const QRManagementScreen = () => {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Số Bàn</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Khu Vực</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mã QR</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ngày Tạo</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Thao Tác</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Số Bàn
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Khu Vực
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Mã QR
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Ngày Tạo
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                  Thao Tác
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {tables.map((table) => (
                 <tr key={table.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
-                    <span className="text-lg font-semibold">Bàn {table.tableNumber}</span>
+                    <span className="text-lg font-semibold">
+                      Bàn {table.tableNumber}
+                    </span>
                   </td>
                   <td className="px-6 py-4 text-gray-700">{table.area}</td>
                   <td className="px-6 py-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      table.hasQR ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"
-                    }`}>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        table.hasQR
+                          ? "bg-green-100 text-green-700"
+                          : "bg-gray-100 text-gray-700"
+                      }`}
+                    >
                       {table.hasQR ? "Có" : "Chưa có"}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">
-                    {table.qrGeneratedAt 
-                      ? new Date(table.qrGeneratedAt).toLocaleDateString('vi-VN')
-                      : new Date(table.createdAt).toLocaleDateString('vi-VN')}
+                    {table.qrGeneratedAt
+                      ? new Date(table.qrGeneratedAt).toLocaleDateString(
+                          "vi-VN"
+                        )
+                      : new Date(table.createdAt).toLocaleDateString("vi-VN")}
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex gap-2 justify-end">
@@ -415,23 +493,28 @@ const QRManagementScreen = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
             <div className="text-center">
-              <h2 className="text-2xl font-bold mb-2">Bàn {selectedTable.tableNumber}</h2>
+              <h2 className="text-2xl font-bold mb-2">
+                Bàn {selectedTable.tableNumber}
+              </h2>
               <p className="text-gray-600 mb-6">{selectedTable.area}</p>
-              
+
               {selectedTable.qrCodeUrl && (
                 <div className="bg-gray-50 p-6 rounded-lg mb-6 inline-block">
-                  <img 
-                    src={selectedTable.qrCodeUrl} 
+                  <img
+                    src={selectedTable.qrCodeUrl}
                     alt={`QR Code Bàn ${selectedTable.tableNumber}`}
                     className="w-[300px] h-[300px] object-contain"
                   />
                 </div>
               )}
-              
+
               <p className="text-sm text-gray-500 mb-6">
-                Ngày tạo: {new Date(selectedTable.qrGeneratedAt || selectedTable.createdAt).toLocaleDateString('vi-VN')}
+                Ngày tạo:{" "}
+                {new Date(
+                  selectedTable.qrGeneratedAt || selectedTable.createdAt
+                ).toLocaleDateString("vi-VN")}
               </p>
-              
+
               <div className="grid grid-cols-3 gap-3 mb-4">
                 <button
                   onClick={() => handleDownloadPNG(selectedTable)}
@@ -455,7 +538,7 @@ const QRManagementScreen = () => {
                   <span className="text-xs font-medium">In</span>
                 </button>
               </div>
-              
+
               <button
                 onClick={() => setShowQRModal(false)}
                 className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
@@ -475,10 +558,9 @@ const QRManagementScreen = () => {
               {selectedTable.hasQR ? "Tạo Lại Mã QR?" : "Tạo Mã QR?"}
             </h2>
             <p className="text-gray-600 mb-6">
-              {selectedTable.hasQR 
+              {selectedTable.hasQR
                 ? `Bạn có chắc muốn tạo lại mã QR cho Bàn ${selectedTable.tableNumber}? Mã QR cũ sẽ không còn hoạt động.`
-                : `Tạo mã QR mới cho Bàn ${selectedTable.tableNumber}?`
-              }
+                : `Tạo mã QR mới cho Bàn ${selectedTable.tableNumber}?`}
             </p>
             <div className="flex gap-3">
               <button

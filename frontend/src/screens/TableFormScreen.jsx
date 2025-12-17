@@ -1,7 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Save, MapPin, Users, FileText, Home } from "lucide-react";
-import { getTableById, createTable, updateTable, getAllTables } from "../data/mockTables";
+
+
+const BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/admin/tables`;
+
+const HEADERS = {
+  "Content-Type": "application/json",
+  "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+};
 
 const TableFormScreen = () => {
   const navigate = useNavigate();
@@ -33,46 +40,37 @@ const TableFormScreen = () => {
   }, [id]);
 
     const fetchTableData = async () => {
-      try {
-        setIsFetching(true);
+    try {
+      setIsFetching(true);
 
-        const response = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/api/admin/tables/${id}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              "x-tenant-id": import.meta.env.VITE_TENANT_ID,
-            },
-          }
-        );
+      const response = await fetch(`${BASE_URL}/${id}`, {
+        method: "GET",
+        headers: HEADERS,
+      });
 
-        const result = await response.json();
+      const result = await response.json();
 
-        if (!result.success || !result.data) {
-          alert("Không tìm thấy bàn");
-          navigate("/tables");
-          return;
-        }
-
-        const data = result.data;
-
-        // Đổ dữ liệu lên form
-        setFormData({
-          tableNumber: data.tableNumber ?? "",
-          capacity: data.capacity ?? "",
-          area: data.location ?? "",       
-          description: data.description ?? "",
-          isActive: data.isActive ?? true,
-        });
-      } catch (error) {
-        console.error("Error fetching table:", error);
-        alert("Không thể tải thông tin bàn");
-        navigate("/tables");
-      } finally {
-        setIsFetching(false);
+      if (!response.ok || !result.success || !result.data) {
+        throw new Error(result.message || "Không tìm thấy bàn");
       }
-    };
+
+      const data = result.data;
+
+      setFormData({
+        tableNumber: data.tableNumber ?? "",
+        capacity: data.capacity ?? "",
+        area: data.location ?? "",
+        description: data.description ?? "",
+        isActive: data.isActive ?? true,
+      });
+    } catch (error) {
+      console.error(error);
+      alert(error.message);
+      navigate("/tables");
+    } finally {
+      setIsFetching(false);
+    }
+  };
 
 
   const handleInputChange = (field, value) => {
@@ -94,12 +92,15 @@ const TableFormScreen = () => {
     const newErrors = {};
     let isValid = true;
 
-    // Validate table number
+    // Validate table name
     if (!formData.tableNumber || formData.tableNumber.trim() === "") {
-      newErrors.tableNumber = "Vui lòng nhập số bàn";
+      newErrors.tableNumber = "Vui lòng nhập tên bàn";
       isValid = false;
-    } else if (isNaN(formData.tableNumber) || parseInt(formData.tableNumber) <= 0) {
-      newErrors.tableNumber = "Số bàn phải là số nguyên dương";
+    } else if (formData.tableNumber.trim().length < 2) {
+      newErrors.tableNumber = "Tên bàn phải có ít nhất 2 ký tự";
+      isValid = false;
+    } else if (formData.tableNumber.trim().length > 50) {
+      newErrors.tableNumber = "Tên bàn tối đa 50 ký tự";
       isValid = false;
     }
 
@@ -125,70 +126,108 @@ const TableFormScreen = () => {
     return isValid;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const normalizeTableNumber = (value) => {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " "); // gộp nhiều khoảng trắng
+  };
 
-    if (!validateForm()) {
+  const checkDuplicateTableNumber = async () => {
+  const response = await fetch(BASE_URL, {
+    method: "GET",
+    headers: HEADERS,
+  });
+
+  const result = await response.json();
+
+  if (!response.ok || !result.success) {
+    throw new Error("Không thể kiểm tra số bàn");
+  }
+
+  return result.data || [];
+  };
+
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  if (!validateForm()) return;
+
+  setIsLoading(true);
+
+  try {
+    const inputTableNumberNormalized = normalizeTableNumber(
+      formData.tableNumber
+    );
+
+    // GET ALL TABLES → CHECK TRÙNG (CASE-INSENSITIVE)
+    const tables = await checkDuplicateTableNumber();
+
+    const isDuplicate = tables.some((t) => {
+      const existingNormalized = normalizeTableNumber(t.tableNumber);
+
+      if (isEditMode) {
+        return (
+          existingNormalized === inputTableNumberNormalized &&
+          String(t.id) !== String(id)
+        );
+      }
+
+      return existingNormalized === inputTableNumberNormalized;
+    });
+
+    if (isDuplicate) {
+      setErrors((prev) => ({
+        ...prev,
+        tableNumber: "Số / tên bàn đã tồn tại (không phân biệt hoa thường)",
+      }));
+      setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
+    // 📦 PAYLOAD
+    const payload = {
+      tableNumber: formData.tableNumber.trim(),
+      capacity: Number(formData.capacity),
+      location: formData.area.trim(),
+      description: formData.description.trim(),
+      isActive: formData.isActive,
+    };
 
-    try {
-      
-      const tableData = {
-        tableNumber: parseInt(formData.tableNumber),
-        capacity: parseInt(formData.capacity),
-        area: formData.area.trim(),
-        description: formData.description.trim() || "",
-        isActive: formData.isActive,
-      };
-      
-      // Check if table number already exists (only for new tables)
-      if (!isEditMode) {
-        const existingTables = getAllTables();
-        const isDuplicate = existingTables.some(
-          t => t.tableNumber === tableData.tableNumber
-        );
-        
-        if (isDuplicate) {
-          setErrors((prev) => ({
-            ...prev,
-            tableNumber: "Số bàn đã tồn tại",
-          }));
-          setIsLoading(false);
-          return;
-        }
-        
-        createTable(tableData);
-      } else {
-        // Check if table number conflicts with other tables
-        const existingTables = getAllTables();
-        const isDuplicate = existingTables.some(
-          t => t.tableNumber === tableData.tableNumber && t.id !== id
-        );
-        
-        if (isDuplicate) {
-          setErrors((prev) => ({
-            ...prev,
-            tableNumber: "Số bàn đã tồn tại",
-          }));
-          setIsLoading(false);
-          return;
-        }
-        
-        updateTable(id, tableData);
+    const response = await fetch(
+      isEditMode ? `${BASE_URL}/${id}` : BASE_URL,
+      {
+        method: isEditMode ? "PUT" : "POST",
+        headers: HEADERS,
+        body: JSON.stringify(payload),
       }
+    );
 
-      // Success - navigate back to tables list
-      navigate("/tables");
-    } catch (error) {
-      console.error("Error saving table:", error);
-      alert("Có lỗi xảy ra");
-    } finally {
-      setIsLoading(false);
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || "Lưu bàn thất bại");
     }
-  };
+
+    navigate("/tables");
+  } catch (error) {
+    console.error("Save table error:", error);
+
+    // fallback nếu backend vẫn bắt trùng
+    if (error.message?.toLowerCase().includes("table")) {
+      setErrors((prev) => ({
+        ...prev,
+        tableNumber: "Số / tên bàn đã tồn tại",
+      }));
+    } else {
+      alert(error.message || "Có lỗi xảy ra");
+    }
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   const handleCancel = () => {
     navigate("/tables");
@@ -229,27 +268,31 @@ const TableFormScreen = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Table Number */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Số Bàn <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  value={formData.tableNumber}
-                  onChange={(e) => handleInputChange("tableNumber", e.target.value)}
-                  className={`w-full px-4 py-3 pl-12 border-2 rounded-lg focus:outline-none transition-all ${
-                    errors.tableNumber
-                      ? "border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-100"
-                      : "border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                  }`}
-                  placeholder="Nhập số bàn (VD: 1, 2, 3...)"
-                />
-                <Home
-                  className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 ${
-                    errors.tableNumber ? "text-red-400" : "text-gray-400"
-                  }`}
-                />
-              </div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Tên Bàn <span className="text-red-500">*</span>
+                </label>
+
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={formData.tableNumber}
+                    onChange={(e) =>
+                      handleInputChange("tableNumber", e.target.value)
+                    }
+                    className={`w-full px-4 py-3 pl-12 border-2 rounded-lg focus:outline-none transition-all ${
+                      errors.tableNumber
+                        ? "border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-100"
+                        : "border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    }`}
+                    placeholder="VD: Table 1, Table Vip 1, ...."
+                  />
+
+                  <Home
+                    className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 ${
+                      errors.tableNumber ? "text-red-400" : "text-gray-400"
+                    }`}
+                  />
+                </div>
               {errors.tableNumber && (
                 <p className="text-red-600 text-sm mt-1">{errors.tableNumber}</p>
               )}
