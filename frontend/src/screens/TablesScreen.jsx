@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+
 import { Plus, Filter, Search, Grid, List, QrCode, Users, MapPin, Check, X, Calendar, UserCheck, UserX } from "lucide-react";
 import { getAllTables, updateTable } from "../data/mockTables";
 import TableStatus from "../../constants/tableStatus";
 import TableLocation from "../../constants/tableLocation";
+
 
 const TablesScreen = () => {
   const navigate = useNavigate();
@@ -11,7 +13,9 @@ const TablesScreen = () => {
   const [filteredTables, setFilteredTables] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState("grid"); // grid or list
-  
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [selectedTable, setSelectedTable] = useState(null);
+
   // Filter states
   const [statusFilter, setStatusFilter] = useState(""); 
   const [areaFilter, setAreaFilter] = useState("");
@@ -35,6 +39,7 @@ const TablesScreen = () => {
       label: loc,
     })),
   ];
+
 
 
   // Fetch tables from API
@@ -81,6 +86,7 @@ const TablesScreen = () => {
     }
     } catch (error) {
       console.error("Fetch tables error:", error);
+
       setTables([]);
     } finally {
       setIsLoading(false);
@@ -92,11 +98,13 @@ const TablesScreen = () => {
   useEffect(() => {
     let result = [...tables];
 
+
     // Filter by search term (client-side)
     if (searchTerm) {
       result = result.filter(
         (table) =>
           table.tableNumber.toString().includes(searchTerm) ||
+
           table.location?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
@@ -127,6 +135,7 @@ const TablesScreen = () => {
 
         // 2️⃣ cùng loại → sort theo số tăng dần
         return A.number - B.number;
+
       }
 
       if (sortBy === "capacity") {
@@ -144,40 +153,46 @@ const TablesScreen = () => {
     navigate("/tables/new");
   };
 
+
   const handleEditTable = (table) => {
     navigate(`/tables/edit/${table.id}`);
+
   };
 
-  const toggleTableStatus = async (tableId, currentStatus) => {
-    try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      updateTable(tableId, { isActive: !currentStatus });
-      
-      // Refresh tables
-      fetchTables();
-    } catch (error) {
-      console.error("Error updating table status:", error);
+  const handleDownloadQR = () => {
+    const canvas = document.getElementById("qr-code-canvas");
+    if (canvas) {
+      const url = canvas.toDataURL("image/png");
+      const link = document.createElement("a");
+      link.download = `table-${selectedTable.tableNumber}-qr.png`;
+      link.href = url;
+      link.click();
     }
   };
 
-  const toggleOccupiedStatus = async (tableId, currentStatus) => {
-    try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      const newStatus = currentStatus === TableStatus.OCCUPIED 
-        ? TableStatus.AVAILABLE 
-        : TableStatus.OCCUPIED;
-      
-      updateTable(tableId, { status: newStatus });
-      
-      // Refresh tables
-      fetchTables();
-    } catch (error) {
-      console.error("Error updating occupied status:", error);
-    }
+  const getQRValue = (table) => {
+    if (!table.qrToken) return "";
+    // Generate QR code URL with qrToken
+    return `${window.location.origin}/menu?token=${table.qrToken}&table=${table.tableNumber}`;
+  };
+
+  const getStatusBadge = (status) => {
+    const statusMap = {
+      Active: {
+        bg: "bg-green-100",
+        text: "text-green-700",
+        label: "Hoạt động",
+      },
+      Inactive: {
+        bg: "bg-gray-100",
+        text: "text-gray-700",
+        label: "Không hoạt động",
+      },
+      Occupied: { bg: "bg-red-100", text: "text-red-700", label: "Có khách" },
+      Available: { bg: "bg-blue-100", text: "text-blue-700", label: "Trống" },
+    };
+    const badge = statusMap[status] || statusMap["Inactive"];
+    return badge;
   };
 
   if (isLoading) {
@@ -193,12 +208,12 @@ const TablesScreen = () => {
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-800">Quản Lý Bàn</h1>
-              <p className="text-gray-600 mt-1">
-                Tổng số: {filteredTables.length} bàn
-              </p>
-            </div>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800">Quản Lý Bàn</h1>
+            <p className="text-gray-600 mt-1">
+              Tổng số: {filteredTables.length} bàn
+            </p>
+          </div>
           <button
             onClick={handleCreateTable}
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
@@ -229,11 +244,13 @@ const TablesScreen = () => {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
+
               {statusOptions.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
                 ))}
+
             </select>
 
             {/* Area Filter */}
@@ -301,114 +318,87 @@ const TablesScreen = () => {
       ) : viewMode === "grid" ? (
         // Grid View
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredTables.map((table) => (
-            <div
-              key={table.id}
-              className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow p-6 border border-gray-200 flex flex-col"
-            >
-              {/* Table Header */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
+          {filteredTables.map((table) => {
+            const statusBadge = getStatusBadge(table.status);
+            return (
+              <div
+                key={table.tableNumber}
+                className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow p-6 border border-gray-200 flex flex-col"
+              >
+                {/* Table Header */}
+                <div className="flex items-center justify-between mb-4">
                   <h3 className="text-2xl font-bold text-gray-800">
                     {table.tableNumber}
                   </h3>
                   <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      table.status === TableStatus.OCCUPIED
-                        ? "bg-red-100 text-red-700"
-                        : "bg-green-100 text-green-700"
-                    }`}
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${statusBadge.bg} ${statusBadge.text}`}
                   >
-                    {table.status === TableStatus.OCCUPIED ? "Có khách" : "Trống"}
+                    {statusBadge.label}
                   </span>
                 </div>
-                <span
-                  className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    table.isActive
-                      ? "bg-green-100 text-green-700"
-                      : "bg-red-100 text-red-700"
-                  }`}
-                >
-                  {table.isActive ? "Hoạt động" : "Không hoạt động"}
-                </span>
-              </div>
-              
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2 text-gray-600">
+
+                {/* Location */}
+                <div className="flex items-center gap-2 mb-2 text-gray-600">
                   <MapPin className="w-4 h-4" />
+
                   <span className="text-sm">{table.location || "Chưa xác định"}</span>
                 </div>
                 {table.qrToken != null && (
                   <QrCode className="w-5 h-5 text-blue-600" />
+
                 )}
-              </div>
 
-              {/* Capacity */}
-              <div className="flex items-center gap-2 mb-2">
-                <Users className="w-5 h-5 text-gray-500" />
-                <span className="text-gray-700">
-                  Sức chứa: {table.capacity} người
-                </span>
-              </div>
+                {/* QR Token Created Date */}
+                {table.qrTokenCreatedAt && (
+                  <div className="flex items-center gap-2 mb-2">
+                    <Calendar className="w-5 h-5 text-gray-500" />
+                    <span className="text-xs text-gray-600">
+                      QR:{" "}
+                      {new Date(table.qrTokenCreatedAt).toLocaleDateString(
+                        "vi-VN"
+                      )}
+                    </span>
+                  </div>
+                )}
 
-              {/* Created Date */}
-              <div className="flex items-center gap-2 mb-4">
-                <Calendar className="w-5 h-5 text-gray-500" />
-                <span className="text-sm text-gray-600">
-                  {new Date(table.createdAt).toLocaleDateString('vi-VN', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric'
-                  })}
-                </span>
-              </div>
+                {/* Current Order */}
+                {table.currentOrderId && (
+                  <div className="mb-2">
+                    <span className="text-xs text-orange-600 font-medium">
+                      Đơn hàng: #{table.currentOrderId}
+                    </span>
+                  </div>
+                )}
 
-              {/* Description */}
-              {table.description && (
-                <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                  {table.description}
-                </p>
-              )}
+                {/* Description */}
+                {table.description && (
+                  <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                    {table.description}
+                  </p>
+                )}
 
-              {/* Spacer to push actions to bottom */}
-              <div className="flex-1"></div>
+                {/* Spacer */}
+                <div className="flex-1"></div>
 
-              {/* Actions */}
-              <div className="space-y-2 pt-4 border-t border-gray-100 mt-auto">
-                <button
-                  onClick={() => handleEditTable(table.id)}
-                  className="w-full px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
-                >
-                  Chỉnh sửa
-                </button>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => toggleOccupiedStatus(table.id, table.status)}
-                    className={`px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
-                      table.status === TableStatus.OCCUPIED
-                        ? "bg-red-50 text-red-600 hover:bg-red-100"
-                        : "bg-green-50 text-green-600 hover:bg-green-100"
-                    }`}
-                    title={table.status === TableStatus.OCCUPIED ? "Đánh dấu trống" : "Đánh dấu có khách"}
-                    disabled={!table.isActive}
-                  >
-                    {table.status === TableStatus.OCCUPIED ? "Trống" : "Có khách"}
-                  </button>
-                  <button
-                    onClick={() => toggleTableStatus(table.id, table.isActive)}
-                    className={`px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
-                      table.isActive
-                        ? "bg-red-50 text-red-600 hover:bg-red-100"
-                        : "bg-green-50 text-green-600 hover:bg-green-100"
-                    }`}
-                    title={table.isActive ? "Vô hiệu hóa" : "Kích hoạt"}
-                  >
-                    {table.isActive ? "Vô hiệu hóa" : "Kích hoạt"}
-                  </button>
+                {/* Actions */}
+                <div className="space-y-2 pt-4 border-t border-gray-100 mt-auto">
+                  {table.qrToken ? (
+                    <button
+                      onClick={() => handleGenerateQR(table)}
+                      className="w-full px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium flex items-center justify-center gap-2"
+                    >
+                      <QrCode className="w-4 h-4" />
+                      Xem QR Code
+                    </button>
+                  ) : (
+                    <div className="w-full px-3 py-2 bg-gray-50 text-gray-400 rounded-lg text-sm text-center">
+                      Chưa có QR Code
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         // List View
@@ -426,13 +416,13 @@ const TablesScreen = () => {
                   Sức Chứa
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ngày Tạo
+                  Ngày Tạo QR
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Trạng Thái
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tình Trạng
+                  Đơn Hàng
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   QR Code
@@ -443,99 +433,169 @@ const TablesScreen = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {filteredTables.map((table) => (
-                <tr key={table.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-lg font-semibold text-gray-800">
-                      Bàn {table.tableNumber}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <MapPin className="w-4 h-4" />
-                      {table.area || "Chưa xác định"}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <Users className="w-4 h-4" />
-                      {table.capacity} người
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <Calendar className="w-4 h-4" />
-                      <span className="text-sm">
-                        {new Date(table.createdAt).toLocaleDateString('vi-VN', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric'
-                        })}
+              {filteredTables.map((table) => {
+                const statusBadge = getStatusBadge(table.status);
+                return (
+                  <tr key={table.tableNumber} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-lg font-semibold text-gray-800">
+                        {table.tableNumber}
                       </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        table.isActive
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
-                      }`}
-                    >
-                      {table.isActive ? "Hoạt động" : "Không hoạt động"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        table.status === TableStatus.OCCUPIED
-                          ? "bg-red-100 text-red-700"
-                          : "bg-green-100 text-green-700"
-                      }`}
-                    >
-                      {table.status === TableStatus.OCCUPIED ? "Có khách" : "Trống"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">                    {table.hasQR ? (
-                      <QrCode className="w-5 h-5 text-blue-600" />
-                    ) : (
-                      <span className="text-gray-400 text-sm">Chưa có</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <div className="flex gap-2 justify-end">
-                      <button
-                        onClick={() => handleEditTable(table.id)}
-                        className="px-3 py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors text-sm font-medium"
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2 text-gray-700">
+                        <MapPin className="w-4 h-4" />
+                        {table.location || "Chưa xác định"}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2 text-gray-700">
+                        <Users className="w-4 h-4" />
+                        {table.capacity} người
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <Calendar className="w-4 h-4" />
+                        <span className="text-sm">
+                          {table.qrTokenCreatedAt
+                            ? new Date(
+                                table.qrTokenCreatedAt
+                              ).toLocaleDateString("vi-VN", {
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric",
+                              })
+                            : "N/A"}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${statusBadge.bg} ${statusBadge.text}`}
                       >
-                        Sửa
-                      </button>
-                      <button
-                        onClick={() => toggleOccupiedStatus(table.id, table.status)}
-                        className={`px-3 py-1 rounded transition-colors text-sm font-medium ${
-                          table.status === TableStatus.OCCUPIED
-                            ? "bg-red-50 text-red-600 hover:bg-red-100"
-                            : "bg-green-50 text-green-600 hover:bg-green-100"
-                        }`}
-                        disabled={!table.isActive}
-                      >
-                        {table.status === TableStatus.OCCUPIED ? "Trống" : "Có khách"}
-                      </button>
-                      <button
-                        onClick={() => toggleTableStatus(table.id, table.isActive)}
-                        className={`px-3 py-1 rounded transition-colors text-sm font-medium ${
-                          table.isActive
-                            ? "bg-red-50 text-red-600 hover:bg-red-100"
-                            : "bg-green-50 text-green-600 hover:bg-green-100"
-                        }`}
-                      >
-                        {table.isActive ? "Vô hiệu hóa" : "Kích hoạt"}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        {statusBadge.label}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {table.currentOrderId ? (
+                        <span className="text-xs text-orange-600 font-medium">
+                          #{table.currentOrderId}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400 text-sm">-</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {table.qrToken ? (
+                        <button
+                          onClick={() => handleGenerateQR(table)}
+                          className="text-blue-600 hover:text-blue-800"
+                        >
+                          <QrCode className="w-5 h-5" />
+                        </button>
+                      ) : (
+                        <span className="text-gray-400 text-sm">Chưa có</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <div className="flex gap-2 justify-end">
+                        {table.qrToken && (
+                          <button
+                            onClick={() => handleGenerateQR(table)}
+                            className="px-3 py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors text-sm font-medium"
+                          >
+                            QR
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* QR Code Modal */}
+      {showQRModal && selectedTable && (
+        <div
+          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowQRModal(false)}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-md w-full p-8 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                QR Code - {selectedTable.tableNumber}
+              </h2>
+              <p className="text-gray-600 text-sm">Quét mã để truy cập menu</p>
+            </div>
+
+            {/* QR Code Display */}
+            <div className="bg-white p-6 rounded-xl border-4 border-blue-100 flex justify-center mb-6">
+              <QRCodeCanvas
+                id="qr-code-canvas"
+                value={getQRValue(selectedTable)}
+                size={256}
+                level="H"
+                includeMargin={true}
+              />
+            </div>
+
+            {/* Table Info */}
+            <div className="bg-gray-50 rounded-lg p-4 mb-6 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Bàn:</span>
+                <span className="font-semibold text-gray-800">
+                  {selectedTable.tableNumber}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Khu vực:</span>
+                <span className="font-semibold text-gray-800">
+                  {selectedTable.location}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Sức chứa:</span>
+                <span className="font-semibold text-gray-800">
+                  {selectedTable.capacity} người
+                </span>
+              </div>
+              {selectedTable.qrTokenCreatedAt && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Ngày tạo QR:</span>
+                  <span className="font-semibold text-gray-800">
+                    {new Date(
+                      selectedTable.qrTokenCreatedAt
+                    ).toLocaleDateString("vi-VN")}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <button
+                onClick={handleDownloadQR}
+                className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors font-medium"
+              >
+                <Download className="w-5 h-5" />
+                Tải xuống
+              </button>
+              <button
+                onClick={() => setShowQRModal(false)}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-3 rounded-lg transition-colors font-medium"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
