@@ -32,35 +32,48 @@ const TableFormScreen = () => {
     }
   }, [id]);
 
-  const fetchTableData = async () => {
-    try {
-      setIsFetching(true);
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      const data = getTableById(id);
-      
-      if (!data) {
-        alert("Không tìm thấy bàn");
+    const fetchTableData = async () => {
+      try {
+        setIsFetching(true);
+
+        const response = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/api/admin/tables/${id}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+            },
+          }
+        );
+
+        const result = await response.json();
+
+        if (!result.success || !result.data) {
+          alert("Không tìm thấy bàn");
+          navigate("/tables");
+          return;
+        }
+
+        const data = result.data;
+
+        // Đổ dữ liệu lên form
+        setFormData({
+          tableNumber: data.tableNumber ?? "",
+          capacity: data.capacity ?? "",
+          area: data.location ?? "",       
+          description: data.description ?? "",
+          isActive: data.isActive ?? true,
+        });
+      } catch (error) {
+        console.error("Error fetching table:", error);
+        alert("Không thể tải thông tin bàn");
         navigate("/tables");
-        return;
+      } finally {
+        setIsFetching(false);
       }
-      
-      setFormData({
-        tableNumber: data.tableNumber,
-        capacity: data.capacity,
-        area: data.area || "",
-        description: data.description || "",
-        isActive: data.isActive,
-      });
-    } catch (error) {
-      console.error("Error fetching table:", error);
-      alert("Không thể tải thông tin bàn");
-      navigate("/tables");
-    } finally {
-      setIsFetching(false);
-    }
-  };
+    };
+
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({
@@ -122,8 +135,6 @@ const TableFormScreen = () => {
     setIsLoading(true);
 
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
       
       const tableData = {
         tableNumber: parseInt(formData.tableNumber),
