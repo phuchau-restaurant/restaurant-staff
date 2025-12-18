@@ -9,8 +9,9 @@ export const MOCK_ORDERS = [
         name: 'Bò Phô Mai Đặc Biệt', 
         quantity: 2, 
         image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200&q=80', 
-        notes: 'Ít cay, không hành', 
-        station: 'grill' 
+        notes: 'Ít cay, không hành, aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 
+        station: 'grill',
+        completed: true  // Ready - có thể phục vụ
       },
       { 
         id: 2, 
@@ -18,13 +19,14 @@ export const MOCK_ORDERS = [
         quantity: 1, 
         image: 'https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?w=200&q=80', 
         notes: '', 
-        station: 'fryer' 
+        station: 'fryer',
+        completed: false  // Pending - đang nấu
       }
     ],
     server: 'Nguyễn Văn A',
-    status: 'new',
+    status: 'cooking',
     orderTime: new Date(Date.now() - 2 * 60000),
-    startTime: null,
+    startTime: new Date(Date.now() - 1 * 60000),
     completeTime: null
   },
   {
@@ -38,7 +40,17 @@ export const MOCK_ORDERS = [
         quantity: 3, 
         image: 'https://images.unsplash.com/photo-1615557960916-5f4791effe9d?w=200&q=80', 
         notes: 'Thêm sốt', 
-        station: 'fryer' 
+        station: 'fryer',
+        completed: true  // Ready - có thể phục vụ
+      },
+      { 
+        id: 4, 
+        name: 'Salad Trộn', 
+        quantity: 2, 
+        image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=200&q=80', 
+        notes: '', 
+        station: 'salad',
+        completed: true  // Ready - có thể phục vụ
       }
     ],
     server: 'Trần Thị B',
@@ -53,20 +65,22 @@ export const MOCK_ORDERS = [
     tableNumber: 8,
     items: [
       { 
-        id: 4, 
+        id: 5, 
         name: 'Trà Đào Cam Sả', 
         quantity: 2, 
         image: 'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=200&q=80', 
         notes: 'Ít đường', 
-        station: 'bar' 
+        station: 'bar',
+        completed: false  // Pending - đang nấu
       },
       { 
-        id: 5, 
+        id: 6, 
         name: 'Cà Phê Sữa Đá', 
         quantity: 1, 
         image: 'https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=200&q=80', 
         notes: '', 
-        station: 'bar' 
+        station: 'bar',
+        completed: false  // Pending - đang nấu
       }
     ],
     server: 'Lê Văn C',
@@ -81,12 +95,13 @@ export const MOCK_ORDERS = [
     tableNumber: 3,
     items: [
       { 
-        id: 6, 
+        id: 7, 
         name: 'Bánh Kem Dâu', 
         quantity: 1, 
         image: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=200&q=80', 
         notes: '', 
-        station: 'dessert' 
+        station: 'dessert',
+        completed: false  // Pending - chờ xử lý
       }
     ],
     server: 'Nguyễn Văn A',

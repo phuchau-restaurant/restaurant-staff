@@ -1,6 +1,6 @@
 import React from 'react';
 import { CheckCircle } from 'lucide-react';
-import OrderCard from './OrderCard';
+import OrderCard from '../OrderCard/OrderCard';
 
 const OrdersGrid = ({ 
   orders, 
@@ -11,6 +11,7 @@ const OrdersGrid = ({
   handleComplete, 
   handleCancel, 
   handleRecall,
+  handleCompleteItem,
   viewMode 
 }) => {
   if (orders.length === 0) {
@@ -39,6 +40,7 @@ const OrdersGrid = ({
           handleComplete={handleComplete}
           handleCancel={handleCancel}
           handleRecall={handleRecall}
+          handleCompleteItem={handleCompleteItem}
           viewMode={viewMode}
         />
       ))}
