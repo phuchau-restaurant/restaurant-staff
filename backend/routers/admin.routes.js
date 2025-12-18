@@ -1,4 +1,4 @@
-// backend/routers/admin.routes.js  
+// backend/routers/admin.routes.js
 import express from "express";
 import { adminController } from "../containers/adminContainer.js";
 import { tablesController } from "../containers/tablesContainer.js";
@@ -33,6 +33,9 @@ router.use(authMiddleware);
 
 // Tạo QR code cho bàn (chỉ admin)
 router.post("/tables/:id/qr/generate", adminController.generateTableQR);
+
+// Xem QR code (view/preview)
+router.get("/tables/:id/qr/view", adminController.viewTableQR);
 
 // Download QR code (PNG hoặc PDF)
 router.get("/tables/:id/qr/download", adminController.downloadTableQR);

@@ -57,6 +57,27 @@ export default class AdminController {
   };
 
   /**
+   * View/Preview QR code cho bàn
+   * GET /admin/tables/:id/qr/view
+   */
+  viewTableQR = async (req, res, next) => {
+    try {
+      const tableId = req.params.id;
+      const tenantId = req.tenantId; // Từ tenantMiddleware
+
+      // Gọi service để lấy QR code
+      const result = await this.adminService.viewTableQR(tableId, tenantId);
+
+      res.status(200).json({
+        message: "QR code retrieved successfully",
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
    * Download QR code
    * GET /admin/tables/:id/qr/download?format=png|pdf
    */

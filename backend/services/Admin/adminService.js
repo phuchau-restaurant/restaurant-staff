@@ -108,6 +108,78 @@ export default class AdminService {
   }
 
   /**
+   * View/Preview QR code cho bàn (không tạo mới)
+   * @param {string} tableId - ID của bàn
+   * @param {string} tenantId - ID của tenant
+   * @returns {Object} - Thông tin QR code và bàn
+   */
+  async viewTableQR(tableId, tenantId) {
+    try {
+      // 1. Lấy bàn + qrToken
+      const table = await this.tablesRepository.getByIdAndTenant(
+        tableId,
+        tenantId
+      );
+
+      if (!table) {
+        const error = new Error(
+          "Table not found or does not belong to this tenant"
+        );
+        error.statusCode = 404;
+        throw error;
+      }
+
+      if (!table.qrToken) {
+        const error = new Error(
+          "QR code not generated for this table yet. Please generate first."
+        );
+        error.statusCode = 404;
+        throw error;
+      }
+
+      // 2. Ký lại JWT từ qrToken đã có
+      const now = new Date();
+      const expiresAt = new Date(now);
+      expiresAt.setDate(expiresAt.getDate() + QR_EXPIRE_DAYS);
+
+      const tokenPayload = {
+        tableId: table.id,
+        tenantId: tenantId,
+        qrToken: table.qrToken, // Sử dụng token đã có
+        createdAt: table.qrTokenCreatedAt || now.toISOString(),
+        expiresAt: expiresAt.toISOString(),
+      };
+
+      const jwtToken = jwt.sign(tokenPayload, QR_SECRET, {
+        expiresIn: `${QR_EXPIRE_DAYS}d`,
+      });
+
+      // 3. Tạo URL cho customer login
+      const customerLoginUrl = `${FRONTEND_URL}/customer/login?token=${jwtToken}`;
+
+      // 4. Generate QR image
+      const qrCodeDataURL = await QRCode.toDataURL(customerLoginUrl, {
+        errorCorrectionLevel: "H",
+        margin: 1,
+        width: 300,
+      });
+
+      // 5. Trả về thông tin
+      return {
+        tableId: table.id,
+        tableNumber: table.tableNumber,
+        qrCode: qrCodeDataURL,
+        customerLoginUrl: customerLoginUrl,
+        qrTokenCreatedAt: table.qrTokenCreatedAt,
+        expiresAt: expiresAt.toISOString(),
+      };
+    } catch (error) {
+      if (!error.statusCode) error.statusCode = 500;
+      throw error;
+    }
+  }
+
+  /**
    * Xác thực QR token khi khách hàng scan
    * @param {string} token - JWT token từ QR code
    * @returns {Object} - Thông tin bàn và tenant
