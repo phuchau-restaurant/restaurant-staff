@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import QRStats from "./QrManagement/QRStats";
 import QRGridView from "./QrManagement/QRGridView";
 import QRListView from "./QrManagement/QRListView";
@@ -321,7 +321,7 @@ const QRManagementScreen = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="text-gray-500">Đang tải...</div>
+        <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
       </div>
     );
   }

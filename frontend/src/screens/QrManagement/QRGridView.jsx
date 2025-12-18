@@ -1,4 +1,4 @@
-import { QrCode, Download, Printer, RefreshCw } from "lucide-react";
+import { QrCode, Download, Printer, RefreshCw, Loader2 } from "lucide-react";
 
 const QRGridView = ({
   tables,
@@ -36,7 +36,7 @@ const QRGridView = ({
             <div className="flex justify-center mb-4 bg-gray-50 p-4 rounded-lg">
               {table.qrLoading ? (
                 <div className="w-[180px] h-[180px] flex items-center justify-center">
-                  <div className="text-gray-500 text-sm">Đang tải...</div>
+                  <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
                 </div>
               ) : table.qrCodeData?.qrCode ? (
                 <img
