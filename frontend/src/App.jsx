@@ -20,7 +20,6 @@ import TestScreen from "./screens/TestScreen";
 import OnboardingScreen from "./screens/OnboardingScreen";
 import CustomerLoginScreen from "./screens/CustomerLoginScreen";
 import TablesScreen from "./screens/TablesScreen";
-import QRManagementScreen from "./screens/QRManagementScreen";
 
 function CustomerRoutes() {
   const location = useLocation();
@@ -63,7 +62,6 @@ function App() {
             }
           />
           <Route path="/tables" element={<TablesScreen />} />
-          <Route path="/tables/qr" element={<QRManagementScreen />} />
           <Route
             path="/test"
             element={
