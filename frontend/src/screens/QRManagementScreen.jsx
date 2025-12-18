@@ -1,25 +1,92 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import QRStats from "./QrManagement/QRStats";
 import QRGridView from "./QrManagement/QRGridView";
 import QRListView from "./QrManagement/QRListView";
 import RegenerateConfirmModal from "./QrManagement/RegenerateConfirmModal";
 import AlertModal from "../components/Modal/AlertModal";
+import QRFilterBar from "../components/qr/QRFilterBar";
 import { useAlert } from "../hooks/useAlert";
+import * as tableService from "../services/tableService";
+import { sortByTableNumber } from "../utils/tableUtils";
 
 const QRManagementScreen = () => {
-  const navigate = useNavigate();
   const [tables, setTables] = useState([]);
+  const [filteredTables, setFilteredTables] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState("grid"); // grid or list
   const [selectedTable, setSelectedTable] = useState(null);
   const { alert: alertState, showSuccess, showError, showWarning, showInfo, closeAlert } = useAlert();
 
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState("");
+  const [qrStatusFilter, setQRStatusFilter] = useState("all");
+  const [areaFilter, setAreaFilter] = useState("");
+  const [sortBy, setSortBy] = useState("tableNumber");
+  const [areaOptions, setAreaOptions] = useState([{ value: "", label: "Tất cả khu vực" }]);
+
   useEffect(() => {
     fetchTables();
+    fetchLocationOptions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    filterAndSortTables();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tables, searchTerm, qrStatusFilter, areaFilter, sortBy]);
+
+  const fetchLocationOptions = async () => {
+    try {
+      const options = await tableService.fetchLocationOptions();
+      setAreaOptions(options);
+    } catch (error) {
+      console.error("Error fetching area options:", error);
+    }
+  };
+
+  const filterAndSortTables = () => {
+    let result = [...tables];
+
+    // Filter theo search term
+    if (searchTerm) {
+      result = result.filter(
+        (table) =>
+          table.tableNumber?.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
+          table.area?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Filter theo QR status
+    if (qrStatusFilter === "generated") {
+      result = result.filter((table) => table.hasQR);
+    } else if (qrStatusFilter === "notGenerated") {
+      result = result.filter((table) => !table.hasQR);
+    }
+
+    // Filter theo khu vực
+    if (areaFilter) {
+      result = result.filter((table) => table.area === areaFilter);
+    }
+
+    // Sort
+    result.sort((a, b) => {
+      if (sortBy === "tableNumber") {
+        return sortByTableNumber(a, b);
+      }
+      if (sortBy === "area") {
+        return (a.area || "").localeCompare(b.area || "");
+      }
+      if (sortBy === "qrGeneratedAt") {
+        const dateA = new Date(a.qrGeneratedAt || 0);
+        const dateB = new Date(b.qrGeneratedAt || 0);
+        return dateB - dateA; // Mới nhất trước
+      }
+      return 0;
+    });
+
+    setFilteredTables(result);
+  };
 
   // TODO: [API INTEGRATION] Kết nối API lấy QR code cho từng bàn
   // Endpoint: GET /api/admin/tables/:id/qr/view
@@ -328,28 +395,35 @@ const QRManagementScreen = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
-      {/* Header */}
+      {/* QR Stats */}
       <div className="mb-6">
-        <button
-          onClick={() => navigate("/tables")}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-4 transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          Quay lại danh sách bàn
-        </button>
-
         <QRStats
           tables={tables}
-          viewMode={viewMode}
-          setViewMode={setViewMode}
           onDownloadAll={handleDownloadAll}
+        />
+      </div>
+
+      {/* Filter Bar */}
+      <div className="mb-6">
+        <QRFilterBar
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          qrStatusFilter={qrStatusFilter}
+          onQRStatusChange={setQRStatusFilter}
+          areaFilter={areaFilter}
+          onAreaChange={setAreaFilter}
+          areaOptions={areaOptions}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
         />
       </div>
 
       {/* QR Codes Display */}
       {viewMode === "grid" ? (
         <QRGridView
-          tables={tables}
+          tables={filteredTables}
           onDownloadPNG={handleDownloadPNG}
           onDownloadPDF={handleDownloadPDF}
           onPrint={handlePrint}
@@ -357,7 +431,7 @@ const QRManagementScreen = () => {
         />
       ) : (
         <QRListView
-          tables={tables}
+          tables={filteredTables}
           onDownloadPDF={handleDownloadPDF}
           onPrint={handlePrint}
           onRegenerateQR={handleRegenerateQR}

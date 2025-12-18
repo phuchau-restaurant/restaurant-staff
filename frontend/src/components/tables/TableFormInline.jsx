@@ -1,13 +1,16 @@
 import { useState, useEffect } from "react";
 import { Save, MapPin, Users, FileText, X } from "lucide-react";
 import TableStatus from "../../../constants/tableStatus";
-
-const BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/admin/tables`;
-
-const HEADERS = {
-  "Content-Type": "application/json",
-  "x-tenant-id": import.meta.env.VITE_TENANT_ID,
-};
+import AlertModal from "../Modal/AlertModal";
+import ConfirmModal from "../Modal/ConfirmModal";
+import { useAlert } from "../../hooks/useAlert";
+import * as tableService from "../../services/tableService";
+import {
+  DEACTIVATE_CONFIRMATION,
+  WARNING_MESSAGES,
+  SUCCESS_MESSAGES,
+  ERROR_MESSAGES,
+} from "../../constants/tableConstants";
 
 /**
  * TableFormInline - Form tạo/chỉnh sửa bàn hiển thị inline
@@ -17,8 +20,17 @@ const HEADERS = {
  */
 const TableFormInline = ({ tableId, onCancel, onSuccess }) => {
   const isEditMode = !!tableId;
+  const { alert, showSuccess, showError, showWarning, closeAlert } = useAlert();
 
   const [originalTableName, setOriginalTableName] = useState("");
+  const [originalStatus, setOriginalStatus] = useState(TableStatus.AVAILABLE);
+  const [pendingStatus, setPendingStatus] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+  });
   const [formData, setFormData] = useState({
     tableNumber: "",
     capacity: "",
@@ -50,15 +62,9 @@ const TableFormInline = ({ tableId, onCancel, onSuccess }) => {
 
   const fetchAvailableLocations = async () => {
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/appsettings?category=Location`,
-        { headers: HEADERS }
-      );
-      const result = await response.json();
-      if (result.success) {
-        const locations = (result.data || []).map((item) => item.value);
-        setAreas(locations);
-      }
+      const options = await tableService.fetchLocationOptions();
+      const locations = options.map((option) => option.value).filter((val) => val);
+      setAreas(locations);
     } catch (error) {
       console.error("Error fetching locations:", error);
     }
@@ -66,33 +72,26 @@ const TableFormInline = ({ tableId, onCancel, onSuccess }) => {
 
   const fetchTableData = async () => {
     try {
-      const response = await fetch(`${BASE_URL}/${tableId}`, { headers: HEADERS });
-      const result = await response.json();
-
-      if (result.success && result.data) {
-        const data = result.data;
-        setFormData({
-          tableNumber: data.tableNumber || "",
-          capacity: String(data.capacity ?? ""),
-          area: data.location || "",
-          description: data.description || "",
-          status: data.status || TableStatus.AVAILABLE,
-        });
-        setOriginalTableName(data.tableNumber || "");
-      }
+      const data = await tableService.fetchTableById(tableId);
+      const currentStatus = data.status || TableStatus.AVAILABLE;
+      setFormData({
+        tableNumber: data.tableNumber || "",
+        capacity: String(data.capacity ?? ""),
+        area: data.location || "",
+        description: data.description || "",
+        status: currentStatus,
+      });
+      setOriginalTableName(data.tableNumber || "");
+      setOriginalStatus(currentStatus);
     } catch (error) {
       console.error("Error fetching table:", error);
-      alert("Không thể tải thông tin bàn");
+      showError(ERROR_MESSAGES.FETCH_TABLE_FAILED);
     }
   };
 
   const checkDuplicateTableNumber = async (tableNumber) => {
     try {
-      const response = await fetch(`${BASE_URL}?tableNumber=${encodeURIComponent(tableNumber)}`, {
-        headers: HEADERS,
-      });
-      const result = await response.json();
-      return result.success && result.data && result.data.length > 0;
+      return await tableService.checkDuplicateTableNumber(tableNumber);
     } catch (error) {
       console.error("Error checking duplicate:", error);
       return false;
@@ -106,7 +105,7 @@ const TableFormInline = ({ tableId, onCancel, onSuccess }) => {
     // Validate table number
     const tableNumber = formData.tableNumber.trim();
     if (!tableNumber) {
-      newErrors.tableNumber = "Vui lòng nhập số bàn";
+      newErrors.tableNumber = "Vui lòng nhập tên bàn";
       isValid = false;
     } else {
       const inputNormalized = tableNumber.toLowerCase();
@@ -116,7 +115,7 @@ const TableFormInline = ({ tableId, onCancel, onSuccess }) => {
       if (shouldCheckDuplicate) {
         const isDuplicate = await checkDuplicateTableNumber(tableNumber);
         if (isDuplicate) {
-          newErrors.tableNumber = "Số bàn này đã tồn tại";
+          newErrors.tableNumber = "Tên bàn này đã tồn tại";
           isValid = false;
         }
       }
@@ -162,26 +161,18 @@ const TableFormInline = ({ tableId, onCancel, onSuccess }) => {
         status: formData.status,
       };
 
-      const url = isEditMode ? `${BASE_URL}/${tableId}` : BASE_URL;
-      const method = isEditMode ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method,
-        headers: HEADERS,
-        body: JSON.stringify(payload),
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        alert(isEditMode ? "Cập nhật bàn thành công!" : "Tạo bàn mới thành công!");
-        onSuccess?.();
+      if (isEditMode) {
+        await tableService.updateTable(tableId, payload);
+        showSuccess(SUCCESS_MESSAGES.TABLE_UPDATED);
       } else {
-        alert(result.message || "Có lỗi xảy ra");
+        await tableService.createTable(payload);
+        showSuccess(SUCCESS_MESSAGES.TABLE_CREATED);
       }
+
+      onSuccess?.();
     } catch (error) {
       console.error("Error submitting form:", error);
-      alert("Không thể lưu dữ liệu");
+      showError(error.message || ERROR_MESSAGES.SAVE_FAILED);
     } finally {
       setIsLoading(false);
     }
@@ -193,6 +184,45 @@ const TableFormInline = ({ tableId, onCancel, onSuccess }) => {
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
+  };
+
+  const handleStatusChange = (e) => {
+    const newStatus = e.target.value;
+    const currentStatus = formData.status;
+
+    // Nếu đang tạo mới, cho phép thay đổi tự do
+    if (!isEditMode) {
+      setFormData((prev) => ({ ...prev, status: newStatus }));
+      return;
+    }
+
+    // Nếu không chuyển sang INACTIVE, cho phép thay đổi tự do
+    if (newStatus !== TableStatus.INACTIVE) {
+      setFormData((prev) => ({ ...prev, status: newStatus }));
+      return;
+    }
+
+    // Kiểm tra nếu đang ở trạng thái OCCUPIED
+    if (currentStatus === TableStatus.OCCUPIED) {
+      showWarning(
+        WARNING_MESSAGES.CANNOT_DEACTIVATE_OCCUPIED,
+        "Không thể vô hiệu hóa"
+      );
+      return;
+    }
+
+    // Xác nhận trước khi chuyển sang INACTIVE
+    setPendingStatus(newStatus);
+    setConfirmDialog({
+      isOpen: true,
+      title: DEACTIVATE_CONFIRMATION.title,
+      message: DEACTIVATE_CONFIRMATION.message,
+      onConfirm: () => {
+        setFormData((prev) => ({ ...prev, status: newStatus }));
+        setConfirmDialog({ ...confirmDialog, isOpen: false });
+        setPendingStatus(null);
+      },
+    });
   };
 
   return (
@@ -218,7 +248,7 @@ const TableFormInline = ({ tableId, onCancel, onSuccess }) => {
           <div>
             <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
               <FileText className="w-4 h-4" />
-              Số Bàn
+              Tên Bàn
             </label>
             <input
               type="text"
@@ -297,7 +327,7 @@ const TableFormInline = ({ tableId, onCancel, onSuccess }) => {
             <select
               name="status"
               value={formData.status}
-              onChange={handleChange}
+              onChange={handleStatusChange}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value={TableStatus.AVAILABLE}>Trống</option>
@@ -342,6 +372,28 @@ const TableFormInline = ({ tableId, onCancel, onSuccess }) => {
         </div>
       </form>
       </div>
+
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alert.isOpen}
+        onClose={closeAlert}
+        title={alert.title}
+        message={alert.message}
+        type={alert.type}
+      />
+
+      {/* Confirm Modal */}
+      <ConfirmModal
+        isOpen={confirmDialog.isOpen}
+        onClose={() => {
+          setConfirmDialog({ ...confirmDialog, isOpen: false });
+          setPendingStatus(null);
+        }}
+        onConfirm={confirmDialog.onConfirm}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        type="danger"
+      />
     </div>
   );
 };
