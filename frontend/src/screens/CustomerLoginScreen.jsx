@@ -43,11 +43,6 @@ const CustomerLoginScreen = () => {
         return;
       }
 
-      const storedToken = localStorage.getItem("qrToken");
-      if (storedToken === token && tokenVerified) {
-        return;
-      }
-
       timeoutId = setTimeout(() => {
         if (!tokenVerified) {
           setIsLoading(false);
@@ -168,17 +163,33 @@ const CustomerLoginScreen = () => {
 
   if (!tokenVerified) {
     return (
-      <div className="min-h-screen bg-orange-50 flex items-center justify-center">
-        <div className="text-orange-600 text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-xl font-semibold">Đang xác thực QR code...</p>
-          {tableInfo && (
-            <p className="text-sm mt-2 text-gray-600">
-              {tableInfo.tableNumber}
-            </p>
-          )}
+      <>
+        <div className="min-h-screen bg-orange-50 flex items-center justify-center">
+          <div className="text-orange-600 text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-orange-500 mx-auto mb-4"></div>
+            <p className="text-xl font-semibold">Đang xác thực QR code...</p>
+            {tableInfo && (
+              <p className="text-sm mt-2 text-gray-600">
+                Bàn: {tableInfo.tableNumber}
+              </p>
+            )}
+          </div>
         </div>
-      </div>
+
+        {/* Alert Modal - Hiển thị lỗi khi verify */}
+        <AlertModal
+          isOpen={alert.isOpen}
+          onClose={() => {
+            closeAlert();
+            if (alert.type === "error") {
+              window.location.href = "/";
+            }
+          }}
+          title={alert.title}
+          message={alert.message}
+          type={alert.type}
+        />
+      </>
     );
   }
 
@@ -207,12 +218,12 @@ const CustomerLoginScreen = () => {
     >
       {/* Background Blobs - Di chuyển chậm và mượt hơn */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <motion.div 
+        <motion.div
           animate={{ x: [0, 50, 0], y: [0, -30, 0], scale: [1, 1.1, 1] }}
           transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
           className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-orange-200/40 rounded-full blur-3xl"
         />
-        <motion.div 
+        <motion.div
           animate={{ x: [0, -30, 0], y: [0, 50, 0], scale: [1, 1.2, 1] }}
           transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
           className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-yellow-200/40 rounded-full blur-3xl"
@@ -220,7 +231,6 @@ const CustomerLoginScreen = () => {
       </div>
 
       <div className="relative bg-white/80 backdrop-blur-sm shadow-2xl rounded-3xl overflow-hidden max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 border border-orange-100/50 z-10">
-        
         {/* LEFT - Visual Animation Zone */}
         <motion.div
           className="relative bg-gradient-to-br from-orange-400 via-orange-500 to-amber-500 flex items-center justify-center p-12 overflow-hidden min-h-[500px]"
@@ -230,12 +240,12 @@ const CustomerLoginScreen = () => {
         >
           {/* Vòng tròn lan tỏa (Pulse) phía sau logo */}
           <div className="absolute inset-0 flex items-center justify-center">
-            <motion.div 
+            <motion.div
               animate={{ scale: [1, 1.5, 1], opacity: [0.1, 0, 0.1] }}
               transition={{ duration: 3, repeat: Infinity }}
               className="w-64 h-64 bg-white rounded-full absolute"
             />
-            <motion.div 
+            <motion.div
               animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.05, 0.2] }}
               transition={{ duration: 4, repeat: Infinity, delay: 0.5 }}
               className="w-96 h-96 bg-white rounded-full absolute"
@@ -288,8 +298,8 @@ const CustomerLoginScreen = () => {
             <Pizza className="w-10 h-10 drop-shadow-md" />
           </motion.div>
 
-           {/* Icon 6: ChefHat - Giữa phải (Thêm mới) */}
-           <motion.div
+          {/* Icon 6: ChefHat - Giữa phải (Thêm mới) */}
+          <motion.div
             className="absolute bottom-1/3 right-8 text-white/20"
             variants={floatingVariant(2.5)}
             animate="animate"
@@ -310,8 +320,11 @@ const CustomerLoginScreen = () => {
           <motion.div className="relative z-10" layoutId="app-logo">
             <div className="relative inline-block group">
               {/* Glow effect */}
-              <motion.div 
-                animate={{ opacity: [0.5, 0.8, 0.5], scale: [0.95, 1.05, 0.95] }}
+              <motion.div
+                animate={{
+                  opacity: [0.5, 0.8, 0.5],
+                  scale: [0.95, 1.05, 0.95],
+                }}
                 transition={{ duration: 2, repeat: Infinity }}
                 className="absolute inset-0 bg-white/20 rounded-full blur-2xl"
               />
@@ -324,20 +337,34 @@ const CustomerLoginScreen = () => {
 
             {/* Chấm tròn loading trang trí bên dưới */}
             <div className="flex justify-center gap-3 mt-10">
-              <motion.div 
+              <motion.div
                 animate={{ y: [0, -10, 0] }}
-                transition={{ duration: 0.6, repeat: Infinity, repeatDelay: 0.2 }}
-                className="w-3 h-3 bg-white/90 rounded-full" 
+                transition={{
+                  duration: 0.6,
+                  repeat: Infinity,
+                  repeatDelay: 0.2,
+                }}
+                className="w-3 h-3 bg-white/90 rounded-full"
               />
-              <motion.div 
+              <motion.div
                 animate={{ y: [0, -10, 0] }}
-                transition={{ duration: 0.6, repeat: Infinity, delay: 0.2, repeatDelay: 0.2 }}
-                className="w-3 h-3 bg-white/90 rounded-full" 
+                transition={{
+                  duration: 0.6,
+                  repeat: Infinity,
+                  delay: 0.2,
+                  repeatDelay: 0.2,
+                }}
+                className="w-3 h-3 bg-white/90 rounded-full"
               />
-              <motion.div 
+              <motion.div
                 animate={{ y: [0, -10, 0] }}
-                transition={{ duration: 0.6, repeat: Infinity, delay: 0.4, repeatDelay: 0.2 }}
-                className="w-3 h-3 bg-white/90 rounded-full" 
+                transition={{
+                  duration: 0.6,
+                  repeat: Infinity,
+                  delay: 0.4,
+                  repeatDelay: 0.2,
+                }}
+                className="w-3 h-3 bg-white/90 rounded-full"
               />
             </div>
           </motion.div>
@@ -345,8 +372,8 @@ const CustomerLoginScreen = () => {
 
         {/* RIGHT - Login Form */}
         <div className="p-12 flex flex-col justify-center bg-white relative">
-           {/* Trang trí góc phải */}
-           <div className="absolute top-0 right-0 w-32 h-32 bg-orange-100 rounded-bl-full opacity-50 pointer-events-none"></div>
+          {/* Trang trí góc phải */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-orange-100 rounded-bl-full opacity-50 pointer-events-none"></div>
 
           <div className="max-w-md mx-auto w-full space-y-8">
             {/* Header */}
@@ -359,11 +386,9 @@ const CustomerLoginScreen = () => {
               <h3 className="text-3xl font-bold text-gray-800 tracking-tight">
                 Kính chào quý khách
               </h3>
-              <p className="text-gray-500">
-                Mời quý khách nhập thông tin
-              </p>
+              <p className="text-gray-500">Mời quý khách nhập thông tin</p>
               {tableInfo && (
-                <motion.div 
+                <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   className="mt-4 inline-flex items-center gap-2 bg-orange-50 text-orange-600 border border-orange-200 px-5 py-2 rounded-full text-sm font-bold shadow-sm"
@@ -424,7 +449,7 @@ const CustomerLoginScreen = () => {
 
               {/* ERROR MESSAGE */}
               {error && (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm font-medium flex items-center gap-2"
@@ -439,7 +464,10 @@ const CustomerLoginScreen = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                whileHover={{ scale: 1.02, boxShadow: "0 10px 25px -5px rgba(249, 115, 22, 0.4)" }}
+                whileHover={{
+                  scale: 1.02,
+                  boxShadow: "0 10px 25px -5px rgba(249, 115, 22, 0.4)",
+                }}
                 whileTap={{ scale: 0.98 }}
                 type="submit"
                 disabled={isLoading}
