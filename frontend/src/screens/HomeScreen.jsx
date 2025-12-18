@@ -74,6 +74,7 @@ const HomeScreen = () => {
       // Lưu thông tin user và token
       if (data.data?.user) {
         localStorage.setItem("user", JSON.stringify(data.data.user));
+        localStorage.setItem("adminToken", data.data.token);
 
         const userRole = data.data.user.role;
 

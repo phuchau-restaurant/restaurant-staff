@@ -60,21 +60,6 @@ export default class AdminService {
 
       const qrToken = uuidv4(); // Unique token cho mỗi QR
 
-      const tokenPayload = {
-        tableId: table.id,
-        tenantId: tenantId,
-        qrToken: qrToken,
-        createdAt: now.toISOString(),
-        expiresAt: expiresAt.toISOString(),
-      };
-
-      const jwtToken = jwt.sign(tokenPayload, QR_SECRET, {
-        expiresIn: `${QR_EXPIRE_DAYS}d`,
-      });
-
-      // 4. Tạo URL cho customer login với token
-      const customerLoginUrl = `${FRONTEND_URL}/customer/login?token=${jwtToken}`;
-
       // 5. Lưu thông tin QR token vào database
       const updatedTable = await this.tablesRepository.updateQRInfo(
         table.id,
@@ -85,19 +70,10 @@ export default class AdminService {
         }
       );
 
-      // 6. Tạo QR code từ URL (generate on-demand)
-      const qrCodeDataURL = await QRCode.toDataURL(customerLoginUrl, {
-        errorCorrectionLevel: "H",
-        margin: 1,
-        width: 300,
-      });
-
       return {
         tableId: updatedTable.id,
         tableNumber: updatedTable.tableNumber,
-        qrCode: qrCodeDataURL,
         qrToken: qrToken,
-        customerLoginUrl: customerLoginUrl,
         createdAt: now.toISOString(),
         expiresAt: expiresAt.toISOString(),
       };

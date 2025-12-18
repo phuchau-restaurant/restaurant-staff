@@ -1,8 +1,7 @@
-import { QrCode, Download, Printer, RefreshCw, Eye } from "lucide-react";
+import { QrCode, Download, Printer, RefreshCw, Loader2 } from "lucide-react";
 
 const QRGridView = ({
   tables,
-  onViewQR,
   onDownloadPNG,
   onDownloadPDF,
   onPrint,
@@ -37,7 +36,7 @@ const QRGridView = ({
             <div className="flex justify-center mb-4 bg-gray-50 p-4 rounded-lg">
               {table.qrLoading ? (
                 <div className="w-[180px] h-[180px] flex items-center justify-center">
-                  <div className="text-gray-500 text-sm">Đang tải...</div>
+                  <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
                 </div>
               ) : table.qrCodeData?.qrCode ? (
                 <img
@@ -67,13 +66,6 @@ const QRGridView = ({
           <div className="space-y-2">
             {table.hasQR ? (
               <>
-                <button
-                  onClick={() => onViewQR(table)}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-                >
-                  <Eye className="w-4 h-4" />
-                  Xem Chi Tiết
-                </button>
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     onClick={() => onDownloadPNG(table)}
