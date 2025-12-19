@@ -42,7 +42,7 @@ function App() {
     <BrowserRouter>
       <div className="h-screen w-screen">
         <Routes>
-          <Route path="/" element={<Navigate to="/customer/login" replace />} />
+          <Route path="/" element={<Navigate to="/login" replace />} />
 
           {/* Customer Flow */}
           <Route path="/customer/*" element={<CustomerRoutes />} />
@@ -87,7 +87,7 @@ function App() {
             }
           />
 
-          <Route path="*" element={<Navigate to="/customer/login" replace />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </div>
     </BrowserRouter>
