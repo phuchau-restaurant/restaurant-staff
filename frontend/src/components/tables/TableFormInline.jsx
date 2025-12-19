@@ -166,7 +166,10 @@ const TableFormInline = ({ tableId, onCancel, onSuccess }) => {
         showSuccess(SUCCESS_MESSAGES.TABLE_CREATED);
       }
 
-      onSuccess?.();
+      // Delay để alert hiển thị trước khi component unmount
+      setTimeout(() => {
+        onSuccess?.();
+      }, 1500);
     } catch (error) {
       console.error("Error submitting form:", error);
       showError(error.message || ERROR_MESSAGES.SAVE_FAILED);
