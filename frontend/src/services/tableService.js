@@ -173,17 +173,20 @@ export const fetchTableById = async (tableId) => {
 /**
  * Kiểm tra trùng số bàn
  * @param {string} tableNumber - Số bàn cần kiểm tra
+ * @param {number} currentTableId - ID bàn hiện tại (để loại trừ khi update)
  * @returns {Promise<boolean>} True nếu trùng, false nếu không trùng
  */
-export const checkDuplicateTableNumber = async (tableNumber) => {
+export const checkDuplicateTableNumber = async (tableNumber, currentTableId = null) => {
   try {
-    const response = await fetch(
-      `${BASE_URL}?tableNumber=${encodeURIComponent(tableNumber)}`,
-      { headers: HEADERS }
+    // Fetch toàn bộ bàn
+    const allTables = await fetchTables();
+    
+    // Kiểm tra xem có bàn nào khác có cùng tableNumber không
+    const isDuplicate = allTables.some(table => 
+      table.tableNumber === tableNumber && table.id !== currentTableId
     );
-
-    const result = await response.json();
-    return result.success && result.data && result.data.length > 0;
+    
+    return isDuplicate;
   } catch (error) {
     console.error("Check duplicate table number error:", error);
     return false;

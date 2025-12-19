@@ -91,7 +91,9 @@ const TableFormInline = ({ tableId, onCancel, onSuccess }) => {
 
   const checkDuplicateTableNumber = async (tableNumber) => {
     try {
-      return await tableService.checkDuplicateTableNumber(tableNumber);
+      // Truyền tableId khi đang ở chế độ edit để loại trừ bàn hiện tại
+      const currentTableId = isEditMode ? table?.id : null;
+      return await tableService.checkDuplicateTableNumber(tableNumber, currentTableId);
     } catch (error) {
       console.error("Error checking duplicate:", error);
       return false;
@@ -108,16 +110,11 @@ const TableFormInline = ({ tableId, onCancel, onSuccess }) => {
       newErrors.tableNumber = "Vui lòng nhập tên bàn";
       isValid = false;
     } else {
-      const inputNormalized = tableNumber.toLowerCase();
-      const originalNormalized = originalTableName.toLowerCase();
-      const shouldCheckDuplicate = !isEditMode || inputNormalized !== originalNormalized;
-
-      if (shouldCheckDuplicate) {
-        const isDuplicate = await checkDuplicateTableNumber(tableNumber);
-        if (isDuplicate) {
-          newErrors.tableNumber = "Tên bàn này đã tồn tại";
-          isValid = false;
-        }
+      // Luôn kiểm tra trùng, hàm checkDuplicateTableNumber sẽ tự loại trừ bàn hiện tại
+      const isDuplicate = await checkDuplicateTableNumber(tableNumber);
+      if (isDuplicate) {
+        newErrors.tableNumber = "Tên bàn này đã tồn tại";
+        isValid = false;
       }
     }
 
