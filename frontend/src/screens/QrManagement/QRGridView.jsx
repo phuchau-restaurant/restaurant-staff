@@ -20,15 +20,6 @@ const QRGridView = ({
               Bàn {table.tableNumber}
             </h3>
             <p className="text-sm text-gray-600">{table.area}</p>
-            <span
-              className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-medium ${
-                table.hasQR
-                  ? "bg-green-100 text-green-700"
-                  : "bg-gray-100 text-gray-700"
-              }`}
-            >
-              {table.hasQR ? "Có mã QR" : "Chưa có mã QR"}
-            </span>
           </div>
 
           {/* QR Code Preview */}
@@ -69,7 +60,7 @@ const QRGridView = ({
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     onClick={() => onDownloadPNG(table)}
-                    className="flex items-center justify-center gap-1 px-2 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-xs"
+                    className="flex items-center justify-center gap-1 px-2 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-xs font-medium"
                     title="Tải PNG"
                   >
                     <Download className="w-4 h-4" />
@@ -77,7 +68,7 @@ const QRGridView = ({
                   </button>
                   <button
                     onClick={() => onDownloadPDF(table)}
-                    className="flex items-center justify-center gap-1 px-2 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-xs"
+                    className="flex items-center justify-center gap-1 px-2 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-xs font-medium"
                     title="Tải PDF"
                   >
                     <Download className="w-4 h-4" />
@@ -85,7 +76,7 @@ const QRGridView = ({
                   </button>
                   <button
                     onClick={() => onPrint(table)}
-                    className="flex items-center justify-center gap-1 px-2 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-xs"
+                    className="flex items-center justify-center gap-1 px-2 py-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors text-xs font-medium"
                     title="In"
                   >
                     <Printer className="w-4 h-4" />
@@ -103,7 +94,7 @@ const QRGridView = ({
             ) : (
               <button
                 onClick={() => onRegenerateQR(table)}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
               >
                 <QrCode className="w-4 h-4" />
                 Tạo Mã QR

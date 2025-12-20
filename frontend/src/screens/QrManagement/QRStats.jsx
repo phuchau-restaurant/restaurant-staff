@@ -19,7 +19,7 @@ const QRStats = ({ tables, onDownloadAll }) => {
         <div className="flex gap-2">
           <button
             onClick={() => onDownloadAll("png")}
-            className="flex items-center gap-2 bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-2 rounded-lg transition-colors text-sm font-medium"
+            className="flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors text-sm font-medium"
             title="Tải tất cả PNG"
           >
             <FileImage className="w-4 h-4" />
@@ -27,7 +27,7 @@ const QRStats = ({ tables, onDownloadAll }) => {
           </button>
           <button
             onClick={() => onDownloadAll("pdf")}
-            className="flex items-center gap-2 bg-red-50 text-red-600 hover:bg-red-100 px-3 py-2 rounded-lg transition-colors text-sm font-medium"
+            className="flex items-center gap-2 bg-red-600 text-white hover:bg-red-700 px-4 py-2 rounded-lg transition-colors text-sm font-medium"
             title="Tải tất cả PDF"
           >
             <FileText className="w-4 h-4" />

@@ -17,11 +17,8 @@ const QRListView = ({
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
               Khu Vực
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-              Mã QR
-            </th>
             <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">
-              QR Code
+              Mã QR
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
               Ngày Tạo
@@ -33,24 +30,14 @@ const QRListView = ({
         </thead>
         <tbody className="divide-y divide-gray-200">
           {tables.map((table) => (
-            <tr key={table.id} className="hover:bg-gray-50">
+            <tr key={table.id} className="hover:bg-blue-50">
               <td className="px-6 py-4">
                 <span className="text-lg font-semibold">
                   Bàn {table.tableNumber}
                 </span>
               </td>
               <td className="px-6 py-4 text-gray-700">{table.area}</td>
-              <td className="px-6 py-4">
-                <span
-                  className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    table.hasQR
-                      ? "bg-green-100 text-green-700"
-                      : "bg-gray-100 text-gray-700"
-                  }`}
-                >
-                  {table.hasQR ? "Có" : "Chưa có"}
-                </span>
-              </td>
+              
               <td className="px-6 py-4">
                 {table.hasQR && (
                   <div className="flex justify-center">
@@ -72,6 +59,7 @@ const QRListView = ({
                   </div>
                 )}
               </td>
+              
               <td className="px-6 py-4 text-sm text-gray-600">
                 {table.qrGeneratedAt
                   ? new Date(table.qrGeneratedAt).toLocaleDateString("vi-VN")
@@ -83,19 +71,19 @@ const QRListView = ({
                     <>
                       <button
                         onClick={() => onDownloadPDF(table)}
-                        className="px-3 py-1 bg-gray-50 text-gray-600 rounded hover:bg-gray-100 text-sm"
+                        className="px-3 py-1.5 bg-red-50 text-red-600 rounded hover:bg-red-100 text-sm font-medium"
                       >
                         PDF
                       </button>
                       <button
                         onClick={() => onPrint(table)}
-                        className="px-3 py-1 bg-gray-50 text-gray-600 rounded hover:bg-gray-100 text-sm"
+                        className="px-3 py-1.5 bg-purple-50 text-purple-600 rounded hover:bg-purple-100 text-sm font-medium"
                       >
                         In
                       </button>
                       <button
                         onClick={() => onRegenerateQR(table)}
-                        className="px-3 py-1 bg-orange-50 text-orange-600 rounded hover:bg-orange-100 text-sm"
+                        className="px-3 py-1.5 bg-orange-50 text-orange-600 rounded hover:bg-orange-100 text-sm font-medium"
                       >
                         Tạo lại
                       </button>
@@ -103,7 +91,7 @@ const QRListView = ({
                   ) : (
                     <button
                       onClick={() => onRegenerateQR(table)}
-                      className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+                      className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 text-sm font-medium"
                     >
                       Tạo QR
                     </button>

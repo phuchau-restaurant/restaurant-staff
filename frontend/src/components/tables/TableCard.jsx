@@ -21,42 +21,27 @@ const TableCard = ({ table, onEdit, onToggleStatus, onToggleActive }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow p-6 border border-gray-200 flex flex-col">
+    <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all p-6 border border-gray-200 hover:border-blue-300 hover:bg-blue-50/30 flex flex-col">
       {/* Table Header */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-2xl font-bold text-gray-800">
           {table.tableNumber}
         </h3>
-        <span
-          className={`px-3 py-1 rounded-full text-xs font-medium ${
-            table.status === TableStatus.AVAILABLE
-              ? "bg-green-100 text-green-700"
-              : table.status === TableStatus.OCCUPIED
-              ? "bg-red-100 text-red-700"
-              : "bg-gray-100 text-gray-700"
-          }`}
-        >
-          {table.status === TableStatus.AVAILABLE && "Trống"}
-          {table.status === TableStatus.OCCUPIED && "Có khách"}
-          {table.status === TableStatus.INACTIVE && "Không hoạt động"}
-        </span>
-      </div>
-
-      {/* Location and QR */}
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2 text-gray-600">
-          <MapPin className="w-4 h-4" />
-          <span className="text-sm">{table.location || "Chưa xác định"}</span>
-        </div>
         {table.qrToken != null && (
           <QrCode className="w-5 h-5 text-blue-600" />
         )}
       </div>
 
+      {/* Location */}
+        <div className="flex py-2 items-center gap-2 text-gray-600">
+          <MapPin className="w-4 h-4" />
+          <span className="text-sm">{table.location || "Chưa xác định"}</span>
+        </div>
+
       {/* Capacity */}
       <div className="flex items-center gap-2 mb-2">
         <Users className="w-5 h-5 text-gray-500" />
-        <span className="text-gray-700">
+        <span className="text-gray-700 text-sm">
           Sức chứa: {table.capacity} người
         </span>
       </div>
@@ -64,7 +49,7 @@ const TableCard = ({ table, onEdit, onToggleStatus, onToggleActive }) => {
       {/* Created At */}
       <div className="flex items-center gap-2 mb-2 text-gray-500">
         <Calendar className="w-4 h-4" />
-        <span className="text-xs">{formatDate(table.createdAt || table.createdat)}</span>
+        <span className="text-sm">{formatDate(table.createdAt || table.createdat)}</span>
       </div>
 
       {/* Description */}
@@ -83,18 +68,13 @@ const TableCard = ({ table, onEdit, onToggleStatus, onToggleActive }) => {
         <button
           onClick={() => onToggleStatus(table.id, table.status)}
           className={`px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
-            table.status === TableStatus.OCCUPIED
+            table.status === TableStatus.AVAILABLE
               ? "bg-green-50 text-green-600 hover:bg-green-100"
               : "bg-red-50 text-red-600 hover:bg-red-100"
           } disabled:opacity-50 disabled:cursor-not-allowed`}
-          title={
-            table.status === TableStatus.OCCUPIED
-              ? "Đánh dấu trống"
-              : "Đánh dấu có khách"
-          }
           disabled={table.status === TableStatus.INACTIVE}
         >
-          {table.status === TableStatus.OCCUPIED ? "Trống" : "Có khách"}
+          {table.status === TableStatus.AVAILABLE ? "Trống" : "Có khách"}
         </button>
         <button
           onClick={() => onEdit(table.id)}
@@ -107,7 +87,7 @@ const TableCard = ({ table, onEdit, onToggleStatus, onToggleActive }) => {
           className={`col-span-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
             table.status === TableStatus.INACTIVE
               ? "bg-green-50 text-green-600 hover:bg-green-100"
-              : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+              : "bg-orange-50 text-orange-600 hover:bg-orange-100"
           }`}
         >
           {table.status === TableStatus.INACTIVE ? "Kích hoạt" : "Vô hiệu hóa"}
