@@ -22,11 +22,15 @@ const Sidebar = ({ activeMenu = 'dashboard', onNavigate }) => {
 
   return (
     <div className="w-64 bg-white shadow-lg">
-      <div className="p-6">
-        <h1 className="text-3xl font-bold text-gray-800">
-          Romdol<span className="text-blue-500">.</span>
-        </h1>
-        <p className="text-xs text-gray-400 mt-1">Modern Admin Dashboard</p>
+      <div className="pt-6">
+        <div className='flex flex-row items-center'>
+            <img src="../images/logo.png" alt="Logo" className="h-20 w-20" />
+            <h1 className="text-3xl font-bold text-gray-800">
+              RoRi<span className="text-blue-500">.</span>
+            </h1>
+        </div>
+
+        <p className="ml-5 text-xs text-gray-400 mt-1">Modern Admin Dashboard</p>
       </div>
 
       <nav className="mt-6">

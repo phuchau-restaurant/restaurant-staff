@@ -1,4 +1,4 @@
-import { QrCode } from "lucide-react";
+import { QrCode, Loader2 } from "lucide-react";
 
 const QRListView = ({
   tables,
@@ -56,7 +56,7 @@ const QRListView = ({
                   <div className="flex justify-center">
                     {table.qrLoading ? (
                       <div className="w-20 h-20 flex items-center justify-center bg-gray-50 rounded">
-                        <div className="text-xs text-gray-500">...</div>
+                        <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
                       </div>
                     ) : table.qrCodeData?.qrCode ? (
                       <img

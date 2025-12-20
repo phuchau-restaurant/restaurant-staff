@@ -2,14 +2,13 @@ import { memo } from "react";
 import { Search, Grid, List } from "lucide-react";
 
 /**
- * TablesFilterBar Component
- * Thanh lọc và tìm kiếm bàn
+ * QRFilterBar Component
+ * Thanh lọc và tìm kiếm QR codes
  * 
  * @param {string} searchTerm - Từ khóa tìm kiếm
  * @param {function} onSearchChange - Callback khi thay đổi từ khóa
- * @param {string} statusFilter - Trạng thái được chọn
- * @param {function} onStatusChange - Callback khi thay đổi trạng thái
- * @param {array} statusOptions - Danh sách options trạng thái
+ * @param {string} qrStatusFilter - Trạng thái QR được chọn
+ * @param {function} onQRStatusChange - Callback khi thay đổi trạng thái QR
  * @param {string} areaFilter - Khu vực được chọn
  * @param {function} onAreaChange - Callback khi thay đổi khu vực
  * @param {array} areaOptions - Danh sách options khu vực
@@ -18,12 +17,11 @@ import { Search, Grid, List } from "lucide-react";
  * @param {string} viewMode - Chế độ hiển thị (grid/list)
  * @param {function} onViewModeChange - Callback khi thay đổi chế độ hiển thị
  */
-const TablesFilterBar = memo(({
+const QRFilterBar = memo(({
   searchTerm,
   onSearchChange,
-  statusFilter,
-  onStatusChange,
-  statusOptions,
+  qrStatusFilter,
+  onQRStatusChange,
   areaFilter,
   onAreaChange,
   areaOptions,
@@ -32,6 +30,12 @@ const TablesFilterBar = memo(({
   viewMode,
   onViewModeChange,
 }) => {
+  const qrStatusOptions = [
+    { value: "all", label: "Tất cả QR" },
+    { value: "generated", label: "Đã tạo QR" },
+    { value: "notGenerated", label: "Chưa tạo QR" },
+  ];
+
   return (
     <div className="bg-white rounded-lg shadow-sm p-4">
       <div className="flex flex-wrap gap-4 items-center">
@@ -47,13 +51,13 @@ const TablesFilterBar = memo(({
           />
         </div>
 
-        {/* Filter trạng thái */}
+        {/* Filter trạng thái QR */}
         <select
-          value={statusFilter}
-          onChange={(e) => onStatusChange(e.target.value)}
+          value={qrStatusFilter}
+          onChange={(e) => onQRStatusChange(e.target.value)}
           className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          {statusOptions.map((option) => (
+          {qrStatusOptions.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
             </option>
@@ -80,8 +84,7 @@ const TablesFilterBar = memo(({
           className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="tableNumber">Sắp xếp theo số bàn</option>
-          <option value="capacity">Sắp xếp theo sức chứa</option>
-          <option value="createdAt">Sắp xếp theo ngày tạo</option>
+          <option value="qrGeneratedAt">Sắp xếp theo ngày tạo QR</option>
         </select>
 
         {/* Toggle view mode (Grid/List) */}
@@ -114,6 +117,6 @@ const TablesFilterBar = memo(({
   );
 });
 
-TablesFilterBar.displayName = "TablesFilterBar";
+QRFilterBar.displayName = "QRFilterBar";
 
-export default TablesFilterBar;
+export default QRFilterBar;

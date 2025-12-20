@@ -1,4 +1,4 @@
-import { MapPin, Users, QrCode } from "lucide-react";
+import { MapPin, Users, QrCode, Calendar } from "lucide-react";
 import TableStatus from "../../../constants/tableStatus";
 
 /**
@@ -6,8 +6,20 @@ import TableStatus from "../../../constants/tableStatus";
  * @param {Object} table - Thông tin bàn
  * @param {Function} onEdit - Callback khi click nút chỉnh sửa
  * @param {Function} onToggleStatus - Callback khi chuyển đổi trạng thái Trống/Có khách
+ * @param {Function} onToggleActive - Callback khi kích hoạt/vô hiệu hóa bàn
  */
-const TableCard = ({ table, onEdit, onToggleStatus }) => {
+const TableCard = ({ table, onEdit, onToggleStatus, onToggleActive }) => {
+  // Format ngày tạo
+  const formatDate = (dateString) => {
+    if (!dateString) return "Chưa có";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow p-6 border border-gray-200 flex flex-col">
       {/* Table Header */}
@@ -49,6 +61,12 @@ const TableCard = ({ table, onEdit, onToggleStatus }) => {
         </span>
       </div>
 
+      {/* Created At */}
+      <div className="flex items-center gap-2 mb-2 text-gray-500">
+        <Calendar className="w-4 h-4" />
+        <span className="text-xs">{formatDate(table.createdAt || table.createdat)}</span>
+      </div>
+
       {/* Description */}
       {table.description && (
         <p className="text-sm text-gray-600 mb-4 line-clamp-2">
@@ -56,14 +74,15 @@ const TableCard = ({ table, onEdit, onToggleStatus }) => {
         </p>
       )}
 
+
       {/* Spacer to push actions to bottom */}
       <div className="flex-1"></div>
 
       {/* Actions */}
-      <div className="flex flex-row pt-4 gap-2 border-t border-gray-100 mt-auto">
+      <div className="grid grid-cols-2 pt-4 gap-2 border-t border-gray-100 mt-auto">
         <button
           onClick={() => onToggleStatus(table.id, table.status)}
-          className={`flex-[2] w-full px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
+          className={`px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
             table.status === TableStatus.OCCUPIED
               ? "bg-green-50 text-green-600 hover:bg-green-100"
               : "bg-red-50 text-red-600 hover:bg-red-100"
@@ -79,9 +98,19 @@ const TableCard = ({ table, onEdit, onToggleStatus }) => {
         </button>
         <button
           onClick={() => onEdit(table.id)}
-          className="flex-[1] w-full px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
+          className="px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
         >
           Chỉnh sửa
+        </button>
+        <button
+          onClick={() => onToggleActive(table.id, table.status)}
+          className={`col-span-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
+            table.status === TableStatus.INACTIVE
+              ? "bg-green-50 text-green-600 hover:bg-green-100"
+              : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+          }`}
+        >
+          {table.status === TableStatus.INACTIVE ? "Kích hoạt" : "Vô hiệu hóa"}
         </button>
       </div>
     </div>

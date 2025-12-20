@@ -1,4 +1,4 @@
-import { Users, MapPin, QrCode } from "lucide-react";
+import { Users, MapPin, QrCode, Calendar } from "lucide-react";
 import TableStatus from "../../../constants/tableStatus";
 
 /**
@@ -8,8 +8,20 @@ import TableStatus from "../../../constants/tableStatus";
  * @param {array} tables - Danh sách bàn
  * @param {function} onEdit - Callback khi bấm "Sửa"
  * @param {function} onToggleStatus - Callback khi bấm "Trống/Có khách"
+ * @param {function} onToggleActive - Callback khi kích hoạt/vô hiệu hóa bàn
  */
-const TableListView = ({ tables, onEdit, onToggleStatus }) => {
+const TableListView = ({ tables, onEdit, onToggleStatus, onToggleActive }) => {
+  // Format ngày tạo
+  const formatDate = (dateString) => {
+    if (!dateString) return "Chưa có";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
       <table className="w-full">
@@ -32,6 +44,9 @@ const TableListView = ({ tables, onEdit, onToggleStatus }) => {
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               QR Code
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Ngày Tạo
             </th>
             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
               Thao Tác
@@ -97,13 +112,21 @@ const TableListView = ({ tables, onEdit, onToggleStatus }) => {
                 )}
               </td>
 
+              {/* Ngày tạo */}
+              <td className="px-6 py-4 whitespace-nowrap">
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Calendar className="w-4 h-4" />
+                  <span className="text-sm">{formatDate(table.createdAt || table.created_at)}</span>
+                </div>
+              </td>
+
               {/* Thao tác */}
               <td className="px-6 py-4 whitespace-nowrap text-right">
-                <div className="flex gap-2 justify-end">
+                <div className="inline-flex gap-2">
                   {/* Nút sửa */}
                   <button
                     onClick={() => onEdit(table.id)}
-                    className="px-3 py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors text-sm font-medium"
+                    className="px-3 py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors text-sm font-medium min-w-[80px]"
                   >
                     Sửa
                   </button>
@@ -111,7 +134,7 @@ const TableListView = ({ tables, onEdit, onToggleStatus }) => {
                   {/* Nút toggle trạng thái */}
                   <button
                     onClick={() => onToggleStatus(table.id, table.status)}
-                    className={`px-3 py-1 rounded transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed ${
+                    className={`px-3 py-1 rounded transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed min-w-[90px] ${
                       table.status === TableStatus.OCCUPIED
                         ? "bg-green-50 text-green-600 hover:bg-green-100"
                         : "bg-red-50 text-red-600 hover:bg-red-100"
@@ -119,6 +142,18 @@ const TableListView = ({ tables, onEdit, onToggleStatus }) => {
                     disabled={table.status === TableStatus.INACTIVE}
                   >
                     {table.status === TableStatus.OCCUPIED ? "Trống" : "Có khách"}
+                  </button>
+
+                  {/* Nút kích hoạt/vô hiệu hóa */}
+                  <button
+                    onClick={() => onToggleActive(table.id, table.status)}
+                    className={`px-3 py-1 rounded transition-colors text-sm font-medium min-w-[100px] ${
+                      table.status === TableStatus.INACTIVE
+                        ? "bg-green-50 text-green-600 hover:bg-green-100"
+                        : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    {table.status === TableStatus.INACTIVE ? "Kích hoạt" : "Vô hiệu hóa"}
                   </button>
                 </div>
               </td>

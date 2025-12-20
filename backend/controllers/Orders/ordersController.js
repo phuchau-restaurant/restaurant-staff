@@ -1,6 +1,6 @@
 // backend/controllers/Orders/ordersController.js
 import OrderStatus from '../../constants/orderStatus.js';
-import OrderDetailStatus from '../../constants/orderDetailStatus.js';
+import OrderDetailStatus from '../../constants/orderdetailStatus.js';
 
 class OrdersController {
   constructor(ordersService) {

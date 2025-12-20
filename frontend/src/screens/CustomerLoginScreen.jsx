@@ -28,6 +28,7 @@ const CustomerLoginScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [tableInfo, setTableInfo] = useState(null);
   const [tokenVerified, setTokenVerified] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
 
   // --- LOGIC GIỮ NGUYÊN ---
   React.useEffect(() => {
@@ -79,9 +80,6 @@ const CustomerLoginScreen = () => {
           id: data.data.tableId,
           number: data.data.tableNumber,
         });
-        localStorage.setItem("qrToken", token);
-        localStorage.setItem("tableInfo", JSON.stringify(data.data));
-        localStorage.setItem("tenantId", data.data.tenantId);
         setTokenVerified(true);
       } catch (error) {
         clearTimeout(timeoutId);
@@ -149,14 +147,18 @@ const CustomerLoginScreen = () => {
         return;
       }
 
-      login(data.data);
-      navigate("/customer/menu");
+      // Trigger exit animation
+      setIsExiting(true);
+
+      setTimeout(() => {
+        login(data.data);
+        navigate("/customer/menu");
+      }, 800);
     } catch (error) {
       console.error("Login error:", error);
       showError("Không thể kết nối server!");
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   // --- RENDER ---
@@ -219,18 +221,27 @@ const CustomerLoginScreen = () => {
       {/* Background Blobs - Di chuyển chậm và mượt hơn */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
-          animate={{ x: [0, 50, 0], y: [0, -30, 0], scale: [1, 1.1, 1] }}
-          transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+          animate={isExiting ? { scale: 0, opacity: 0, rotate: 180, x: 0, y: 0 } : { x: [0, 50, 0], y: [0, -30, 0], scale: [1, 1.1, 1] }}
+          transition={isExiting ? { duration: 0.8, ease: "easeInOut" } : { duration: 15, repeat: Infinity, ease: "linear" }}
           className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-orange-200/40 rounded-full blur-3xl"
         />
         <motion.div
-          animate={{ x: [0, -30, 0], y: [0, 50, 0], scale: [1, 1.2, 1] }}
-          transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
+          animate={isExiting ? { scale: 0, opacity: 0, rotate: -180, x: 0, y: 0 } : { x: [0, -30, 0], y: [0, 50, 0], scale: [1, 1.2, 1] }}
+          transition={isExiting ? { duration: 0.8, ease: "easeInOut" } : { duration: 18, repeat: Infinity, ease: "linear" }}
           className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-yellow-200/40 rounded-full blur-3xl"
         />
       </div>
 
-      <div className="relative bg-white/80 backdrop-blur-sm shadow-2xl rounded-3xl overflow-hidden max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 border border-orange-100/50 z-10">
+      <motion.div 
+        className="relative bg-white/80 backdrop-blur-sm shadow-2xl rounded-3xl overflow-hidden max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 border border-orange-100/50 z-10"
+        animate={isExiting ? { 
+          scale: 0,
+          opacity: 0,
+          rotate: 360,
+          filter: "blur(10px)"
+        } : { scale: 1, opacity: 1, rotate: 0, filter: "blur(0px)" }}
+        transition={{ duration: 0.8, ease: "easeInOut" }}
+      >
         {/* LEFT - Visual Animation Zone */}
         <motion.div
           className="relative bg-gradient-to-br from-orange-400 via-orange-500 to-amber-500 flex items-center justify-center p-12 overflow-hidden min-h-[500px]"
@@ -317,7 +328,12 @@ const CustomerLoginScreen = () => {
           </motion.div>
 
           {/* CENTRAL LOGO */}
-          <motion.div className="relative z-10" layoutId="app-logo">
+          <motion.div 
+            className="relative z-10" 
+            layoutId="app-logo"
+            animate={isExiting ? { rotate: 360, scale: 0.5 } : { rotate: 0, scale: 1 }}
+            transition={{ duration: 0.8, ease: "easeInOut" }}
+          >
             <div className="relative inline-block group">
               {/* Glow effect */}
               <motion.div
@@ -371,7 +387,11 @@ const CustomerLoginScreen = () => {
         </motion.div>
 
         {/* RIGHT - Login Form */}
-        <div className="p-12 flex flex-col justify-center bg-white relative">
+        <motion.div 
+          className="p-12 flex flex-col justify-center bg-white relative"
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8 }}
+        >
           {/* Trang trí góc phải */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-orange-100 rounded-bl-full opacity-50 pointer-events-none"></div>
 
@@ -501,8 +521,8 @@ const CustomerLoginScreen = () => {
               </p>
             </motion.div>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {/* Alert Modal */}
       <AlertModal

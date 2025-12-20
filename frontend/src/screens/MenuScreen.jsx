@@ -313,10 +313,10 @@ const MenuScreen = () => {
   return (
     <motion.div
       className="flex h-screen bg-linear-to-br from-amber-50 via-orange-50 to-red-50 font-sans overflow-hidden relative select-none"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.5 }}
+      initial={{ opacity: 0, scale: 0, rotate: -15, filter: "blur(20px)" }}
+      animate={{ opacity: 1, scale: 1, rotate: 0, filter: "blur(0px)" }}
+      exit={{ opacity: 0, scale: 0.9, filter: "blur(10px)" }}
+      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
     >
       {isCartOpen && (
         <div
@@ -327,8 +327,8 @@ const MenuScreen = () => {
 
       <motion.div
         className="w-30 bg-white border-r flex flex-col items-center py-6 space-y-4 shadow-sm z-10"
-        initial={{ x: -100, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         transition={{ duration: 0.6, delay: 0.2 }}
       >
         <motion.img
@@ -341,8 +341,8 @@ const MenuScreen = () => {
         {categories.map((cat, index) => (
           <motion.button
             key={cat.id}
-            initial={{ x: -50, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.4, delay: 0.3 + index * 0.05 }}
             onClick={() => setActiveCategory(cat.id)}
             className={`flex flex-col items-center justify-center w-20 h-20 rounded-xl transition-all duration-300 ${
@@ -377,8 +377,8 @@ const MenuScreen = () => {
       <div className="flex-1 overflow-y-auto flex flex-col h-screen">
         <motion.header
           className="px-6 py-4 shrink-0"
-          initial={{ y: -50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.3 }}
         >
           <div className="flex justify-between items-center">
@@ -418,7 +418,7 @@ const MenuScreen = () => {
           className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 auto-rows-fr pb-6"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
+          transition={{ duration: 0.5 }}
         >
           {isLoadingMenu ? (
             <div className="col-span-full flex flex-col items-center justify-center h-[60vh]">

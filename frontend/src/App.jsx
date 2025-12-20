@@ -20,7 +20,6 @@ import TestScreen from "./screens/TestScreen";
 import OnboardingScreen from "./screens/OnboardingScreen";
 import CustomerLoginScreen from "./screens/CustomerLoginScreen";
 import TablesScreen from "./screens/TablesScreen";
-import QRManagementScreen from "./screens/QRManagementScreen";
 
 function CustomerRoutes() {
   const location = useLocation();
@@ -43,7 +42,7 @@ function App() {
     <BrowserRouter>
       <div className="h-screen w-screen">
         <Routes>
-          <Route path="/" element={<Navigate to="/customer/login" replace />} />
+          <Route path="/" element={<Navigate to="/login" replace />} />
 
           {/* Customer Flow */}
           <Route path="/customer/*" element={<CustomerRoutes />} />
@@ -63,7 +62,6 @@ function App() {
             }
           />
           <Route path="/tables" element={<TablesScreen />} />
-          <Route path="/tables/qr" element={<QRManagementScreen />} />
           <Route
             path="/test"
             element={
@@ -89,7 +87,7 @@ function App() {
             }
           />
 
-          <Route path="*" element={<Navigate to="/customer/login" replace />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </div>
     </BrowserRouter>
