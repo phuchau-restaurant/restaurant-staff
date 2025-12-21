@@ -272,10 +272,16 @@ export default class AdminService {
       width: 500,
     });
 
+    // Sanitize table number để tránh ký tự không hợp lệ trong filename
+    const safeTableNumber = String(table.tableNumber).replace(
+      /[^a-zA-Z0-9-_]/g,
+      "-"
+    );
+
     return {
       buffer,
       contentType: "image/png",
-      filename: `qr-table-${table.tableNumber}.png`,
+      filename: `qr-table-${safeTableNumber}.png`,
     };
   }
 
@@ -306,10 +312,15 @@ export default class AdminService {
         doc.on("data", buffers.push.bind(buffers));
         doc.on("end", () => {
           const pdfBuffer = Buffer.concat(buffers);
+          // Sanitize table number để tránh ký tự không hợp lệ trong filename
+          const safeTableNumber = String(table.tableNumber).replace(
+            /[^a-zA-Z0-9-_]/g,
+            "-"
+          );
           resolve({
             buffer: pdfBuffer,
             contentType: "application/pdf",
-            filename: `qr-table-${table.tableNumber}.pdf`,
+            filename: `qr-table-${safeTableNumber}.pdf`,
           });
         });
 

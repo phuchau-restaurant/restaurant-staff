@@ -111,7 +111,7 @@ erDiagram
     }
 
     %% --- RELATIONSHIPS ---
-    
+
     %% Tenant Ownership (1 tenant has many resources)
     tenants ||--o{ app_settings : "defines"
     tenants ||--o{ users : "employs"
@@ -124,11 +124,12 @@ erDiagram
 
     %% Operational Logic
     categories ||--o{ dishes : "contains"
-    
+
     tables |o--o{ orders : "hosts (history)"
     tables |o--o| orders : "currently serving (state)"
-    
+
     orders ||--o{ order_details : "includes"
     dishes ||--o{ order_details : "appears in"
-    
+
     orders ||--o| payments : "paid by (1-to-1)"
+```

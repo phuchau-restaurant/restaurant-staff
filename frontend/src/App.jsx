@@ -1,11 +1,6 @@
 // src/App.jsx
 import React from "react";
-import {
-  BrowserRouter,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import HomeScreen from "./screens/HomeScreen";
 import VerifyEmailScreen from "./screens/VerifyEmailScreen";
