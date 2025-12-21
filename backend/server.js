@@ -12,12 +12,11 @@ import { connectDatabase } from "./configs/database.js";
 import categoriesRoutes from "./routers/categories.routes.js";
 import usersRoutes from "./routers/users.routes.js";
 import authRoutes from "./routers/auth.routes.js";
-import menusRoutes from './routers/menus.routes.js';
-import customersRoutes from './routers/customers.routes.js';
-import ordersRoutes from './routers/orders.routes.js';
-import kitchenRoutes from './routers/kitchen.routes.js';
-import appSettingsRoutes from './routers/appSettings.routes.js';
-import adminRoutes from './routers/admin.routes.js';
+import menusRoutes from "./routers/menus.routes.js";
+import ordersRoutes from "./routers/orders.routes.js";
+import kitchenRoutes from "./routers/kitchen.routes.js";
+import appSettingsRoutes from "./routers/appSettings.routes.js";
+import adminRoutes from "./routers/admin.routes.js";
 
 //Import middlewares
 import { errorMiddleware } from "./middlewares/errorMiddleware.js";
@@ -42,16 +41,15 @@ app.use(requestLogger);
 app.use("/api/categories", categoriesRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/auth", authRoutes);
-app.use('/api/menus', menusRoutes); 
-app.use('/api/customers', customersRoutes);
-app.use('/api/orders', ordersRoutes);
-app.use('/api/appsettings', appSettingsRoutes); 
-app.use('/api/admin', adminRoutes); 
+app.use("/api/menus", menusRoutes);
+app.use("/api/orders", ordersRoutes);
+app.use("/api/appsettings", appSettingsRoutes);
+app.use("/api/admin", adminRoutes);
 
 //route nghiệp vụ cho kitchen
-app.use('/api/kitchen', kitchenRoutes);
+app.use("/api/kitchen", kitchenRoutes);
 //Nghiệp vụ cho admin
-app.use('/api/admin', adminRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Route kiểm tra server sống hay chết
 app.get("/", (req, res) => {

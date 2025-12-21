@@ -1,12 +1,16 @@
-import React from 'react';
+import React from "react";
 
 const TestScreen = ({ onSelectScreen }) => {
   return (
     <div className="flex items-center justify-center h-screen bg-linear-to-br from-gray-100 to-gray-200">
       <div className="bg-white p-8 rounded-2xl shadow-xl">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">Test Screen</h1>
-        <p className="text-gray-600 mb-8 text-center">Chọn màn hình để chuyển đến</p>
-        
+        <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">
+          Test Screen
+        </h1>
+        <p className="text-gray-600 mb-8 text-center">
+          Chọn màn hình để chuyển đến
+        </p>
+
         <div className="flex flex-col gap-4">
           <button
             onClick={() => onSelectScreen("onboarding")}
@@ -43,13 +47,6 @@ const TestScreen = ({ onSelectScreen }) => {
             className="px-6 py-3 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 transition-colors shadow-sm"
           >
             Waiter Screen
-          </button>
-
-          <button
-            onClick={() => onSelectScreen("customer-login-screen")}
-            className="px-6 py-3 bg-pink-400 text-white font-semibold rounded-lg hover:bg-orange-600 transition-colors shadow-sm"
-          >
-            Customer Login Screen
           </button>
         </div>
       </div>
