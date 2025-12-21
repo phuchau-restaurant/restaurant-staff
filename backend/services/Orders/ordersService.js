@@ -9,7 +9,7 @@ class OrdersService {
     this.menusRepo = menusRepo;
   }
 
-  async createOrder({ tenantId, tableId, customerId, dishes }) {
+  async createOrder({ tenantId, tableId, dishes }) {
     if (!tenantId) throw new Error("Tenant ID is required");
     if (!tableId) throw new Error("Table ID is required");
     if (!dishes || !Array.isArray(dishes) || dishes.length === 0) {
@@ -54,7 +54,6 @@ class OrdersService {
     const newOrder = await this.ordersRepo.create({
       tenantId,
       tableId,
-      customerId,
       status: OrdersStatus.UNSUBMIT, // Mặc định khi tạo là 'Unsubmit'
       totalAmount: calculatedTotalAmount,
       // Tạo mã đơn hiển thị (ví dụ đơn giản)

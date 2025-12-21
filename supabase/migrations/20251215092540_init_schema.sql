@@ -170,21 +170,11 @@ CREATE TABLE dishes (
 -- PHẦN 4: ORDERING & OPERATIONS
 -- ================================================================
 
--- 7. Bảng customers
-CREATE TABLE customers (
-    id SERIAL PRIMARY KEY,
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    phone_number VARCHAR(15),
-    full_name VARCHAR(100),
-    loyalty_points INTEGER DEFAULT 0
-);
-
 -- 8. Bảng orders
 CREATE TABLE orders (
     id BIGSERIAL PRIMARY KEY,
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     table_id INTEGER REFERENCES tables(id) ON DELETE SET NULL,
-    customer_id INTEGER REFERENCES customers(id) ON DELETE SET NULL,
 
     status order_status DEFAULT 'Unsubmit', -- Unsubmit, Approved, Pending, Completed, Served, Paid, Cancelled
     total_amount DECIMAL(12, 2) DEFAULT 0,
@@ -245,7 +235,6 @@ CREATE INDEX idx_users_tenant ON users(tenant_id);
 CREATE INDEX idx_tables_tenant ON tables(tenant_id);
 CREATE INDEX idx_categories_tenant ON categories(tenant_id);
 CREATE INDEX idx_dishes_tenant ON dishes(tenant_id);
-CREATE INDEX idx_customers_tenant ON customers(tenant_id);
 CREATE INDEX idx_orders_tenant ON orders(tenant_id);
 -- order_items -> order_details
 CREATE INDEX idx_order_details_tenant ON order_details(tenant_id);
@@ -253,6 +242,5 @@ CREATE INDEX idx_payments_tenant ON payments(tenant_id);
 
 -- 5.3 Index bổ sung cho các khoá ngoại thường dùng để join
 CREATE INDEX idx_dishes_category ON dishes(category_id);
-CREATE INDEX idx_orders_customer ON orders(customer_id);
 CREATE INDEX idx_orders_table ON orders(table_id);
 CREATE INDEX idx_order_details_order ON order_details(order_id);

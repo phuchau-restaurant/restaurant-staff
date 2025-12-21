@@ -11,13 +11,12 @@ class OrdersController {
   create = async (req, res, next) => {
     try {
       const tenantId = req.tenantId;
-      // Body nhận: tableId, customerId, dishes: [{ dishId, quantity, description }]
-      const { tableId, customerId, dishes } = req.body;
+      // Body nhận: tableId, dishes: [{ dishId, quantity, description }]
+      const { tableId, dishes } = req.body;
 
       const result = await this.ordersService.createOrder({
         tenantId,
         tableId,
-        customerId,
         dishes
       });
       

@@ -5,7 +5,6 @@ import OrdersContent from '../../screens/Dashboard/OrdersContent';
 import InventoryContent from '../../screens/Dashboard/InventoryContent';
 import SalesContent from '../../screens/Dashboard/SalesContent';
 import FeedbackContent from '../../screens/Dashboard/FeedbackContent';
-import CustomersContent from '../../screens/Dashboard/CustomersContent';
 import TablesScreen from '../../screens/TablesScreen';
 
 const DashboardLayout = () => {
@@ -25,8 +24,6 @@ const DashboardLayout = () => {
         return <SalesContent />;
       case 'feedback':
         return <FeedbackContent />;
-      case 'customers':
-        return <CustomersContent />;
       default:
         return <DashboardContent />;
     }

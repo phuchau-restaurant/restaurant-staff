@@ -117,30 +117,19 @@ Quản lý sơ đồ bàn và trạng thái hiện tại.
 
 ## PHẦN 4: OPERATIONS (Vận hành & Kinh doanh)
 
-### 8. Bảng `customers` (Khách hàng thành viên)
-
-| Tên trường | Kiểu dữ liệu + Ràng buộc | Mô tả ngắn |
-| :--- | :--- | :--- |
-| **id** | `INTEGER` (PK, Serial) | ID khách hàng. |
-| **tenant_id** | `UUID` (FK) NOT NULL | Thuộc nhà hàng nào. |
-| **phone_number** | `VARCHAR` | Số điện thoại (thường dùng để định danh). |
-| **full_name** | `VARCHAR` | Tên khách hàng. |
-| **loyalty_points** | `INTEGER` DEFAULT 0 | Điểm tích lũy. |
-
-### 9. Bảng `orders` (Đơn hàng)
+### 8. Bảng `orders` (Đơn hàng)
 
 | Tên trường | Kiểu dữ liệu + Ràng buộc | Mô tả ngắn |
 | :--- | :--- | :--- |
 | **id** | `BIGINT` (PK, Serial) | ID đơn hàng (dùng Bigint cho transaction lớn). |
 | **tenant_id** | `UUID` (FK) NOT NULL | Đơn của nhà hàng nào. |
 | **table_id** | `INTEGER` (FK) | Đơn tại bàn nào. |
-| **customer_id** | `INTEGER` (FK) | Khách hàng nào (Null nếu là khách vãng lai). |
 | **total_amount** | `NUMERIC` DEFAULT 0 | Tổng tiền tạm tính. |
 | **status** | `USER-DEFINED` DEFAULT `'Unsubmit'` | Trạng thái đơn (VD: `Unsubmit`, `Pending`, `Completed`). |
 | **created_at** | `TIMESTAMPTZ` DEFAULT `now()` | Thời gian tạo. |
 | **completed_at** | `TIMESTAMPTZ` | Thời gian hoàn tất. |
 
-### 10. Bảng `order_details` (Chi tiết đơn hàng)
+### 9. Bảng `order_details` (Chi tiết đơn hàng)
 *(Tên cũ: order_items)*
 
 | Tên trường | Kiểu dữ liệu + Ràng buộc | Mô tả ngắn |

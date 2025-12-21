@@ -77,19 +77,10 @@ erDiagram
     }
 
     %% --- OPERATIONS ---
-    customers {
-        integer id PK
-        uuid tenant_id FK
-        varchar phone_number
-        varchar full_name
-        integer loyalty_points
-    }
-
     orders {
         bigint id PK
         uuid tenant_id FK
         integer table_id FK
-        integer customer_id FK
         numeric total_amount
         timestamp created_at
         timestamp completed_at
@@ -127,7 +118,6 @@ erDiagram
     tenants ||--o{ tables : "owns"
     tenants ||--o{ categories : "manages"
     tenants ||--o{ dishes : "serves"
-    tenants ||--o{ customers : "tracks"
     tenants ||--o{ orders : "records"
     tenants ||--o{ order_details : "archives"
     tenants ||--o{ payments : "collects"
@@ -137,8 +127,6 @@ erDiagram
     
     tables |o--o{ orders : "hosts (history)"
     tables |o--o| orders : "currently serving (state)"
-    
-    customers |o--o{ orders : "places"
     
     orders ||--o{ order_details : "includes"
     dishes ||--o{ order_details : "appears in"

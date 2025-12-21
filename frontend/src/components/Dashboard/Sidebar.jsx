@@ -5,8 +5,7 @@ import {
   Table,
   Package, 
   BarChart3, 
-  MessageSquare, 
-  Users
+  MessageSquare
 } from 'lucide-react';
 
 const Sidebar = ({ activeMenu = 'dashboard', onNavigate }) => {
@@ -17,7 +16,6 @@ const Sidebar = ({ activeMenu = 'dashboard', onNavigate }) => {
     { id: 'inventory', label: 'Inventory Management', icon: Package },
     { id: 'sales', label: 'Sales Reports', icon: BarChart3 },
     { id: 'feedback', label: 'Customer Feedback', icon: MessageSquare },
-    { id: 'customers', label: 'Customer Detail', icon: Users },
   ];
 
   return (
