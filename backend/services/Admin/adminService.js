@@ -131,7 +131,7 @@ export default class AdminService {
       });
 
       // 3. Tạo URL cho customer login
-      const customerLoginUrl = `${FRONTEND_URL}/customer/login?token=${jwtToken}`;
+      const customerLoginUrl = `${FRONTEND_URL}/login?token=${jwtToken}`;
 
       // 4. Generate QR image
       const qrCodeDataURL = await QRCode.toDataURL(customerLoginUrl, {
