@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Edit2 } from "lucide-react";
+import { Edit2, Trash2 } from "lucide-react";
 import { formatDate } from "../../utils/categoryUtils";
 
 /**
@@ -8,8 +8,9 @@ import { formatDate } from "../../utils/categoryUtils";
  * 
  * @param {Object} category - Dữ liệu danh mục
  * @param {function} onEdit - Callback khi bấm edit
+ * @param {function} onDelete - Callback khi bấm delete
  */
-const CategoryCard = memo(({ category, onEdit }) => {
+const CategoryCard = memo(({ category, onEdit, onDelete }) => {
   const statusText = category.isActive ? "Hoạt động" : "Không hoạt động";
   const statusColor = category.isActive ? "text-green-600" : "text-red-600";
 

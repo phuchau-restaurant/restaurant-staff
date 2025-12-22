@@ -3,6 +3,7 @@
  */
 
 export const SORT_OPTIONS = [
+  { value: "displayOrder", label: "Sắp xếp theo thứ tự" },
   { value: "name", label: "Sắp xếp theo tên" },
   { value: "createdAt", label: "Sắp xếp theo ngày tạo" },
   { value: "isActive", label: "Sắp xếp theo trạng thái" },

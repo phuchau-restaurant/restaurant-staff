@@ -43,7 +43,7 @@ const CategoryManagementContent = () => {
   // State quản lý filters
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [sortBy, setSortBy] = useState("name");
+  const [sortBy, setSortBy] = useState("displayOrder");
 
   // State quản lý modals
   const [alertModal, setAlertModal] = useState({
@@ -329,6 +329,7 @@ const CategoryManagementContent = () => {
                 key={category.id}
                 category={category}
                 onEdit={handleEditClick}
+                onDelete={handleDeleteClick}
               />
             ))}
           </div>

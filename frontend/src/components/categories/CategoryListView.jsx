@@ -28,7 +28,11 @@ const CategoryListView = memo(({ categories, onEdit, onDelete }) => {
               Tên danh mục
             </th>
             <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
-              Mô tả
+              Thứ tự
+            </th>
+            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">              Thứ tự
+            </th>
+            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">              Mô tả
             </th>
             <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
               Trạng thái
@@ -66,6 +70,10 @@ const CategoryListView = memo(({ categories, onEdit, onDelete }) => {
                     {category.name}
                   </span>
                 </div>
+              </td>              <td className="px-6 py-4 text-sm text-gray-600">
+                {category.displayOrder ?? 0}
+              </td>              <td className="px-6 py-4 text-sm text-gray-600">
+                {category.displayOrder ?? 0}
               </td>
               <td className="px-6 py-4 text-sm text-gray-600 truncate max-w-xs">
                 {category.description || "-"}

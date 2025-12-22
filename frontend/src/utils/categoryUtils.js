@@ -40,6 +40,13 @@ export const filterAndSortCategories = (
   // Sort
   const sorted = [...filtered];
   switch (sortBy) {
+    case "displayOrder":
+      sorted.sort((a, b) => {
+        const orderA = a.displayOrder ?? 999999;
+        const orderB = b.displayOrder ?? 999999;
+        return orderA - orderB;
+      });
+      break;
     case "name":
       sorted.sort((a, b) => a.name.localeCompare(b.name));
       break;
@@ -86,19 +93,29 @@ export const formatDate = (dateString) => {
 export const validateCategoryData = (categoryData) => {
   const errors = {};
 
+  // Name validation
   if (!categoryData.name || !categoryData.name.trim()) {
     errors.name = "Tên danh mục là bắt buộc";
+  } else if (categoryData.name.trim().length < 2) {
+    errors.name = "Tên danh mục phải có ít nhất 2 ký tự";
+  } else if (categoryData.name.trim().length > 50) {
+    errors.name = "Tên danh mục không được quá 50 ký tự";
   }
 
-  if (categoryData.name && categoryData.name.trim().length > 100) {
-    errors.name = "Tên danh mục không quá 100 ký tự";
-  }
-
+  // Description validation
   if (
     categoryData.description &&
     categoryData.description.trim().length > 500
   ) {
     errors.description = "Mô tả không quá 500 ký tự";
+  }
+
+  // Display order validation
+  if (categoryData.displayOrder !== undefined && categoryData.displayOrder !== null) {
+    const order = Number(categoryData.displayOrder);
+    if (isNaN(order) || order < 0) {
+      errors.displayOrder = "Thứ tự hiển thị phải là số không âm";
+    }
   }
 
   return {
