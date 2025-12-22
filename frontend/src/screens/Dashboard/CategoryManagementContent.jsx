@@ -240,10 +240,10 @@ const CategoryManagementContent = () => {
 
   if (initialLoading) {
     return (
-      <div className="flex items-center justify-center h-full p-8">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 text-lg">{MESSAGES.LOADING}</p>
+      <div className="flex items-center justify-center h-screen">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+          <div className="text-gray-500 font-medium">Đang tải dữ liệu...</div>
         </div>
       </div>
     );
@@ -251,99 +251,119 @@ const CategoryManagementContent = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
-      {/* Header with Stats */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="px-8 py-6">
-          <div className="flex items-center justify-between mb-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <div className="flex items-center gap-3 mb-2">
-                <Package className="w-8 h-8 text-blue-600" />
-                <h1 className="text-3xl font-bold text-gray-900">
-                  Quản Lý Danh Mục
-                </h1>
-              </div>
-              <p className="text-gray-600">
-                Quản lý các danh mục món ăn trong hệ thống
+              <h1 className="text-3xl font-bold text-gray-800">Quản Lý Danh Mục</h1>
+              <p className="text-gray-600 mt-1">
+                Tổng số: {filteredCategories.length} danh mục
               </p>
             </div>
             <button
               onClick={handleAddNew}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors font-semibold shadow-lg hover:shadow-xl"
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors font-semibold shadow-md hover:shadow-lg"
             >
               <Plus className="w-5 h-5" />
               Thêm Danh Mục
             </button>
           </div>
+        </div>
 
-  
-
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-blue-50 rounded-lg p-4">
-              <p className="text-sm text-blue-600 font-medium">Tổng số</p>
-              <p className="text-2xl font-bold text-blue-900">{stats.total}</p>
-            </div>
-            <div className="bg-green-50 rounded-lg p-4">
-              <p className="text-sm text-green-600 font-medium">Đang hoạt động</p>
-              <p className="text-2xl font-bold text-green-900">{stats.active}</p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <p className="text-sm text-gray-600 font-medium">Ngưng hoạt động</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.inactive}</p>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 font-medium">Tổng số</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{stats.total}</p>
+              </div>
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Package className="w-6 h-6 text-blue-600" />
+              </div>
             </div>
           </div>
-
-          {/* Filter Bar */}
-          <CategoryFilterBar
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            sortBy={sortBy}
-            onSortChange={setSortBy}
-            statusFilter={statusFilter}
-            onStatusChange={setStatusFilter}
-            statusOptions={STATUS_OPTIONS}
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-          />
+          <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 font-medium">Đang hoạt động</p>
+                <p className="text-3xl font-bold text-green-600 mt-1">{stats.active}</p>
+              </div>
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <Package className="w-6 h-6 text-green-600" />
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 font-medium">Ngưng hoạt động</p>
+                <p className="text-3xl font-bold text-gray-600 mt-1">{stats.inactive}</p>
+              </div>
+              <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                <Package className="w-6 h-6 text-gray-600" />
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="px-8 py-6 w-full h-full overflow-auto">
+        {/* Filter Bar */}
+        <CategoryFilterBar
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          statusFilter={statusFilter}
+          onStatusChange={setStatusFilter}
+          statusOptions={STATUS_OPTIONS}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+        />
 
         {/* Categories Display */}
-        {filteredCategories.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-            <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg mb-2">
-              Không tìm thấy danh mục nào
-            </p>
-            <p className="text-gray-400 text-sm">
-              {searchTerm || statusFilter
-                ? "Thử thay đổi bộ lọc hoặc tìm kiếm"
-                : "Bắt đầu bằng cách thêm danh mục mới"}
-            </p>
-          </div>
-        ) : viewMode === VIEW_MODES.GRID ? (
-          // Grid View
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredCategories.map((category) => (
-              <CategoryCard
-                key={category.id}
-                category={category}
-                onEdit={handleEditClick}
-                onDelete={handleDeleteClick}
-              />
-            ))}
-          </div>
-        ) : (
-          // List View
-          <CategoryListView
-            categories={filteredCategories}
-            onEdit={handleEditClick}
-            onDelete={handleDeleteClick}
-          />
-        )}
+        <div className="mt-6">
+          {filteredCategories.length === 0 ? (
+            <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+              <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500 text-lg mb-2">
+                Không tìm thấy danh mục nào
+              </p>
+              <p className="text-gray-400 text-sm mb-4">
+                {searchTerm || statusFilter
+                  ? "Thử thay đổi bộ lọc hoặc tìm kiếm"
+                  : "Bắt đầu bằng cách thêm danh mục mới"}
+              </p>
+              {!searchTerm && !statusFilter && (
+                <button
+                  onClick={handleAddNew}
+                  className="text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Thêm danh mục mới
+                </button>
+              )}
+            </div>
+          ) : viewMode === VIEW_MODES.GRID ? (
+            // Grid View
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredCategories.map((category) => (
+                <CategoryCard
+                  key={category.id}
+                  category={category}
+                  onEdit={handleEditClick}
+                  onDelete={handleDeleteClick}
+                />
+              ))}
+            </div>
+          ) : (
+            // List View
+            <CategoryListView
+              categories={filteredCategories}
+              onEdit={handleEditClick}
+              onDelete={handleDeleteClick}
+            />
+          )}
+        </div>
       </div>
 
       {/* Form Modal */}
