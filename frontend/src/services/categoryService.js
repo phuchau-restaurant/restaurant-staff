@@ -2,7 +2,7 @@
  * Category Service - API calls cho quản lý danh mục
  */
 
-const BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/admin/categories`;
+const BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/categories`;
 const HEADERS = {
   "Content-Type": "application/json",
   "x-tenant-id": import.meta.env.VITE_TENANT_ID,
