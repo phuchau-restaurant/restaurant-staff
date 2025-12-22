@@ -60,14 +60,25 @@ const CategoryCard = memo(({ category, onEdit, onDelete }) => {
           </p>
         </div>
 
-        {/* Edit button */}
-        <button
-          onClick={() => onEdit(category)}
-          className="mt-4 w-full flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold py-2 px-3 rounded-lg transition-colors"
-        >
-          <Edit2 className="w-4 h-4" />
-          Chỉnh sửa
-        </button>
+        {/* Action buttons */}
+        <div className="mt-4 flex gap-2">
+          <button
+            onClick={() => onEdit(category)}
+            className="flex-1 flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold py-2 px-3 rounded-lg transition-colors"
+          >
+            <Edit2 className="w-4 h-4" />
+            Chỉnh sửa
+          </button>
+          {onDelete && (
+            <button
+              onClick={() => onDelete(category)}
+              className="flex items-center justify-center bg-red-50 hover:bg-red-100 text-red-600 py-2 px-3 rounded-lg transition-colors"
+              title="Xóa"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
