@@ -238,8 +238,8 @@ const CategoryManagementContent = () => {
 
   const stats = {
     total: categories.length,
-    active: categories.filter((cat) => cat.status === "active").length,
-    inactive: categories.filter((cat) => cat.status === "inactive").length,
+    active: categories.filter((cat) => cat.isActive === true).length,
+    inactive: categories.filter((cat) => cat.isActive === false).length,
   };
 
   // ==================== RENDER ====================

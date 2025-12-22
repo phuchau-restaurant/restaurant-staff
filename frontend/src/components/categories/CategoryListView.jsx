@@ -49,12 +49,14 @@ const CategoryListView = memo(({ categories, onEdit, onDelete }) => {
             >
               <td className="px-6 py-4">
                 <div className="flex items-center gap-3">
-                  {category.image ? (
-                    <img
-                      src={category.image}
-                      alt={category.name}
-                      className="w-10 h-10 rounded object-cover"
-                    />
+                  {category.urlIcon ? (
+                    <div className="w-10 h-10 rounded bg-blue-100 flex items-center justify-center">
+                      <img
+                        src={category.urlIcon}
+                        alt={category.name}
+                        className="w-6 h-6 object-contain"
+                      />
+                    </div>
                   ) : (
                     <div className="w-10 h-10 rounded bg-gray-200 flex items-center justify-center">
                       <span className="text-xs text-gray-500">N/A</span>

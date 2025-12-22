@@ -16,16 +16,18 @@ const CategoryCard = memo(({ category, onEdit }) => {
   return (
     <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all h-full flex flex-col">
       {/* Hình ảnh */}
-      <div className="relative w-full h-48 bg-gray-200 overflow-hidden">
-        {category.image ? (
-          <img
-            src={category.image}
-            alt={category.name}
-            className="w-full h-full object-cover hover:scale-105 transition-transform"
-          />
+      <div className="relative w-full h-48 bg-gradient-to-br from-blue-500 to-blue-700 overflow-hidden">
+        {category.urlIcon ? (
+          <div className="w-full h-full flex items-center justify-center">
+            <img
+              src={category.urlIcon}
+              alt={category.name}
+              className="w-24 h-24 object-contain"
+            />
+          </div>
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center">
-            <div className="text-gray-500 text-sm">Không có hình ảnh</div>
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="text-white text-sm">Không có icon</div>
           </div>
         )}
         
