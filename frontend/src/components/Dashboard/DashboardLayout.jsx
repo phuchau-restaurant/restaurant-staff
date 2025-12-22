@@ -2,10 +2,10 @@ import React, { useState } from "react";
 import Sidebar from "./Sidebar";
 import DashboardContent from "../../screens/Dashboard/DashboardContent";
 import OrdersContent from "../../screens/Dashboard/OrdersContent";
+import CategoryManagementContent from "../../screens/Dashboard/CategoryManagementContent";
 import SalesContent from "../../screens/Dashboard/SalesContent";
 import FeedbackContent from "../../screens/Dashboard/FeedbackContent";
 import TablesScreen from "../../screens/TablesScreen";
-import CategoriesScreen from "../../screens/CategoriesScreen";
 
 const DashboardLayout = () => {
   const [activeMenu, setActiveMenu] = useState("dashboard");
@@ -19,7 +19,7 @@ const DashboardLayout = () => {
       case "tables":
         return <TablesScreen />;
       case "inventory":
-        return <CategoriesScreen />;
+        return <CategoryManagementContent />;
       case "sales":
         return <SalesContent />;
       case "feedback":

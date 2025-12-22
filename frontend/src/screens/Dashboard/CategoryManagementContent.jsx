@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Package } from "lucide-react";
 
 // Components
 import CategoryFilterBar from "../../components/categories/CategoryFilterBar";
@@ -19,7 +19,7 @@ import {
 } from "../../constants/categoryConstants";
 
 /**
- * CategoriesScreen - Màn hình quản lý danh mục
+ * CategoryManagementContent - Màn hình quản lý danh mục trong Dashboard
  * Hiển thị danh sách danh mục với các chức năng:
  * - Lọc theo trạng thái
  * - Tìm kiếm theo tên
@@ -27,7 +27,9 @@ import {
  * - Xem dạng lưới hoặc danh sách
  * - Thêm, chỉnh sửa, xóa danh mục
  */
-const CategoriesScreen = () => {
+const CategoryManagementContent = () => {
+  // ==================== STATE MANAGEMENT ====================
+  
   // State quản lý dữ liệu
   const [categories, setCategories] = useState([]);
   const [filteredCategories, setFilteredCategories] = useState([]);
@@ -99,92 +101,80 @@ const CategoriesScreen = () => {
       showAlert("Thành công", MESSAGES.CREATE_SUCCESS, "success");
     } catch (error) {
       console.error("Create category error:", error);
-      showAlert("Lỗi", MESSAGES.CREATE_ERROR, "error");
+      showAlert(
+        "Lỗi",
+        error.message || "Không thể thêm danh mục. Vui lòng thử lại!",
+        "error"
+      );
     }
   };
 
   /**
    * Cập nhật danh mục
    */
-  const handleUpdateCategory = async (categoryData) => {
+  const handleUpdateCategory = async (id, categoryData) => {
     try {
-      const updated = await categoryService.updateCategory(
-        editingCategory.id,
+      const updatedCategory = await categoryService.updateCategory(
+        id,
         categoryData
       );
-
       setCategories(
-        categories.map((cat) => (cat.id === editingCategory.id ? updated : cat))
+        categories.map((cat) => (cat.id === id ? updatedCategory : cat))
       );
-      setEditingCategory(null);
       setShowForm(false);
+      setEditingCategory(null);
       showAlert("Thành công", MESSAGES.UPDATE_SUCCESS, "success");
     } catch (error) {
       console.error("Update category error:", error);
-      showAlert("Lỗi", MESSAGES.UPDATE_ERROR, "error");
+      showAlert(
+        "Lỗi",
+        error.message || "Không thể cập nhật danh mục. Vui lòng thử lại!",
+        "error"
+      );
     }
   };
 
   /**
    * Xóa danh mục
    */
-  const handleDeleteCategory = async () => {
+  const handleDeleteCategory = async (id) => {
     try {
-      await categoryService.deleteCategory(editingCategory.id);
-      setCategories(categories.filter((cat) => cat.id !== editingCategory.id));
-      setEditingCategory(null);
-      setConfirmDialog({ isOpen: false, title: "", message: "", onConfirm: null });
+      await categoryService.deleteCategory(id);
+      setCategories(categories.filter((cat) => cat.id !== id));
       showAlert("Thành công", MESSAGES.DELETE_SUCCESS, "success");
     } catch (error) {
       console.error("Delete category error:", error);
-      showAlert("Lỗi", MESSAGES.DELETE_ERROR, "error");
+      showAlert(
+        "Lỗi",
+        error.message || "Không thể xóa danh mục. Vui lòng thử lại!",
+        "error"
+      );
     }
   };
 
   // ==================== HANDLERS ====================
 
   /**
-   * Filter và sort danh sách danh mục
+   * Xử lý filter và sort
    */
   const handleFilterAndSort = useCallback(() => {
     const filtered = filterAndSortCategories(
       categories,
       searchTerm,
-      sortBy,
-      statusFilter
+      statusFilter,
+      sortBy
     );
     setFilteredCategories(filtered);
-  }, [categories, searchTerm, sortBy, statusFilter]);
-
-  /**
-   * Xử lý khi bấm edit
-   */
-  const handleEditClick = (category) => {
-    setEditingCategory(category);
-    setShowForm(true);
-  };
-
-  /**
-   * Xử lý khi bấm delete
-   */
-  const handleDeleteClick = (category) => {
-    setEditingCategory(category);
-    setConfirmDialog({
-      isOpen: true,
-      title: "Xóa danh mục",
-      message: MESSAGES.DELETE_CONFIRMATION,
-      onConfirm: handleDeleteCategory,
-    });
-  };
+  }, [categories, searchTerm, statusFilter, sortBy]);
 
   /**
    * Xử lý submit form
    */
-  const handleFormSubmit = (categoryData) => {
+  const handleFormSubmit = async (categoryData) => {
     if (editingCategory) {
-      return handleUpdateCategory(categoryData);
+      await handleUpdateCategory(editingCategory.id, categoryData);
     } else {
-      return handleCreateCategory(categoryData);
+      await handleCreateCategory(categoryData);
     }
   };
 
@@ -194,6 +184,34 @@ const CategoriesScreen = () => {
   const handleCloseForm = () => {
     setShowForm(false);
     setEditingCategory(null);
+  };
+
+  /**
+   * Xử lý click edit
+   */
+  const handleEditClick = (category) => {
+    setEditingCategory(category);
+    setShowForm(true);
+  };
+
+  /**
+   * Xử lý click delete
+   */
+  const handleDeleteClick = (category) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Xác nhận xóa",
+      message: `Bạn có chắc chắn muốn xóa danh mục "${category.name}"?`,
+      onConfirm: () => {
+        handleDeleteCategory(category.id);
+        setConfirmDialog({
+          isOpen: false,
+          title: "",
+          message: "",
+          onConfirm: null,
+        });
+      },
+    });
   };
 
   /**
@@ -216,12 +234,21 @@ const CategoriesScreen = () => {
     });
   };
 
+  // ==================== STATISTICS ====================
+
+  const stats = {
+    total: categories.length,
+    active: categories.filter((cat) => cat.status === "active").length,
+    inactive: categories.filter((cat) => cat.status === "inactive").length,
+  };
+
   // ==================== RENDER ====================
 
   if (initialLoading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="flex items-center justify-center h-full p-8">
         <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600 text-lg">{MESSAGES.LOADING}</p>
         </div>
       </div>
@@ -229,26 +256,45 @@ const CategoriesScreen = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-8">
-      {/* Header */}
-      <div className="bg-gray-100 pt-6 pb-6">
-        <div className="px-8">
-          <div className="flex items-center justify-between mb-4">
+    <div className="h-full overflow-auto bg-gray-50">
+      {/* Header with Stats */}
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="px-8 py-6">
+          <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800">
-                Quản Lý Danh Mục
-              </h1>
-              <p className="text-gray-600 mt-1">
-                Tổng số: {filteredCategories.length} danh mục
+              <div className="flex items-center gap-3 mb-2">
+                <Package className="w-8 h-8 text-blue-600" />
+                <h1 className="text-3xl font-bold text-gray-900">
+                  Quản Lý Danh Mục
+                </h1>
+              </div>
+              <p className="text-gray-600">
+                Quản lý các danh mục món ăn trong hệ thống
               </p>
             </div>
             <button
               onClick={handleAddNew}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors font-semibold"
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors font-semibold shadow-lg hover:shadow-xl"
             >
               <Plus className="w-5 h-5" />
               Thêm Danh Mục
             </button>
+          </div>
+
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-blue-50 rounded-lg p-4">
+              <p className="text-sm text-blue-600 font-medium">Tổng số</p>
+              <p className="text-2xl font-bold text-blue-900">{stats.total}</p>
+            </div>
+            <div className="bg-green-50 rounded-lg p-4">
+              <p className="text-sm text-green-600 font-medium">Đang hoạt động</p>
+              <p className="text-2xl font-bold text-green-900">{stats.active}</p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <p className="text-sm text-gray-600 font-medium">Ngưng hoạt động</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.inactive}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -270,9 +316,15 @@ const CategoriesScreen = () => {
 
         {/* Categories Display */}
         {filteredCategories.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm p-8 text-center">
-            <p className="text-gray-500 text-lg">
-              Không tìm thấy danh mục nào phù hợp
+          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+            <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500 text-lg mb-2">
+              Không tìm thấy danh mục nào
+            </p>
+            <p className="text-gray-400 text-sm">
+              {searchTerm || statusFilter
+                ? "Thử thay đổi bộ lọc hoặc tìm kiếm"
+                : "Bắt đầu bằng cách thêm danh mục mới"}
             </p>
           </div>
         ) : viewMode === VIEW_MODES.GRID ? (
@@ -335,4 +387,4 @@ const CategoriesScreen = () => {
   );
 };
 
-export default CategoriesScreen;
+export default CategoryManagementContent;
