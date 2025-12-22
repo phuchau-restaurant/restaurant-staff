@@ -24,7 +24,7 @@ export const filterAndSortCategories = (
   let filtered = categories;
   if (statusFilter) {
     const isActive = statusFilter === "true";
-    filtered = categories.filter((cat) => cat.isActive === isActive);
+    filtered = filtered.filter((cat) => cat.isActive === isActive);
   }
 
   // Filter theo search term

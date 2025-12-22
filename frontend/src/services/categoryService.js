@@ -23,6 +23,10 @@ export const fetchCategories = async (searchTerm = "") => {
     }`;
 
     const response = await fetch(url, { headers: HEADERS });
+    if (!response.ok) {
+      // Ném lỗi để rơi vào block catch và trả về mock data
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
     const result = await response.json();
 
     if (result.success) {

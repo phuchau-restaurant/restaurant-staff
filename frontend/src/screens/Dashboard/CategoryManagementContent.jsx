@@ -69,18 +69,13 @@ const CategoryManagementContent = () => {
 
   // Filter và sort phía client
   useEffect(() => {
-    console.log("Filter effect - categories:", categories.length);
-    console.log("Filter effect - searchTerm:", searchTerm);
-    console.log("Filter effect - statusFilter:", statusFilter);
-    console.log("Filter effect - sortBy:", sortBy);
-    
     const filtered = filterAndSortCategories(
       categories,
       searchTerm,
       statusFilter,
       sortBy
     );
-    console.log("Filtered categories:", filtered);
+
     setFilteredCategories(filtered);
   }, [categories, searchTerm, sortBy, statusFilter]);
 
