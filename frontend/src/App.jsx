@@ -7,7 +7,6 @@ import VerifyEmailScreen from "./screens/VerifyEmailScreen";
 import DashboardLayout from "./components/Dashboard/DashboardLayout";
 import KitchenScreen from "./screens/KitchenScreen";
 import WaiterScreen from "./screens/WaiterScreen";
-import TestScreen from "./screens/TestScreen";
 import OnboardingScreen from "./screens/OnboardingScreen";
 import TablesScreen from "./screens/TablesScreen";
 
@@ -33,14 +32,6 @@ function App() {
             }
           />
           <Route path="/tables" element={<TablesScreen />} />
-          <Route
-            path="/test"
-            element={
-              <ProtectedRoute>
-                <TestScreen />
-              </ProtectedRoute>
-            }
-          />
           <Route
             path="/kitchen"
             element={
