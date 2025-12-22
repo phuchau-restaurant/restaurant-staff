@@ -5,6 +5,7 @@ import OrdersContent from "../../screens/Dashboard/OrdersContent";
 import SalesContent from "../../screens/Dashboard/SalesContent";
 import FeedbackContent from "../../screens/Dashboard/FeedbackContent";
 import TablesScreen from "../../screens/TablesScreen";
+import CategoriesScreen from "../../screens/CategoriesScreen";
 
 const DashboardLayout = () => {
   const [activeMenu, setActiveMenu] = useState("dashboard");
