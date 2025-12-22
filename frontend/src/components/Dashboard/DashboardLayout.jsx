@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import Sidebar from "./Sidebar";
 import DashboardContent from "../../screens/Dashboard/DashboardContent";
 import OrdersContent from "../../screens/Dashboard/OrdersContent";
-import InventoryContent from "../../screens/Dashboard/InventoryContent";
 import SalesContent from "../../screens/Dashboard/SalesContent";
 import FeedbackContent from "../../screens/Dashboard/FeedbackContent";
 import TablesScreen from "../../screens/TablesScreen";
