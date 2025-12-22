@@ -72,10 +72,11 @@ const CategoryCard = memo(({ category, onEdit, onDelete }) => {
           {onDelete && (
             <button
               onClick={() => onDelete(category)}
-              className="flex items-center justify-center bg-red-50 hover:bg-red-100 text-red-600 py-2 px-3 rounded-lg transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-2 px-3 rounded-lg transition-colors"
               title="Xóa"
             >
               <Trash2 className="w-4 h-4" />
+              Xóa
             </button>
           )}
         </div>
