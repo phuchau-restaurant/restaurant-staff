@@ -250,7 +250,7 @@ const CategoryManagementContent = () => {
   }
 
   return (
-    <div className="h-full overflow-auto bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
       {/* Header with Stats */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="px-8 py-6">
@@ -275,6 +275,8 @@ const CategoryManagementContent = () => {
             </button>
           </div>
 
+  
+
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-blue-50 rounded-lg p-4">
@@ -290,23 +292,24 @@ const CategoryManagementContent = () => {
               <p className="text-2xl font-bold text-gray-900">{stats.inactive}</p>
             </div>
           </div>
+
+          {/* Filter Bar */}
+          <CategoryFilterBar
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
+            statusFilter={statusFilter}
+            onStatusChange={setStatusFilter}
+            statusOptions={STATUS_OPTIONS}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+          />
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="px-8 py-6">
-        {/* Filter Bar */}
-        <CategoryFilterBar
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          sortBy={sortBy}
-          onSortChange={setSortBy}
-          statusFilter={statusFilter}
-          onStatusChange={setStatusFilter}
-          statusOptions={STATUS_OPTIONS}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-        />
+      <div className="px-8 py-6 w-full h-full overflow-auto">
 
         {/* Categories Display */}
         {filteredCategories.length === 0 ? (
