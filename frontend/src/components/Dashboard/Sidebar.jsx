@@ -13,7 +13,7 @@ const Sidebar = ({ activeMenu = "dashboard", onNavigate }) => {
     { id: "dashboard", label: "Dashboard", icon: Home },
     { id: "orders", label: "Order Management", icon: ShoppingBag },
     { id: "tables", label: "Table Management", icon: Table },
-    { id: "inventory", label: "Inventory Management", icon: Package },
+    { id: "inventory", label: "Category Management", icon: Package },
     { id: "sales", label: "Sales Reports", icon: BarChart3 },
     { id: "feedback", label: "Customer Feedback", icon: MessageSquare },
   ];

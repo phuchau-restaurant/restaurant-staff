@@ -31,7 +31,7 @@ const FoodForm = ({ mode, food, categories, onSubmit, onClose }) => {
         {/* Header with Close Button */}
         <div className="mb-6 flex items-start justify-between">
           <h2 className="text-2xl font-bold text-gray-800">
-            {mode === 'add' ? 'Add New inventory' : 'Edit Food Item'}
+            {mode === 'add' ? 'Add New Category' : 'Edit Food Item'}
           </h2>
           <button
             onClick={onClose}
