@@ -6,15 +6,15 @@
  * Filter và sort danh sách danh mục
  * @param {Array} categories - Danh sách danh mục
  * @param {string} searchTerm - Từ khóa tìm kiếm
- * @param {string} sortBy - Tiêu chí sắp xếp
  * @param {string} statusFilter - Bộ lọc trạng thái
+ * @param {string} sortBy - Tiêu chí sắp xếp
  * @returns {Array} Danh sách danh mục sau khi filter và sort
  */
 export const filterAndSortCategories = (
   categories = [],
   searchTerm = "",
-  sortBy = "name",
-  statusFilter = ""
+  statusFilter = "",
+  sortBy = "name"
 ) => {
   if (!Array.isArray(categories)) {
     return [];
