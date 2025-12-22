@@ -1,4 +1,6 @@
 // backend/models/Categories.js
+import { v7 as uuidv7 } from 'uuid';
+
 export class Categories {
   constructor(data) {
     // Xử lý linh hoạt: data có thể đến từ DB (snake) hoặc từ Service (camel)
@@ -20,13 +22,23 @@ export class Categories {
    * Hàm này tạo ra object thuần để Supabase có thể insert/update
    */
   toPersistence() {
-    return {
-      // id thường do DB tự sinh nên có thể không cần map khi create
+    const payload = {
+      // Generate UUID v7 nếu chưa có id (khi create mới)
+      id: this.id || uuidv7(),
       tenant_id: this.tenantId,
       name: this.name,
-      display_order: this.displayOrder,
-      is_active: this.isActive,
-      id: this.id,
     };
+
+    // Chỉ thêm display_order nếu có giá trị
+    if (this.displayOrder !== undefined && this.displayOrder !== null) {
+      payload.display_order = this.displayOrder;
+    }
+
+    // Chỉ thêm is_active nếu có giá trị
+    if (this.isActive !== undefined && this.isActive !== null) {
+      payload.is_active = this.isActive;
+    }
+
+    return payload;
   }
 }
