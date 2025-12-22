@@ -18,7 +18,7 @@ const DashboardLayout = () => {
       case "tables":
         return <TablesScreen />;
       case "inventory":
-        return <InventoryContent />;
+        return <CategoriesScreen />;
       case "sales":
         return <SalesContent />;
       case "feedback":
