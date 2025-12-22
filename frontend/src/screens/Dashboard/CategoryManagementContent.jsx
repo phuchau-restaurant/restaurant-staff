@@ -69,7 +69,19 @@ const CategoryManagementContent = () => {
 
   // Filter và sort phía client
   useEffect(() => {
-    handleFilterAndSort();
+    console.log("Filter effect - categories:", categories.length);
+    console.log("Filter effect - searchTerm:", searchTerm);
+    console.log("Filter effect - statusFilter:", statusFilter);
+    console.log("Filter effect - sortBy:", sortBy);
+    
+    const filtered = filterAndSortCategories(
+      categories,
+      searchTerm,
+      statusFilter,
+      sortBy
+    );
+    console.log("Filtered categories:", filtered);
+    setFilteredCategories(filtered);
   }, [categories, searchTerm, sortBy, statusFilter]);
 
   // ==================== API CALLS ====================
@@ -153,19 +165,6 @@ const CategoryManagementContent = () => {
   };
 
   // ==================== HANDLERS ====================
-
-  /**
-   * Xử lý filter và sort
-   */
-  const handleFilterAndSort = useCallback(() => {
-    const filtered = filterAndSortCategories(
-      categories,
-      searchTerm,
-      statusFilter,
-      sortBy
-    );
-    setFilteredCategories(filtered);
-  }, [categories, searchTerm, statusFilter, sortBy]);
 
   /**
    * Xử lý submit form
