@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import { CATEGORY_ICONS } from "./categoryIcons.js";
 import { X, Upload } from "lucide-react";
 import { validateCategoryData } from "../../utils/categoryUtils";
+import { fetchCategoryIcons } from "../../services/appSettingsService";
 
 /**
  * CategoryForm Component
@@ -12,13 +12,17 @@ import { validateCategoryData } from "../../utils/categoryUtils";
  * @param {function} onClose - Callback khi đóng form
  */
 const CategoryForm = ({ category, onSubmit, onClose }) => {
+  // State cho danh sách icons fetch từ API
+  const [categoryIcons, setCategoryIcons] = useState([]);
+  const [isLoadingIcons, setIsLoadingIcons] = useState(true);
+
   const [formData, setFormData] = useState({
     name: "",
     description:  "",
     displayOrder: 0,
     image: "",
     isActive: true,
-    icon: CATEGORY_ICONS[0]?. icon || "",
+    icon: "",
     modifiers:  [],
   });
   // State cho toggle icon picker
@@ -44,6 +48,31 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Fetch icons từ API khi component mount
+  useEffect(() => {
+    const loadIcons = async () => {
+      try {
+        setIsLoadingIcons(true);
+        const icons = await fetchCategoryIcons();
+        setCategoryIcons(icons);
+        
+        // Set default icon nếu chưa có icon được chọn
+        if (!formData.icon && icons.length > 0) {
+          setFormData((prev) => ({
+            ...prev,
+            icon: icons[0]?.icon || "",
+          }));
+        }
+      } catch (error) {
+        console.error("Error loading icons:", error);
+      } finally {
+        setIsLoadingIcons(false);
+      }
+    };
+
+    loadIcons();
+  }, []); // chỉ chạy 1 lần khi mount
+
   // Initialize form with category data if editing
   useEffect(() => {
     if (category) {
@@ -53,11 +82,11 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
         displayOrder: category.displayOrder || 0,
         image:  category.image || "",
         isActive: category.isActive !== undefined ? category.isActive : true,
-        icon: category.icon || CATEGORY_ICONS[0]?.icon || "",
+        icon: category.icon || (categoryIcons[0]?.icon || ""),
         modifiers: category.modifiers || [],
       });
     }
-  }, [category]);
+  }, [category, categoryIcons]);
 
   // Icon selection handler
   const handleIconSelect = (icon) => {
@@ -384,34 +413,40 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Icon đại diện
                 </label>
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">{formData.icon}</span>
-                  <button
-                    type="button"
-                    className="px-3 py-1 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
-                    onClick={() => setShowIconPicker((v) => !v)}
-                  >
-                    {showIconPicker ? "Ẩn icon" : "Chọn icon"}
-                  </button>
-                </div>
-                {showIconPicker && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {CATEGORY_ICONS.map((item) => (
+                {isLoadingIcons ? (
+                  <div className="text-sm text-gray-500">Đang tải icons...</div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">{formData.icon}</span>
                       <button
                         type="button"
-                        key={item.icon}
-                        className={`text-2xl p-2 rounded border transition-colors ${
-                          formData.icon === item.icon
-                            ?  "border-blue-500 bg-blue-50"
-                            :  "border-gray-200 bg-white hover:border-blue-300"
-                        }`}
-                        onClick={() => handleIconSelect(item.icon)}
-                        aria-label={item.name}
+                        className="px-3 py-1 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
+                        onClick={() => setShowIconPicker((v) => !v)}
                       >
-                        {item.icon}
+                        {showIconPicker ? "Ẩn icon" : "Chọn icon"}
                       </button>
-                    ))}
-                  </div>
+                    </div>
+                    {showIconPicker && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {categoryIcons.map((item) => (
+                          <button
+                            type="button"
+                            key={item.icon}
+                            className={`text-2xl p-2 rounded border transition-colors ${
+                              formData.icon === item.icon
+                                ?  "border-blue-500 bg-blue-50"
+                                :  "border-gray-200 bg-white hover:border-blue-300"
+                            }`}
+                            onClick={() => handleIconSelect(item.icon)}
+                            aria-label={item.name}
+                          >
+                            {item.icon}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </>
                 )}
                 <p className="text-xs text-gray-500 mt-1">
                   Icon sẽ hiển thị cùng tên danh mục. 
