@@ -1,0 +1,316 @@
+/**
+ * Modifier Service - API calls cho quản lý modifier groups và options
+ * Base: /api/admin/menu
+ */
+
+const BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/admin/menu`;
+const HEADERS = {
+  "Content-Type": "application/json",
+  "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+};
+
+// ==================== MODIFIER GROUPS ====================
+
+/**
+ * Fetch danh sách modifier groups
+ * @param {string} searchTerm - Tìm kiếm theo tên (optional)
+ * @returns {Promise<Array>} Danh sách modifier groups
+ */
+export const fetchModifierGroups = async (searchTerm = "") => {
+  try {
+    const queryParams = new URLSearchParams();
+    if (searchTerm) queryParams.append("search", searchTerm);
+
+    const url = `${BASE_URL}/modifier-groups${
+      queryParams.toString() ? `?${queryParams.toString()}` : ""
+    }`;
+
+    const response = await fetch(url, { headers: HEADERS });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const result = await response.json();
+
+    if (result.success) {
+      return result.data || [];
+    }
+    return [];
+  } catch (error) {
+    console.error("Fetch modifier groups error:", error);
+    return getMockModifierGroups();
+  }
+};
+
+/**
+ * Lấy chi tiết modifier group theo ID
+ * @param {string} groupId - ID modifier group
+ * @returns {Promise<Object>} Chi tiết modifier group
+ */
+export const fetchModifierGroupById = async (groupId) => {
+  try {
+    const response = await fetch(`${BASE_URL}/modifier-groups/${groupId}`, { headers: HEADERS });
+    const result = await response.json();
+
+    if (result.success) {
+      return result.data;
+    }
+    throw new Error(result.message || "Failed to fetch modifier group");
+  } catch (error) {
+    console.error("Fetch modifier group error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Tạo modifier group mới
+ * @param {Object} groupData - Dữ liệu modifier group
+ * @returns {Promise<Object>} Modifier group vừa tạo
+ */
+export const createModifierGroup = async (groupData) => {
+  try {
+    const response = await fetch(`${BASE_URL}/modifier-groups`, {
+      method: "POST",
+      headers: HEADERS,
+      body: JSON.stringify(groupData),
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      return result.data;
+    }
+    throw new Error(result.message || "Failed to create modifier group");
+  } catch (error) {
+    console.error("Create modifier group error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Cập nhật modifier group
+ * @param {string} groupId - ID modifier group
+ * @param {Object} groupData - Dữ liệu cập nhật
+ * @returns {Promise<Object>} Modifier group sau khi cập nhật
+ */
+export const updateModifierGroup = async (groupId, groupData) => {
+  try {
+    const response = await fetch(`${BASE_URL}/modifier-groups/${groupId}`, {
+      method: "PUT",
+      headers: HEADERS,
+      body: JSON.stringify(groupData),
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      return result.data;
+    }
+    throw new Error(result.message || "Failed to update modifier group");
+  } catch (error) {
+    console.error("Update modifier group error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Xóa modifier group (soft delete)
+ * @param {string} groupId - ID modifier group
+ * @returns {Promise<void>}
+ */
+export const deleteModifierGroup = async (groupId) => {
+  try {
+    const response = await fetch(`${BASE_URL}/modifier-groups/${groupId}`, {
+      method: "DELETE",
+      headers: HEADERS,
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.message || "Failed to delete modifier group");
+    }
+  } catch (error) {
+    console.error("Delete modifier group error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Toggle trạng thái active/inactive của modifier group
+ * @param {string} groupId - ID modifier group
+ * @param {boolean} isActive - Trạng thái mới
+ * @returns {Promise<Object>}
+ */
+export const toggleModifierGroupStatus = async (groupId, isActive) => {
+  try {
+    // Use PUT to update the group with new isActive status
+    const response = await fetch(`${BASE_URL}/modifier-groups/${groupId}`, {
+      method: "PUT",
+      headers: HEADERS,
+      body: JSON.stringify({ isActive }),
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      return result.data;
+    }
+    throw new Error(result.message || "Failed to toggle status");
+  } catch (error) {
+    console.error("Toggle modifier group status error:", error);
+    throw error;
+  }
+};
+
+// ==================== MODIFIER OPTIONS ====================
+
+/**
+ * Tạo option mới trong group
+ * POST /api/admin/menu/modifier-groups/:id/options
+ * @param {string} groupId - ID modifier group
+ * @param {Object} optionData - Dữ liệu option
+ * @returns {Promise<Object>} Option vừa tạo
+ */
+export const createModifier = async (groupId, optionData) => {
+  try {
+    const response = await fetch(`${BASE_URL}/modifier-groups/${groupId}/options`, {
+      method: "POST",
+      headers: HEADERS,
+      body: JSON.stringify(modifierData),
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      return result.data;
+    }
+    throw new Error(result.message || "Failed to create modifier");
+  } catch (error) {
+    console.error("Create modifier error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Cập nhật option
+ * PUT /api/admin/menu/modifier-options/:id
+ * @param {string} groupId - ID modifier group (không dùng trong API mới)
+ * @param {string} optionId - ID option
+ * @param {Object} optionData - Dữ liệu cập nhật
+ * @returns {Promise<Object>} Option sau khi cập nhật
+ */
+export const updateModifier = async (groupId, optionId, optionData) => {
+  try {
+    const response = await fetch(`${BASE_URL}/modifier-options/${optionId}`, {
+      method: "PUT",
+      headers: HEADERS,
+      body: JSON.stringify(modifierData),
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      return result.data;
+    }
+    throw new Error(result.message || "Failed to update modifier");
+  } catch (error) {
+    console.error("Update modifier error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Xóa option
+ * DELETE /api/admin/menu/modifier-options/:id (assumed)
+ * @param {string} groupId - ID modifier group (không dùng trong API mới)
+ * @param {string} optionId - ID option
+ * @returns {Promise<void>}
+ */
+export const deleteModifier = async (groupId, optionId) => {
+  try {
+    const response = await fetch(`${BASE_URL}/modifier-options/${optionId}`, {
+      method: "DELETE",
+      headers: HEADERS,
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.message || "Failed to delete modifier");
+    }
+  } catch (error) {
+    console.error("Delete modifier error:", error);
+    throw error;
+  }
+};
+
+// ==================== MOCK DATA ====================
+
+/**
+ * Mock data cho development
+ */
+const getMockModifierGroups = () => [
+  {
+    id: 1,
+    name: "Size",
+    description: "Chọn kích cỡ cho món",
+    isRequired: true,
+    minSelect: 1,
+    maxSelect: 1,
+    isActive: true,
+    modifiers: [
+      { id: 1, name: "Nhỏ", price: 0, isDefault: true, isActive: true },
+      { id: 2, name: "Vừa", price: 5000, isDefault: false, isActive: true },
+      { id: 3, name: "Lớn", price: 10000, isDefault: false, isActive: true },
+    ],
+    createdAt: "2024-01-10T10:00:00Z",
+  },
+  {
+    id: 2,
+    name: "Topping",
+    description: "Thêm topping cho món",
+    isRequired: false,
+    minSelect: 0,
+    maxSelect: 5,
+    isActive: true,
+    modifiers: [
+      { id: 4, name: "Trứng chiên", price: 8000, isDefault: false, isActive: true },
+      { id: 5, name: "Thịt thêm", price: 15000, isDefault: false, isActive: true },
+      { id: 6, name: "Rau thêm", price: 5000, isDefault: false, isActive: true },
+    ],
+    createdAt: "2024-01-11T10:00:00Z",
+  },
+  {
+    id: 3,
+    name: "Độ ngọt",
+    description: "Chọn độ ngọt cho đồ uống",
+    isRequired: true,
+    minSelect: 1,
+    maxSelect: 1,
+    isActive: false,
+    modifiers: [
+      { id: 7, name: "Không đường", price: 0, isDefault: false, isActive: true },
+      { id: 8, name: "Ít đường", price: 0, isDefault: false, isActive: true },
+      { id: 9, name: "Bình thường", price: 0, isDefault: true, isActive: true },
+      { id: 10, name: "Nhiều đường", price: 0, isDefault: false, isActive: true },
+    ],
+    createdAt: "2024-01-12T10:00:00Z",
+  },
+  {
+    id: 4,
+    name: "Đá",
+    description: "Chọn lượng đá",
+    isRequired: false,
+    minSelect: 0,
+    maxSelect: 1,
+    isActive: true,
+    modifiers: [
+      { id: 11, name: "Không đá", price: 0, isDefault: false, isActive: true },
+      { id: 12, name: "Ít đá", price: 0, isDefault: false, isActive: true },
+      { id: 13, name: "Đá bình thường", price: 0, isDefault: true, isActive: true },
+    ],
+    createdAt: "2024-01-13T10:00:00Z",
+  },
+];
+
+export { getMockModifierGroups };
