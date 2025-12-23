@@ -129,13 +129,10 @@ class CategoriesService {
    * (Lưu ý: Cân nhắc dùng Soft Delete (is_active=false) thay vì xóa hẳn nếu dữ liệu quan trọng)
    */
   async deleteCategory(id, tenantId) {
-    //ktra tồn tại không ?
+    // Kiểm tra tồn tại
     await this.getCategoryById(id, tenantId);
-    //TODO: cân nhắc dùng soft delete
-    //update is_active = false thay vì xóa hẳn
-    //return await CategoriesRepository.update(id, { is_active: false });
-
-    return await this.categoryRepo.delete(id);
+    // Soft delete: cập nhật is_active = false
+    return await this.categoryRepo.update(id, { is_active: false });
   }
 }
 

@@ -10,7 +10,9 @@ export class Categories {
       data.is_active !== undefined ? data.is_active : data.isActive;
     this.urlIcon = data.url_icon || data.urlIcon || "";
     this.description = data.description || data.desc || "";
+
     this.imageUrl = data.image_url || data.imageUrl || "";
+    this.createdAt = data.created_at || data.createdAt || null;
 
     // Đảm bảo isActive luôn là boolean hoặc undefined
     if (data.is_active !== undefined) this.isActive = data.is_active;
@@ -51,6 +53,11 @@ export class Categories {
     // Thêm url_icon nếu có
     if (this.urlIcon !== undefined && this.urlIcon !== null) {
       payload.url_icon = this.urlIcon;
+    }
+
+    // Thêm created_at nếu có
+    if (this.createdAt !== undefined && this.createdAt !== null) {
+      payload.created_at = this.createdAt;
     }
 
     return payload;
