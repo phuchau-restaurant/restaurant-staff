@@ -24,6 +24,7 @@ const CategoriesScreen = () => {
     title: "",
     message: "",
     onConfirm: null,
+    type: "danger", // Add type for modal color
   });
 
   // State quản lý dữ liệu
