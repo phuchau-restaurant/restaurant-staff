@@ -141,3 +141,26 @@ export const updateCategoryStatus = async (categoryId, isActive) => {
     throw error;
   }
 };
+
+/**
+ * Xóa vĩnh viễn danh mục
+ * @param {string} categoryId - ID danh mục
+ * @returns {Promise<void>}
+ */
+export const deleteCategoryPermanent = async (categoryId) => {
+  try {
+    const response = await fetch(`${BASE_URL}/${categoryId}`, {
+      method: "DELETE",
+      headers: HEADERS,
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.message || "Failed to permanently delete category");
+    }
+  } catch (error) {
+    console.error("Delete category permanently error:", error);
+    throw error;
+  }
+};

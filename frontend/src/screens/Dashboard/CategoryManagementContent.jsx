@@ -201,6 +201,86 @@ const CategoryManagementContent = () => {
     }
   };
 
+  /**
+   * Khôi phục danh mục (set is_active = true)
+   */
+  const handleRestoreCategory = async (category) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Xác nhận khôi phục",
+      message: `Bạn có chắc chắn muốn khôi phục danh mục "${category.name}"?`,
+      onConfirm: async () => {
+        try {
+          await categoryService.updateCategoryStatus(category.category_id, true);
+          setCategories(
+            categories.map((cat) =>
+              cat.category_id === category.category_id
+                ? { ...cat, is_active: true }
+                : cat
+            )
+          );
+          showAlert(
+            "Thành công",
+            "Đã khôi phục danh mục thành công",
+            "success"
+          );
+        } catch (error) {
+          console.error("Restore category error:", error);
+          showAlert(
+            "Lỗi",
+            "Không thể khôi phục danh mục. Vui lòng thử lại!",
+            "error"
+          );
+        } finally {
+          setConfirmDialog({
+            isOpen: false,
+            title: "",
+            message: "",
+            onConfirm: null,
+          });
+        }
+      },
+    });
+  };
+
+  /**
+   * Xóa vĩnh viễn danh mục
+   */
+  const handleDeletePermanent = async (category) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Xác nhận xóa vĩnh viễn",
+      message: `Bạn có chắc chắn muốn xóa VĨNH VIỄN danh mục "${category.name}"? Hành động này KHÔNG THỂ HOÀN TÁC!`,
+      onConfirm: async () => {
+        try {
+          await categoryService.deleteCategoryPermanent(category.category_id);
+          setCategories(
+            categories.filter((cat) => cat.category_id !== category.category_id)
+          );
+          showAlert(
+            "Thành công",
+            "Đã xóa vĩnh viễn danh mục",
+            "success"
+          );
+        } catch (error) {
+          console.error("Delete permanent error:", error);
+          showAlert(
+            "Lỗi",
+            "Không thể xóa vĩnh viễn danh mục. Vui lòng thử lại!",
+            "error"
+          );
+        } finally {
+          setConfirmDialog({
+            isOpen: false,
+            title: "",
+            message: "",
+            onConfirm: null,
+          });
+        }
+      },
+    });
+  };
+
   // ==================== HANDLERS ====================
 
   /**
@@ -429,6 +509,8 @@ const CategoryManagementContent = () => {
                 category={category}
                 onEdit={handleEditClick}
                 onDelete={handleDeleteClick}
+                onRestore={handleRestoreCategory}
+                onDeletePermanent={handleDeletePermanent}
               />
             ))}
           </div>
@@ -441,6 +523,8 @@ const CategoryManagementContent = () => {
             onToggleStatus={(category) =>
               handleToggleStatus(category.category_id, category.is_active)
             }
+            onRestore={handleRestoreCategory}
+            onDeletePermanent={handleDeletePermanent}
           />
         )}
       </div>

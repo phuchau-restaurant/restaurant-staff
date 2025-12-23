@@ -9,15 +9,18 @@ import { formatDate } from "../../utils/categoryUtils";
  * @param {Object} category - Dữ liệu danh mục
  * @param {function} onEdit - Callback khi bấm edit
  * @param {function} onDelete - Callback khi bấm delete
+ * @param {function} onRestore - Callback khi bấm restore
+ * @param {function} onDeletePermanent - Callback khi bấm xóa vĩnh viễn
  */
-const CategoryCard = memo(({ category, onEdit, onDelete }) => {
-  const statusText = category.isActive ? "Hoạt động" : "Không hoạt động";
-  const statusColor = category.isActive ? "text-green-600" : "text-red-600";
-
+const CategoryCard = memo(({ category, onEdit, onDelete, onRestore, onDeletePermanent }) => {
   const isInactive = category.is_active === false;
+  const statusText = category.is_active ? "Hoạt động" : "Không hoạt động";
+
   return (
     <div
-      className={`bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all h-full flex flex-col ${isInactive ? "opacity-50" : ""}`}
+      className={`bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all h-full flex flex-col ${
+        isInactive ? "opacity-50 grayscale" : ""
+      }`}
     >
       {/* Hình ảnh */}
       <div className="relative w-full h-48 bg-gradient-to-br from-blue-500 to-blue-700 overflow-hidden">
@@ -39,7 +42,7 @@ const CategoryCard = memo(({ category, onEdit, onDelete }) => {
         <div className="absolute top-2 right-2">
           <span
             className={`px-3 py-1 rounded-full text-xs font-semibold ${
-              category.isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+              category.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
             }`}
           >
             {statusText}
@@ -68,13 +71,14 @@ const CategoryCard = memo(({ category, onEdit, onDelete }) => {
           {isInactive ? (
             <>
               <button
-                onClick={() => onEdit && onEdit({ ...category, restore: true })}
+                onClick={() => onRestore && onRestore(category)}
                 className="flex-1 flex items-center justify-center gap-2 bg-green-50 hover:bg-green-100 text-green-600 font-semibold py-2 px-3 rounded-lg transition-colors"
+                title="Khôi phục danh mục"
               >
                 Khôi phục
               </button>
               <button
-                onClick={() => onDelete && onDelete({ ...category, permanent: true })}
+                onClick={() => onDeletePermanent && onDeletePermanent(category)}
                 className="flex-1 flex items-center justify-center gap-2 bg-red-100 hover:bg-red-200 text-red-700 font-semibold py-2 px-3 rounded-lg transition-colors"
                 title="Xóa vĩnh viễn"
               >
