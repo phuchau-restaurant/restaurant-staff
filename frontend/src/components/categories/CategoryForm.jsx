@@ -18,12 +18,12 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
 
   const [formData, setFormData] = useState({
     name: "",
-    description:  "",
+    description: "",
     displayOrder: 0,
     image: "",
     isActive: true,
     icon: "",
-    modifiers:  [],
+    modifiers: [],
   });
   // State cho toggle icon picker
   const [showIconPicker, setShowIconPicker] = useState(false);
@@ -55,7 +55,7 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
         setIsLoadingIcons(true);
         const icons = await fetchCategoryIcons();
         setCategoryIcons(icons);
-        
+
         // Set default icon nếu chưa có icon được chọn
         if (!formData.icon && icons.length > 0) {
           setFormData((prev) => ({
@@ -80,9 +80,9 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
         name: category.name || "",
         description: category.description || "",
         displayOrder: category.displayOrder || 0,
-        image:  category.image || "",
+        image: category.image || "",
         isActive: category.isActive !== undefined ? category.isActive : true,
-        icon: category.icon || (categoryIcons[0]?.icon || ""),
+        icon: category.icon || categoryIcons[0]?.icon || "",
         modifiers: category.modifiers || [],
       });
     }
@@ -95,7 +95,7 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
 
   // Modifier handlers
   const handleAddModifier = (value) => {
-    const val = (value ??  modifierInput).trim();
+    const val = (value ?? modifierInput).trim();
     if (val && !formData.modifiers.includes(val)) {
       setFormData((prev) => ({
         ...prev,
@@ -166,18 +166,18 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
   // Drag & resize state
   const modalRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y:  0 });
-  const [modalPos, setModalPos] = useState({ 
-    x: window.innerWidth / 2 - 400, 
-    y: window. innerHeight / 2 - 300 
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [modalPos, setModalPos] = useState({
+    x: window.innerWidth / 2 - 400,
+    y: window.innerHeight / 2 - 300,
   });
   const [modalSize, setModalSize] = useState({ width: 800, height: 600 });
   const [isResizing, setIsResizing] = useState(false);
-  const [resizeStart, setResizeStart] = useState({ 
-    x: 0, 
-    y: 0, 
-    width: 800, 
-    height: 600 
+  const [resizeStart, setResizeStart] = useState({
+    x: 0,
+    y: 0,
+    width: 800,
+    height: 600,
   });
 
   // Drag handlers
@@ -185,7 +185,7 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
     setIsDragging(true);
     setDragOffset({
       x: e.clientX - modalPos.x,
-      y: e.clientY - modalPos. y,
+      y: e.clientY - modalPos.y,
     });
   };
   const onDrag = (e) => {
@@ -201,7 +201,7 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
   const onResizeStart = (e) => {
     setIsResizing(true);
     setResizeStart({
-      x:  e.clientX,
+      x: e.clientX,
       y: e.clientY,
       width: modalSize.width,
       height: modalSize.height,
@@ -211,7 +211,7 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
   const onResize = (e) => {
     if (!isResizing) return;
     setModalSize({
-      width:  Math.max(400, resizeStart.width + (e.clientX - resizeStart.x)),
+      width: Math.max(400, resizeStart.width + (e.clientX - resizeStart.x)),
       height: Math.max(300, resizeStart.height + (e.clientY - resizeStart.y)),
     });
   };
@@ -251,14 +251,14 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
         ref={modalRef}
         style={{
           position: "absolute",
-          left: modalPos. x,
+          left: modalPos.x,
           top: modalPos.y,
           width: modalSize.width,
           height: modalSize.height,
           minWidth: 400,
           minHeight: 300,
-          maxWidth: '100vw',
-          maxHeight: '100vh',
+          maxWidth: "100vw",
+          maxHeight: "100vh",
           boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
           background: "white",
           borderRadius: 12,
@@ -328,7 +328,9 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
                 }`}
               />
               {errors.description && (
-                <p className="text-red-600 text-sm mt-1">{errors.description}</p>
+                <p className="text-red-600 text-sm mt-1">
+                  {errors.description}
+                </p>
               )}
             </div>
 
@@ -351,7 +353,9 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
                 }`}
               />
               {errors.displayOrder && (
-                <p className="text-red-600 text-sm mt-1">{errors.displayOrder}</p>
+                <p className="text-red-600 text-sm mt-1">
+                  {errors.displayOrder}
+                </p>
               )}
               <p className="text-xs text-gray-500 mt-1">
                 Số thứ tự để sắp xếp danh mục (0 = đầu tiên)
@@ -418,7 +422,17 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
                 ) : (
                   <>
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl">{formData.icon}</span>
+                      {formData.icon ? (
+                        <img
+                          src={formData.icon}
+                          alt="icon preview"
+                          className="w-8 h-8 object-contain rounded border border-gray-200 bg-white"
+                        />
+                      ) : (
+                        <span className="text-gray-400 text-sm">
+                          Chưa chọn icon
+                        </span>
+                      )}
                       <button
                         type="button"
                         className="px-3 py-1 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
@@ -433,15 +447,19 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
                           <button
                             type="button"
                             key={item.icon}
-                            className={`text-2xl p-2 rounded border transition-colors ${
+                            className={`p-2 rounded border transition-colors ${
                               formData.icon === item.icon
-                                ?  "border-blue-500 bg-blue-50"
-                                :  "border-gray-200 bg-white hover:border-blue-300"
+                                ? "border-blue-500 bg-blue-50"
+                                : "border-gray-200 bg-white hover:border-blue-300"
                             }`}
                             onClick={() => handleIconSelect(item.icon)}
                             aria-label={item.name}
                           >
-                            {item.icon}
+                            <img
+                              src={item.icon}
+                              alt={item.name}
+                              className="w-8 h-8 object-contain"
+                            />
                           </button>
                         ))}
                       </div>
@@ -449,7 +467,7 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
                   </>
                 )}
                 <p className="text-xs text-gray-500 mt-1">
-                  Icon sẽ hiển thị cùng tên danh mục. 
+                  Icon sẽ hiển thị cùng tên danh mục.
                 </p>
               </div>
 
@@ -482,7 +500,7 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
                         {SUGGESTED_MODIFIERS.filter(
                           (mod) =>
                             !formData.modifiers.includes(mod) &&
-                            (! modifierInput ||
+                            (!modifierInput ||
                               mod
                                 .toLowerCase()
                                 .includes(modifierInput.toLowerCase()))
@@ -499,10 +517,10 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
                         {SUGGESTED_MODIFIERS.filter(
                           (mod) =>
                             !formData.modifiers.includes(mod) &&
-                            (! modifierInput ||
+                            (!modifierInput ||
                               mod
                                 .toLowerCase()
-                                .includes(modifierInput. toLowerCase()))
+                                .includes(modifierInput.toLowerCase()))
                         ).length === 0 && (
                           <span className="text-xs text-gray-400">
                             Không có gợi ý
