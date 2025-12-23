@@ -212,13 +212,13 @@ const CategoryManagementContent = () => {
       onConfirm: async () => {
         try {
           await categoryService.updateCategoryStatus(
-            category.category_id,
+            category.id,
             true
           );
           setCategories(
             categories.map((cat) =>
-              cat.category_id === category.category_id
-                ? { ...cat, is_active: true }
+              cat.id === category.id
+                ? { ...cat, isActive: true }
                 : cat
             )
           );
@@ -256,9 +256,9 @@ const CategoryManagementContent = () => {
       message: `Bạn có chắc chắn muốn xóa VĨNH VIỄN danh mục "${category.name}"? Hành động này KHÔNG THỂ HOÀN TÁC!`,
       onConfirm: async () => {
         try {
-          await categoryService.deleteCategoryPermanent(category.category_id);
+          await categoryService.deleteCategoryPermanent(category.id);
           setCategories(
-            categories.filter((cat) => cat.category_id !== category.category_id)
+            categories.filter((cat) => cat.id !== category.id)
           );
           showAlert("Thành công", "Đã xóa vĩnh viễn danh mục", "success");
         } catch (error) {

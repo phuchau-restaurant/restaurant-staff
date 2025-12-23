@@ -132,7 +132,7 @@ class CategoriesService {
     // Kiểm tra tồn tại
     await this.getCategoryById(id, tenantId);
     // Soft delete: cập nhật is_active = false
-    return await this.categoryRepo.update(id, { is_active: false });
+    return await this.categoryRepo.delete(id);
   }
 }
 
