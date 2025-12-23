@@ -92,17 +92,19 @@ const CategoryList = ({ categories, onEdit, onDelete, onToggleStatus, onRestore,
                       <>
                         <button
                           onClick={() => onRestore && onRestore(category)}
-                          className="text-green-600 hover:text-green-900 p-1 hover:bg-green-50 rounded"
+                          className="flex items-center gap-1 px-3 py-1.5 bg-green-100 hover:bg-green-200 text-green-700 hover:text-green-900 rounded-lg font-medium transition-all"
                           title="Khôi phục"
                         >
-                          <RotateCcw size={18} />
+                          <RotateCcw size={16} />
+                          <span className="text-xs">Khôi phục</span>
                         </button>
                         <button
                           onClick={() => onDeletePermanent && onDeletePermanent(category)}
-                          className="text-red-600 hover:text-red-900 p-1 hover:bg-red-50 rounded"
+                          className="flex items-center gap-1 px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 hover:text-red-900 rounded-lg font-medium transition-all"
                           title="Xóa vĩnh viễn"
                         >
-                          <Trash size={18} />
+                          <Trash size={16} />
+                          <span className="text-xs">Xóa vĩnh viễn</span>
                         </button>
                       </>
                     ) : (

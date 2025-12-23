@@ -72,14 +72,14 @@ const CategoryCard = memo(({ category, onEdit, onDelete, onRestore, onDeletePerm
                 <>
                   <button
                     onClick={() => onRestore && onRestore(category)}
-                    className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-3 rounded-lg transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-2.5 px-3 rounded-lg transition-all shadow-md hover:shadow-lg"
                     title="Khôi phục danh mục"
                   >
                     Khôi phục
                   </button>
                   <button
                     onClick={() => onDeletePermanent && onDeletePermanent(category)}
-                    className="flex-1 flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-3 rounded-lg transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-2.5 px-3 rounded-lg transition-all shadow-md hover:shadow-lg"
                     title="Xóa vĩnh viễn"
                   >
                     Xóa vĩnh viễn
