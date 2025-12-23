@@ -2,10 +2,10 @@ import { useState, useEffect, useCallback } from "react";
 import { Plus, Package } from "lucide-react";
 
 // Components
-import CategoryFilterBar from "../../components/Categories/CategoryFilterBar";
-import CategoryCard from "../../components/Categories/CategoryCard";
-import CategoryListView from "../../components/Categories/CategoryListView";
-import CategoryFormModal from "../../components/Categories/CategoryFormModal";
+import CategoryFilterBar from "../../components/categories/CategoryFilterBar";
+import CategoryCard from "../../components/categories/CategoryCard";
+import CategoryList from "../../components/categories/CategoryList";
+import CategoryForm from "../../components/categories/CategoryForm";
 import AlertModal from "../../components/Modal/AlertModal";
 import ConfirmModal from "../../components/Modal/ConfirmModal";
 
@@ -139,6 +139,53 @@ const CategoryManagementContent = () => {
         "error"
       );
     }
+  };
+
+  /**
+   * Toggle trạng thái danh mục (thay vì xóa cứng)
+   */
+  const handleToggleStatus = async (categoryId, currentStatus) => {
+    const newStatus = !currentStatus;
+    const actionText = newStatus ? "kích hoạt" : "vô hiệu hóa";
+
+    // Hiển thị confirm modal
+    setConfirmDialog({
+      isOpen: true,
+      title: `Xác nhận ${actionText}`,
+      message: `Bạn có chắc chắn muốn ${actionText} danh mục này?`,
+      onConfirm: async () => {
+        try {
+          await categoryService.updateCategoryStatus(categoryId, newStatus);
+          // Cập nhật local state
+          setCategories(
+            categories.map((cat) =>
+              cat.category_id === categoryId
+                ? { ...cat, is_active: newStatus }
+                : cat
+            )
+          );
+          showAlert(
+            "Thành công",
+            `Đã ${actionText} danh mục thành công`,
+            "success"
+          );
+        } catch (error) {
+          console.error("Toggle status error:", error);
+          showAlert(
+            "Lỗi",
+            `Không thể ${actionText} danh mục. Vui lòng thử lại!`,
+            "error"
+          );
+        } finally {
+          setConfirmDialog({
+            isOpen: false,
+            title: "",
+            message: "",
+            onConfirm: null,
+          });
+        }
+      },
+    });
   };
 
   /**
@@ -368,21 +415,23 @@ const CategoryManagementContent = () => {
           </div>
         ) : (
           // List View
-          <CategoryListView
+          <CategoryList
             categories={filteredCategories}
             onEdit={handleEditClick}
             onDelete={handleDeleteClick}
+            onToggleStatus={(category) => handleToggleStatus(category.category_id, category.is_active)}
           />
         )}
       </div>
 
       {/* Form Modal */}
-      <CategoryFormModal
-        open={showForm}
-        category={editingCategory}
-        onSubmit={handleFormSubmit}
-        onClose={handleCloseForm}
-      />
+      {showForm && (
+        <CategoryForm
+          category={editingCategory}
+          onSubmit={handleFormSubmit}
+          onClose={handleCloseForm}
+        />
+      )}
 
       {/* Alert Modal */}
       {alertModal.isOpen && (

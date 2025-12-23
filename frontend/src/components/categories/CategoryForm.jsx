@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { CATEGORY_ICONS } from "../Categories/categoryIcons.js";
+import { CATEGORY_ICONS } from "./categoryIcons.js";
 import { X, Upload } from "lucide-react";
 import { validateCategoryData } from "../../utils/categoryUtils";
 

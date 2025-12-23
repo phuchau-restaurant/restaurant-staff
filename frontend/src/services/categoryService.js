@@ -115,3 +115,29 @@ export const deleteCategory = async (categoryId) => {
     throw error;
   }
 };
+
+/**
+ * Cập nhật trạng thái hoạt động của danh mục
+ * @param {string} categoryId - ID danh mục
+ * @param {boolean} isActive - Trạng thái hoạt động
+ * @returns {Promise<Object>} Danh mục sau khi cập nhật
+ */
+export const updateCategoryStatus = async (categoryId, isActive) => {
+  try {
+    const response = await fetch(`${BASE_URL}/${categoryId}`, {
+      method: "PUT",
+      headers: HEADERS,
+      body: JSON.stringify({ is_active: isActive }),
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      return result.data;
+    }
+    throw new Error(result.message || "Failed to update category status");
+  } catch (error) {
+    console.error("Update category status error:", error);
+    throw error;
+  }
+};
