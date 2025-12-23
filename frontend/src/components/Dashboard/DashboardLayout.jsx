@@ -3,6 +3,8 @@ import Sidebar from "./Sidebar";
 import DashboardContent from "../../screens/Dashboard/DashboardContent";
 import OrdersContent from "../../screens/Dashboard/OrdersContent";
 import CategoryManagementContent from "../../screens/Dashboard/CategoryManagementContent";
+import MenuManagementContent from "../../screens/Dashboard/MenuManagementContent";
+import ModifierManagementContent from "../../screens/Dashboard/ModifierManagementContent";
 import SalesContent from "../../screens/Dashboard/SalesContent";
 import FeedbackContent from "../../screens/Dashboard/FeedbackContent";
 import TablesScreen from "../../screens/TablesScreen";
@@ -20,6 +22,10 @@ const DashboardLayout = () => {
         return <TablesScreen />;
       case "inventory":
         return <CategoryManagementContent />;
+      case "menus":
+        return <MenuManagementContent />;
+      case "modifiers":
+        return <ModifierManagementContent />;
       case "sales":
         return <SalesContent />;
       case "feedback":

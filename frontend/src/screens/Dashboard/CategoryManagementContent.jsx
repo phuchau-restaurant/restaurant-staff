@@ -395,6 +395,7 @@ const CategoryManagementContent = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
+<<<<<<< HEAD
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
@@ -420,6 +421,12 @@ const CategoryManagementContent = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-100">
           <div className="flex items-center justify-between">
+=======
+      <div>
+        {/* Header */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+>>>>>>> develop
             <div>
               <p className="text-sm text-gray-600 font-medium">Tổng số</p>
               <p className="text-3xl font-bold text-gray-900 mt-1">
