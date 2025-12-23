@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, AlertTriangle, RotateCcw, Info } from "lucide-react";
+import { X, AlertTriangle } from "lucide-react";
 
 const ConfirmModal = ({
   isOpen,
@@ -10,28 +10,10 @@ const ConfirmModal = ({
   message,
   confirmText = "Xác nhận",
   cancelText = "Hủy",
-  type = "danger", // danger, warning, info, success
+  type = "danger", // danger, warning, info
 }) => {
-  const getIcon = () => {
-    switch (type) {
-      case "success":
-        return <RotateCcw className="w-16 h-16 text-green-500" />;
-      case "danger":
-        return <AlertTriangle className="w-16 h-16 text-red-500" />;
-      case "warning":
-        return <AlertTriangle className="w-16 h-16 text-yellow-500" />;
-      default:
-        return <Info className="w-16 h-16 text-blue-500" />;
-    }
-  };
-
   const getColors = () => {
     switch (type) {
-      case "success":
-        return {
-          icon: "text-green-500",
-          confirmButton: "bg-green-500 hover:bg-green-600",
-        };
       case "danger":
         return {
           icon: "text-red-500",
@@ -88,7 +70,7 @@ const ConfirmModal = ({
                 animate={{ scale: 1 }}
                 transition={{ type: "spring", stiffness: 300, delay: 0.2 }}
               >
-                {getIcon()}
+                <AlertTriangle className={`w-16 h-16 ${colors.icon}`} />
               </motion.div>
 
               {title && (

@@ -563,19 +563,6 @@ const CategoryManagementContent = () => {
           }
         />
       )}
-      {restoreDialog.isOpen && (
-        <ConfirmModal
-          isOpen={restoreDialog.isOpen}
-          title="Khôi phục danh mục"
-          message={`Bạn có chắc chắn muốn khôi phục danh mục "${restoreDialog.category?.name}"?`}
-          onConfirm={restoreDialog.onConfirm}
-          onClose={() =>
-            setRestoreDialog({ isOpen: false, category: null, onConfirm: null })
-          }
-          type="success"
-          confirmText="Khôi phục"
-        />
-      )}
     </div>
   );
 };
