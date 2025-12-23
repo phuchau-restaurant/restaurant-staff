@@ -14,8 +14,11 @@ const CategoryCard = memo(({ category, onEdit, onDelete }) => {
   const statusText = category.isActive ? "Hoạt động" : "Không hoạt động";
   const statusColor = category.isActive ? "text-green-600" : "text-red-600";
 
+  const isInactive = category.is_active === false;
   return (
-    <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all h-full flex flex-col">
+    <div
+      className={`bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all h-full flex flex-col ${isInactive ? "opacity-50" : ""}`}
+    >
       {/* Hình ảnh */}
       <div className="relative w-full h-48 bg-gradient-to-br from-blue-500 to-blue-700 overflow-hidden">
         {category.urlIcon ? (
@@ -62,22 +65,42 @@ const CategoryCard = memo(({ category, onEdit, onDelete }) => {
 
         {/* Action buttons */}
         <div className="mt-4 flex gap-2">
-          <button
-            onClick={() => onEdit(category)}
-            className="flex-1 flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold py-2 px-3 rounded-lg transition-colors"
-          >
-            <Edit2 className="w-4 h-4" />
-            Chỉnh sửa
-          </button>
-          {onDelete && (
-            <button
-              onClick={() => onDelete(category)}
-              className="flex-1 flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-2 px-3 rounded-lg transition-colors"
-              title="Xóa"
-            >
-              <Trash2 className="w-4 h-4" />
-              Xóa
-            </button>
+          {isInactive ? (
+            <>
+              <button
+                onClick={() => onEdit && onEdit({ ...category, restore: true })}
+                className="flex-1 flex items-center justify-center gap-2 bg-green-50 hover:bg-green-100 text-green-600 font-semibold py-2 px-3 rounded-lg transition-colors"
+              >
+                Khôi phục
+              </button>
+              <button
+                onClick={() => onDelete && onDelete({ ...category, permanent: true })}
+                className="flex-1 flex items-center justify-center gap-2 bg-red-100 hover:bg-red-200 text-red-700 font-semibold py-2 px-3 rounded-lg transition-colors"
+                title="Xóa vĩnh viễn"
+              >
+                Xóa vĩnh viễn
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => onEdit(category)}
+                className="flex-1 flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold py-2 px-3 rounded-lg transition-colors"
+              >
+                <Edit2 className="w-4 h-4" />
+                Chỉnh sửa
+              </button>
+              {onDelete && (
+                <button
+                  onClick={() => onDelete(category)}
+                  className="flex-1 flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-2 px-3 rounded-lg transition-colors"
+                  title="Xóa"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Xóa
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>

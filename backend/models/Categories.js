@@ -3,6 +3,7 @@ import { v7 as uuidv7 } from "uuid";
 
 export class Categories {
   constructor(data) {
+    this.id = data.id || data.category_id || null;
     this.tenantId = data.tenant_id || data.tenantId;
     this.name = data.name;
     this.displayOrder = data.display_order || data.displayOrder;
@@ -29,6 +30,10 @@ export class Categories {
       tenant_id: this.tenantId,
       name: this.name,
     };
+    // Thêm id nếu có (dùng cho update)
+    if (this.id !== undefined && this.id !== null) {
+      payload.id = this.id;
+    }
 
     // Chỉ thêm display_order nếu có giá trị
     if (this.displayOrder !== undefined && this.displayOrder !== null) {

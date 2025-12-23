@@ -121,13 +121,8 @@ const CategoryManagementContent = () => {
    */
   const handleUpdateCategory = async (categoryId, categoryData) => {
     try {
-      const updatedCategory = await categoryService.updateCategory(
-        categoryId,
-        categoryData
-      );
-      setCategories(
-        categories.map((cat) => (cat.category_id === categoryId ? updatedCategory : cat))
-      );
+      await categoryService.updateCategory(categoryId, categoryData);
+      await fetchCategories(); // Fetch lại dữ liệu mới nhất
       setShowForm(false);
       setEditingCategory(null);
       showAlert("Thành công", MESSAGES.UPDATE_SUCCESS, "success");
@@ -194,7 +189,7 @@ const CategoryManagementContent = () => {
   const handleDeleteCategory = async (categoryId) => {
     try {
       await categoryService.deleteCategory(categoryId);
-      setCategories(categories.filter((cat) => cat.category_id !== categoryId));
+      await fetchCategories(); 
       showAlert("Thành công", MESSAGES.DELETE_SUCCESS, "success");
     } catch (error) {
       console.error("Delete category error:", error);
@@ -213,8 +208,32 @@ const CategoryManagementContent = () => {
    */
   const handleFormSubmit = async (categoryData) => {
     if (editingCategory) {
-      await handleUpdateCategory(editingCategory.category_id, categoryData);
+      // --- LOGIC MỚI: Lọc các trường thay đổi ---
+      const changedData = {};
+
+      Object.keys(categoryData).forEach((key) => {
+        // So sánh giá trị mới và cũ
+        // Lưu ý: Cần đảm bảo so sánh đúng kiểu dữ liệu (vd: string vs string)
+        if (categoryData[key] !== editingCategory[key]) {
+          changedData[key] = categoryData[key];
+        }
+      });
+
+      // Kiểm tra xem có trường nào thay đổi không
+      if (Object.keys(changedData).length === 0) {
+        // Nếu không có gì thay đổi, đóng form và thông báo nhẹ (hoặc không làm gì)
+        handleCloseForm();
+        showAlert("Thông báo", "Không có thay đổi nào được thực hiện.", "info");
+        return;
+      }
+
+      // Chỉ gửi changedData đi thay vì toàn bộ categoryData
+      // Lưu ý: Đảm bảo dùng đúng key ID (id hoặc category_id tùy theo backend của bạn)
+      const idToUpdate = editingCategory.id || editingCategory.category_id;
+      await handleUpdateCategory(idToUpdate, changedData); 
+      
     } else {
+      // Tạo mới thì gửi toàn bộ
       await handleCreateCategory(categoryData);
     }
   };
@@ -225,7 +244,7 @@ const CategoryManagementContent = () => {
   const handleCloseForm = () => {
     setShowForm(false);
     setEditingCategory(null);
-  };
+  }; 
 
   /**
    * Xử lý click edit
@@ -244,7 +263,7 @@ const CategoryManagementContent = () => {
       title: "Xác nhận xóa",
       message: `Bạn có chắc chắn muốn xóa danh mục "${category.name}"?`,
       onConfirm: async () => {
-        await handleDeleteCategory(category.category_id);
+        await handleDeleteCategory(category.id);
         setConfirmDialog({
           isOpen: false,
           title: "",
@@ -419,7 +438,9 @@ const CategoryManagementContent = () => {
             categories={filteredCategories}
             onEdit={handleEditClick}
             onDelete={handleDeleteClick}
-            onToggleStatus={(category) => handleToggleStatus(category.category_id, category.is_active)}
+            onToggleStatus={(category) =>
+              handleToggleStatus(category.category_id, category.is_active)
+            }
           />
         )}
       </div>
@@ -446,10 +467,11 @@ const CategoryManagementContent = () => {
       {/* Confirm Dialog */}
       {confirmDialog.isOpen && (
         <ConfirmModal
+          isOpen={confirmDialog.isOpen} 
           title={confirmDialog.title}
           message={confirmDialog.message}
           onConfirm={confirmDialog.onConfirm}
-          onCancel={() =>
+          onClose={() =>
             setConfirmDialog({
               isOpen: false,
               title: "",

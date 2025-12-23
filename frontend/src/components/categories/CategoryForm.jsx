@@ -90,7 +90,11 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
 
   // Icon selection handler
   const handleIconSelect = (icon) => {
-    setFormData((prev) => ({ ...prev, icon }));
+    setFormData((prev) => ({
+      ...prev,
+      icon,
+      urlIcon: icon,
+    }));
   };
 
   // Modifier handlers
