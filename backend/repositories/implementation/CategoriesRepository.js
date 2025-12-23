@@ -88,6 +88,12 @@ async getAll(filters = {}) {
   // 2. Map sang Model (CamelCase) để đồng bộ với toàn hệ thống
   return rawData.map(item => new Categories(item));
 }
+
+  async delete(id) {
+    const { data, error } = await super.delete(id);
+    if (error) throw new Error(`Delete failed: ${error.message}`);
+    return data ? new Categories(data) : null;
+  }
  
 }
 // LƯU Ý QUAN TRỌNG:

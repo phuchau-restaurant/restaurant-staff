@@ -4,7 +4,7 @@ import { Plus, Package } from "lucide-react";
 // Components
 import CategoryFilterBar from "../../components/categories/CategoryFilterBar";
 import CategoryCard from "../../components/categories/CategoryCard";
-import CategoryListView from "../../components/categories/CategoryListView";
+import CategoryList from "../../components/categories/CategoryList";
 import CategoryForm from "../../components/categories/CategoryForm";
 import AlertModal from "../../components/Modal/AlertModal";
 import ConfirmModal from "../../components/Modal/ConfirmModal";
@@ -29,7 +29,7 @@ import {
  */
 const CategoryManagementContent = () => {
   // ==================== STATE MANAGEMENT ====================
-  
+
   // State quản lý dữ liệu
   const [categories, setCategories] = useState([]);
   const [filteredCategories, setFilteredCategories] = useState([]);
@@ -119,15 +119,10 @@ const CategoryManagementContent = () => {
   /**
    * Cập nhật danh mục
    */
-  const handleUpdateCategory = async (id, categoryData) => {
+  const handleUpdateCategory = async (categoryId, categoryData) => {
     try {
-      const updatedCategory = await categoryService.updateCategory(
-        id,
-        categoryData
-      );
-      setCategories(
-        categories.map((cat) => (cat.id === id ? updatedCategory : cat))
-      );
+      await categoryService.updateCategory(categoryId, categoryData);
+      await fetchCategories(); // Fetch lại dữ liệu mới nhất
       setShowForm(false);
       setEditingCategory(null);
       showAlert("Thành công", MESSAGES.UPDATE_SUCCESS, "success");
@@ -142,12 +137,59 @@ const CategoryManagementContent = () => {
   };
 
   /**
+   * Toggle trạng thái danh mục (thay vì xóa cứng)
+   */
+  const handleToggleStatus = async (categoryId, currentStatus) => {
+    const newStatus = !currentStatus;
+    const actionText = newStatus ? "kích hoạt" : "vô hiệu hóa";
+
+    // Hiển thị confirm modal
+    setConfirmDialog({
+      isOpen: true,
+      title: `Xác nhận ${actionText}`,
+      message: `Bạn có chắc chắn muốn ${actionText} danh mục này?`,
+      onConfirm: async () => {
+        try {
+          await categoryService.updateCategoryStatus(categoryId, newStatus);
+          // Cập nhật local state
+          setCategories(
+            categories.map((cat) =>
+              cat.category_id === categoryId
+                ? { ...cat, is_active: newStatus }
+                : cat
+            )
+          );
+          showAlert(
+            "Thành công",
+            `Đã ${actionText} danh mục thành công`,
+            "success"
+          );
+        } catch (error) {
+          console.error("Toggle status error:", error);
+          showAlert(
+            "Lỗi",
+            `Không thể ${actionText} danh mục. Vui lòng thử lại!`,
+            "error"
+          );
+        } finally {
+          setConfirmDialog({
+            isOpen: false,
+            title: "",
+            message: "",
+            onConfirm: null,
+          });
+        }
+      },
+    });
+  };
+
+  /**
    * Xóa danh mục
    */
-  const handleDeleteCategory = async (id) => {
+  const handleDeleteCategory = async (categoryId) => {
     try {
-      await categoryService.deleteCategory(id);
-      setCategories(categories.filter((cat) => cat.id !== id));
+      await categoryService.deleteCategory(categoryId);
+      await fetchCategories();
       showAlert("Thành công", MESSAGES.DELETE_SUCCESS, "success");
     } catch (error) {
       console.error("Delete category error:", error);
@@ -159,6 +201,85 @@ const CategoryManagementContent = () => {
     }
   };
 
+  /**
+   * Khôi phục danh mục (set is_active = true)
+   */
+  const handleRestoreCategory = async (category) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Xác nhận khôi phục",
+      message: `Bạn có chắc chắn muốn khôi phục danh mục "${category.name}"?`,
+      onConfirm: async () => {
+        try {
+          await categoryService.updateCategoryStatus(
+            category.id,
+            true
+          );
+          setCategories(
+            categories.map((cat) =>
+              cat.id === category.id
+                ? { ...cat, isActive: true }
+                : cat
+            )
+          );
+          showAlert(
+            "Thành công",
+            "Đã khôi phục danh mục thành công",
+            "success"
+          );
+        } catch (error) {
+          console.error("Restore category error:", error);
+          showAlert(
+            "Lỗi",
+            "Không thể khôi phục danh mục. Vui lòng thử lại!",
+            "error"
+          );
+        } finally {
+          setConfirmDialog({
+            isOpen: false,
+            title: "",
+            message: "",
+            onConfirm: null,
+          });
+        }
+      },
+    });
+  };
+
+  /**
+   * Xóa vĩnh viễn danh mục
+   */
+  const handleDeletePermanent = async (category) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Xác nhận xóa vĩnh viễn",
+      message: `Bạn có chắc chắn muốn xóa VĨNH VIỄN danh mục "${category.name}"? Hành động này KHÔNG THỂ HOÀN TÁC!`,
+      onConfirm: async () => {
+        try {
+          await categoryService.deleteCategoryPermanent(category.id);
+          setCategories(
+            categories.filter((cat) => cat.id !== category.id)
+          );
+          showAlert("Thành công", "Đã xóa vĩnh viễn danh mục", "success");
+        } catch (error) {
+          console.error("Delete permanent error:", error);
+          showAlert(
+            "Lỗi",
+            "Không thể xóa vĩnh viễn danh mục. Vui lòng thử lại!",
+            "error"
+          );
+        } finally {
+          setConfirmDialog({
+            isOpen: false,
+            title: "",
+            message: "",
+            onConfirm: null,
+          });
+        }
+      },
+    });
+  };
+
   // ==================== HANDLERS ====================
 
   /**
@@ -166,8 +287,31 @@ const CategoryManagementContent = () => {
    */
   const handleFormSubmit = async (categoryData) => {
     if (editingCategory) {
-      await handleUpdateCategory(editingCategory.id, categoryData);
+      // --- LOGIC MỚI: Lọc các trường thay đổi ---
+      const changedData = {};
+
+      Object.keys(categoryData).forEach((key) => {
+        // So sánh giá trị mới và cũ
+        // Lưu ý: Cần đảm bảo so sánh đúng kiểu dữ liệu (vd: string vs string)
+        if (categoryData[key] !== editingCategory[key]) {
+          changedData[key] = categoryData[key];
+        }
+      });
+
+      // Kiểm tra xem có trường nào thay đổi không
+      if (Object.keys(changedData).length === 0) {
+        // Nếu không có gì thay đổi, đóng form và thông báo nhẹ (hoặc không làm gì)
+        handleCloseForm();
+        showAlert("Thông báo", "Không có thay đổi nào được thực hiện.", "info");
+        return;
+      }
+
+      // Chỉ gửi changedData đi thay vì toàn bộ categoryData
+      // Lưu ý: Đảm bảo dùng đúng key ID (id hoặc category_id tùy theo backend của bạn)
+      const idToUpdate = editingCategory.id || editingCategory.category_id;
+      await handleUpdateCategory(idToUpdate, changedData);
     } else {
+      // Tạo mới thì gửi toàn bộ
       await handleCreateCategory(categoryData);
     }
   };
@@ -196,8 +340,8 @@ const CategoryManagementContent = () => {
       isOpen: true,
       title: "Xác nhận xóa",
       message: `Bạn có chắc chắn muốn xóa danh mục "${category.name}"?`,
-      onConfirm: () => {
-        handleDeleteCategory(category.id);
+      onConfirm: async () => {
+        await handleDeleteCategory(category.id);
         setConfirmDialog({
           isOpen: false,
           title: "",
@@ -251,119 +395,136 @@ const CategoryManagementContent = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
+      {/* Header */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800">
+              Quản Lý Danh Mục
+            </h1>
+            <p className="text-gray-600 mt-1">
+              Tổng số: {filteredCategories.length} danh mục
+            </p>
+          </div>
+          <button
+            onClick={handleAddNew}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors font-semibold shadow-md hover:shadow-lg"
+          >
+            <Plus className="w-5 h-5" />
+            Thêm Danh Mục
+          </button>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800">Quản Lý Danh Mục</h1>
-              <p className="text-gray-600 mt-1">
-                Tổng số: {filteredCategories.length} danh mục
+              <p className="text-sm text-gray-600 font-medium">Tổng số</p>
+              <p className="text-3xl font-bold text-gray-900 mt-1">
+                {stats.total}
               </p>
             </div>
-            <button
-              onClick={handleAddNew}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors font-semibold shadow-md hover:shadow-lg"
-            >
-              <Plus className="w-5 h-5" />
-              Thêm Danh Mục
-            </button>
-          </div>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 font-medium">Tổng số</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">{stats.total}</p>
-              </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Package className="w-6 h-6 text-blue-600" />
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 font-medium">Đang hoạt động</p>
-                <p className="text-3xl font-bold text-green-600 mt-1">{stats.active}</p>
-              </div>
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <Package className="w-6 h-6 text-green-600" />
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 font-medium">Ngưng hoạt động</p>
-                <p className="text-3xl font-bold text-gray-600 mt-1">{stats.inactive}</p>
-              </div>
-              <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
-                <Package className="w-6 h-6 text-gray-600" />
-              </div>
+            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+              <Package className="w-6 h-6 text-blue-600" />
             </div>
           </div>
         </div>
-
-        {/* Filter Bar */}
-        <CategoryFilterBar
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          sortBy={sortBy}
-          onSortChange={setSortBy}
-          statusFilter={statusFilter}
-          onStatusChange={setStatusFilter}
-          statusOptions={STATUS_OPTIONS}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-        />
-
-        {/* Categories Display */}
-        <div className="mt-6">
-          {filteredCategories.length === 0 ? (
-            <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-              <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg mb-2">
-                Không tìm thấy danh mục nào
+        <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 font-medium">
+                Đang hoạt động
               </p>
-              <p className="text-gray-400 text-sm mb-4">
-                {searchTerm || statusFilter
-                  ? "Thử thay đổi bộ lọc hoặc tìm kiếm"
-                  : "Bắt đầu bằng cách thêm danh mục mới"}
+              <p className="text-3xl font-bold text-green-600 mt-1">
+                {stats.active}
               </p>
-              {!searchTerm && !statusFilter && (
-                <button
-                  onClick={handleAddNew}
-                  className="text-blue-600 hover:text-blue-700 font-medium"
-                >
-                  Thêm danh mục mới
-                </button>
-              )}
             </div>
-          ) : viewMode === VIEW_MODES.GRID ? (
-            // Grid View
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredCategories.map((category) => (
-                <CategoryCard
-                  key={category.id}
-                  category={category}
-                  onEdit={handleEditClick}
-                  onDelete={handleDeleteClick}
-                />
-              ))}
+            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+              <Package className="w-6 h-6 text-green-600" />
             </div>
-          ) : (
-            // List View
-            <CategoryListView
-              categories={filteredCategories}
-              onEdit={handleEditClick}
-              onDelete={handleDeleteClick}
-            />
-          )}
+          </div>
         </div>
+        <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 font-medium">
+                Ngưng hoạt động
+              </p>
+              <p className="text-3xl font-bold text-gray-600 mt-1">
+                {stats.inactive}
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+              <Package className="w-6 h-6 text-gray-600" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Filter Bar */}
+      <CategoryFilterBar
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        statusFilter={statusFilter}
+        onStatusChange={setStatusFilter}
+        statusOptions={STATUS_OPTIONS}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+      />
+
+      {/* Categories Display */}
+      <div className="mt-6">
+        {filteredCategories.length === 0 ? (
+          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+            <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500 text-lg mb-2">
+              Không tìm thấy danh mục nào
+            </p>
+            <p className="text-gray-400 text-sm mb-4">
+              {searchTerm || statusFilter
+                ? "Thử thay đổi bộ lọc hoặc tìm kiếm"
+                : "Bắt đầu bằng cách thêm danh mục mới"}
+            </p>
+            {!searchTerm && !statusFilter && (
+              <button
+                onClick={handleAddNew}
+                className="text-blue-600 hover:text-blue-700 font-medium"
+              >
+                Thêm danh mục mới
+              </button>
+            )}
+          </div>
+        ) : viewMode === VIEW_MODES.GRID ? (
+          // Grid View
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {filteredCategories.map((category) => (
+              <CategoryCard
+                key={category.id}
+                category={category}
+                onEdit={handleEditClick}
+                onDelete={handleDeleteClick}
+                onRestore={handleRestoreCategory}
+                onDeletePermanent={handleDeletePermanent}
+              />
+            ))}
+          </div>
+        ) : (
+          // List View
+          <CategoryList
+            categories={filteredCategories}
+            onEdit={handleEditClick}
+            onDelete={handleDeleteClick}
+            onToggleStatus={(category) =>
+              handleToggleStatus(category.category_id, category.is_active)
+            }
+            onRestore={handleRestoreCategory}
+            onDeletePermanent={handleDeletePermanent}
+          />
+        )}
       </div>
 
       {/* Form Modal */}
@@ -388,10 +549,11 @@ const CategoryManagementContent = () => {
       {/* Confirm Dialog */}
       {confirmDialog.isOpen && (
         <ConfirmModal
+          isOpen={confirmDialog.isOpen}
           title={confirmDialog.title}
           message={confirmDialog.message}
           onConfirm={confirmDialog.onConfirm}
-          onCancel={() =>
+          onClose={() =>
             setConfirmDialog({
               isOpen: false,
               title: "",

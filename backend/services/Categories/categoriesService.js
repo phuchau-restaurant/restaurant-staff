@@ -1,7 +1,7 @@
 // backend/services/Categories/categoriesService.js
 
 //Ko cần import nữa mà nhận Repository thông qua constructor
-  //ko cần: import CategoriesRepository from "../repositories/implementation/CategoriesRepository.js";
+//ko cần: import CategoriesRepository from "../repositories/implementation/CategoriesRepository.js";
 
 class CategoriesService {
   // Constructor Injection: Nhận vào một cái gì đó tuân thủ ICategoryRepository
@@ -17,12 +17,12 @@ class CategoriesService {
   async getCategoriesByTenant(tenantId, onlyActive = false) {
     if (!tenantId) throw new Error("Missing tenantId");
 
-    const filters = { tenant_id: tenantId }; 
-    
+    const filters = { tenant_id: tenantId };
+
     if (onlyActive) {
       filters.is_active = true;
     }
-   
+
     // Gọi xuống Repository để lấy dữ liệu
     return await this.categoryRepo.getAll(filters);
   }
@@ -32,32 +32,41 @@ class CategoriesService {
    * - Rule 1: Tên không được để trống
    * - Rule 2: Tên không được trùng trong cùng 1 Tenant
    */
-  async createCategory({ tenantId, name, displayOrder = 0, isActive = true }) {
+  async createCategory({
+    tenantId,
+    name,
+    description = "",
+    imageUrl = "",
+    urlIcon = "",
+    displayOrder = 0,
+    isActive = true,
+  }) {
     // 1. Validate dữ liệu đầu vào
     if (!tenantId) throw new Error("Tenant ID is required");
-    if (!name || name.trim() === "") throw new Error("Category name is required");
+    if (!name || name.trim() === "")
+      throw new Error("Category name is required");
+    // Optional: Validate description, imageUrl nếu cần
 
     // 2. Business Logic: Kiểm tra trùng tên trong cùng tenant
-    // Lưu ý: Hàm findByName trả về mảng các Model
-
-    // Gọi repo được inject vào -> cleaner
     const existing = await this.categoryRepo.findByName(tenantId, name.trim());
-    //const existing = await CategoriesRepository.findByName(tenant_id, name.trim()); - 3 lớp
     if (existing && existing.length > 0) {
-      // Kiểm tra kỹ hơn: Nếu có bản ghi trùng tên chính xác (findByName dùng ilike)
-      const isExactMatch = existing
-            .some(cat => cat.name.toLowerCase() === name.trim().toLowerCase());
+      const isExactMatch = existing.some(
+        (cat) => cat.name.toLowerCase() === name.trim().toLowerCase()
+      );
       if (isExactMatch) {
         throw new Error(`Category '${name}' already exists in this tenant`);
-      } 
+      }
     }
 
-    // chuẩn bị dữ liệu 
+    // chuẩn bị dữ liệu
     const newCategoryData = {
-      tenantId: tenantId,         
+      tenantId: tenantId,
       name: name.trim(),
-      displayOrder: displayOrder, 
-      isActive: isActive          
+      description: description,
+      imageUrl: imageUrl,
+      urlIcon: urlIcon,
+      displayOrder: displayOrder,
+      isActive: isActive,
     };
 
     // Gọi Repository -> Lưu xuống DB
@@ -78,7 +87,8 @@ class CategoriesService {
     }
 
     // Security Check: Đảm bảo user của tenant này không xem trộm data của tenant kia
-    if (tenantId && category.tenantId !== tenantId) { //category bây giờ là Model nên thuộc tính là tenantId thay vì tenant_id
+    if (tenantId && category.tenantId !== tenantId) {
+      //category bây giờ là Model nên thuộc tính là tenantId thay vì tenant_id
       throw new Error("Access denied: Category belongs to another tenant");
     }
 
@@ -94,11 +104,18 @@ class CategoriesService {
 
     // 2. Nếu cập nhật tên, cần check trùng lặp (Optional - tuỳ độ kỹ tính)
     if (updates.name) {
-       const existing = await this.categoryRepo.findByName(tenantId, updates.name.trim());
-       const isDuplicate = existing.some(cat => cat.id !== id && cat.name.toLowerCase() === updates.name.trim().toLowerCase());
-       if (isDuplicate) {
-         throw new Error(`Category name '${updates.name}' already exists`);
-       }
+      const existing = await this.categoryRepo.findByName(
+        tenantId,
+        updates.name.trim()
+      );
+      const isDuplicate = existing.some(
+        (cat) =>
+          cat.id !== id &&
+          cat.name.toLowerCase() === updates.name.trim().toLowerCase()
+      );
+      if (isDuplicate) {
+        throw new Error(`Category name '${updates.name}' already exists`);
+      }
     }
 
     // 3. Thực hiện update
@@ -112,13 +129,9 @@ class CategoriesService {
    * (Lưu ý: Cân nhắc dùng Soft Delete (is_active=false) thay vì xóa hẳn nếu dữ liệu quan trọng)
    */
   async deleteCategory(id, tenantId) {
-    //ktra tồn tại không ?
+    // Kiểm tra tồn tại
     await this.getCategoryById(id, tenantId);
-    //TODO: cân nhắc dùng soft delete
-    //update is_active = false thay vì xóa hẳn
-    //return await CategoriesRepository.update(id, { is_active: false });
-
-
+    // Soft delete: cập nhật is_active = false
     return await this.categoryRepo.delete(id);
   }
 }

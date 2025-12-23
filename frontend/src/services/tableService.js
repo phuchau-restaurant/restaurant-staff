@@ -2,6 +2,8 @@
  * Table Service - API calls cho quản lý bàn
  */
 
+import { fetchLocationOptions as getLocationOptions } from "./appSettingsService";
+
 const BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/admin/tables`;
 const HEADERS = {
   "Content-Type": "application/json",
@@ -41,30 +43,7 @@ export const fetchTables = async (statusFilter = "", areaFilter = "") => {
  * Fetch danh sách khu vực từ appsettings API
  * @returns {Promise<Array>} Danh sách options khu vực
  */
-export const fetchLocationOptions = async () => {
-  try {
-    const response = await fetch(
-      `${import.meta.env.VITE_BACKEND_URL}/api/appsettings?category=Location`,
-      { headers: HEADERS }
-    );
-
-    const result = await response.json();
-
-    if (response.ok && result.success) {
-      return [
-        { value: "", label: "Tất cả khu vực" },
-        ...(result.data || []).map((item) => ({
-          value: item.value,
-          label: item.value,
-        })),
-      ];
-    }
-    return [{ value: "", label: "Tất cả khu vực" }];
-  } catch (error) {
-    console.error("Fetch location options error:", error);
-    throw error;
-  }
-};
+export const fetchLocationOptions = getLocationOptions;
 
 /**
  * Cập nhật trạng thái bàn
