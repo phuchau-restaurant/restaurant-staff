@@ -609,7 +609,7 @@ const CategoryManagementContent = () => {
           onClose={() =>
             setRestoreDialog({ isOpen: false, category: null, onConfirm: null })
           }
-          type="info"
+          type="success"
           confirmText="Khôi phục"
         />
       )}
