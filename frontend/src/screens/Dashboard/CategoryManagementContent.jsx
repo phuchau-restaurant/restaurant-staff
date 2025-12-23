@@ -119,14 +119,14 @@ const CategoryManagementContent = () => {
   /**
    * Cập nhật danh mục
    */
-  const handleUpdateCategory = async (id, categoryData) => {
+  const handleUpdateCategory = async (categoryId, categoryData) => {
     try {
       const updatedCategory = await categoryService.updateCategory(
-        id,
+        categoryId,
         categoryData
       );
       setCategories(
-        categories.map((cat) => (cat.id === id ? updatedCategory : cat))
+        categories.map((cat) => (cat.category_id === categoryId ? updatedCategory : cat))
       );
       setShowForm(false);
       setEditingCategory(null);
@@ -191,10 +191,10 @@ const CategoryManagementContent = () => {
   /**
    * Xóa danh mục
    */
-  const handleDeleteCategory = async (id) => {
+  const handleDeleteCategory = async (categoryId) => {
     try {
-      await categoryService.deleteCategory(id);
-      setCategories(categories.filter((cat) => cat.id !== id));
+      await categoryService.deleteCategory(categoryId);
+      setCategories(categories.filter((cat) => cat.category_id !== categoryId));
       showAlert("Thành công", MESSAGES.DELETE_SUCCESS, "success");
     } catch (error) {
       console.error("Delete category error:", error);
@@ -213,7 +213,7 @@ const CategoryManagementContent = () => {
    */
   const handleFormSubmit = async (categoryData) => {
     if (editingCategory) {
-      await handleUpdateCategory(editingCategory.id, categoryData);
+      await handleUpdateCategory(editingCategory.category_id, categoryData);
     } else {
       await handleCreateCategory(categoryData);
     }
@@ -243,8 +243,8 @@ const CategoryManagementContent = () => {
       isOpen: true,
       title: "Xác nhận xóa",
       message: `Bạn có chắc chắn muốn xóa danh mục "${category.name}"?`,
-      onConfirm: () => {
-        handleDeleteCategory(category.id);
+      onConfirm: async () => {
+        await handleDeleteCategory(category.category_id);
         setConfirmDialog({
           isOpen: false,
           title: "",
