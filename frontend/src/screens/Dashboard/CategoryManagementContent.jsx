@@ -1,3 +1,40 @@
+// Modal xác nhận khôi phục
+const [restoreDialog, setRestoreDialog] = useState({
+  isOpen: false,
+  category: null,
+  onConfirm: null,
+});
+// Xử lý khôi phục danh mục
+const handleRestoreCategory = (category) => {
+  setRestoreDialog({
+    isOpen: true,
+    category,
+    onConfirm: async () => {
+      await handleUpdateCategory(category.id || category.category_id, {
+        is_active: true,
+      });
+      setRestoreDialog({ isOpen: false, category: null, onConfirm: null });
+    },
+  });
+};
+
+// Xử lý xóa vĩnh viễn (bạn cần tự viết hàm handleDeletePermanent tương tự handleDeleteCategory)
+const handleDeletePermanent = (category) => {
+  setConfirmDialog({
+    isOpen: true,
+    title: "Xác nhận xóa vĩnh viễn",
+    message: `Bạn có chắc chắn muốn xóa vĩnh viễn danh mục "${category.name}"? Hành động này không thể hoàn tác!`,
+    onConfirm: async () => {
+      // TODO: Gọi API xóa vĩnh viễn ở đây
+      setConfirmDialog({
+        isOpen: false,
+        title: "",
+        message: "",
+        onConfirm: null,
+      });
+    },
+  });
+};
 import { useState, useEffect, useCallback } from "react";
 import { Plus, Package } from "lucide-react";
 
@@ -189,7 +226,7 @@ const CategoryManagementContent = () => {
   const handleDeleteCategory = async (categoryId) => {
     try {
       await categoryService.deleteCategory(categoryId);
-      await fetchCategories(); 
+      await fetchCategories();
       showAlert("Thành công", MESSAGES.DELETE_SUCCESS, "success");
     } catch (error) {
       console.error("Delete category error:", error);
@@ -211,7 +248,10 @@ const CategoryManagementContent = () => {
       message: `Bạn có chắc chắn muốn khôi phục danh mục "${category.name}"?`,
       onConfirm: async () => {
         try {
-          await categoryService.updateCategoryStatus(category.category_id, true);
+          await categoryService.updateCategoryStatus(
+            category.category_id,
+            true
+          );
           setCategories(
             categories.map((cat) =>
               cat.category_id === category.category_id
@@ -257,11 +297,7 @@ const CategoryManagementContent = () => {
           setCategories(
             categories.filter((cat) => cat.category_id !== category.category_id)
           );
-          showAlert(
-            "Thành công",
-            "Đã xóa vĩnh viễn danh mục",
-            "success"
-          );
+          showAlert("Thành công", "Đã xóa vĩnh viễn danh mục", "success");
         } catch (error) {
           console.error("Delete permanent error:", error);
           showAlert(
@@ -310,8 +346,7 @@ const CategoryManagementContent = () => {
       // Chỉ gửi changedData đi thay vì toàn bộ categoryData
       // Lưu ý: Đảm bảo dùng đúng key ID (id hoặc category_id tùy theo backend của bạn)
       const idToUpdate = editingCategory.id || editingCategory.category_id;
-      await handleUpdateCategory(idToUpdate, changedData); 
-      
+      await handleUpdateCategory(idToUpdate, changedData);
     } else {
       // Tạo mới thì gửi toàn bộ
       await handleCreateCategory(categoryData);
@@ -324,7 +359,7 @@ const CategoryManagementContent = () => {
   const handleCloseForm = () => {
     setShowForm(false);
     setEditingCategory(null);
-  }; 
+  };
 
   /**
    * Xử lý click edit
@@ -551,7 +586,7 @@ const CategoryManagementContent = () => {
       {/* Confirm Dialog */}
       {confirmDialog.isOpen && (
         <ConfirmModal
-          isOpen={confirmDialog.isOpen} 
+          isOpen={confirmDialog.isOpen}
           title={confirmDialog.title}
           message={confirmDialog.message}
           onConfirm={confirmDialog.onConfirm}
@@ -563,6 +598,19 @@ const CategoryManagementContent = () => {
               onConfirm: null,
             })
           }
+        />
+      )}
+      {restoreDialog.isOpen && (
+        <ConfirmModal
+          isOpen={restoreDialog.isOpen}
+          title="Khôi phục danh mục"
+          message={`Bạn có chắc chắn muốn khôi phục danh mục "${restoreDialog.category?.name}"?`}
+          onConfirm={restoreDialog.onConfirm}
+          onClose={() =>
+            setRestoreDialog({ isOpen: false, category: null, onConfirm: null })
+          }
+          type="info"
+          confirmText="Khôi phục"
         />
       )}
     </div>

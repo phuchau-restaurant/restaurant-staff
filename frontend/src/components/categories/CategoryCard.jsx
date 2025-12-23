@@ -13,8 +13,8 @@ import { formatDate } from "../../utils/categoryUtils";
  * @param {function} onDeletePermanent - Callback khi bấm xóa vĩnh viễn
  */
 const CategoryCard = memo(({ category, onEdit, onDelete, onRestore, onDeletePermanent }) => {
-  const isInactive = category.is_active === false;
-  const statusText = category.is_active ? "Hoạt động" : "Không hoạt động";
+  const isInactive = category.isActive === false;
+  const statusText = category.isActive ? "Hoạt động" : "Không hoạt động";
 
   return (
     <div
@@ -68,24 +68,24 @@ const CategoryCard = memo(({ category, onEdit, onDelete, onRestore, onDeletePerm
 
         {/* Action buttons */}
         <div className="mt-4 flex gap-2">
-          {isInactive ? (
-            <>
-              <button
-                onClick={() => onRestore && onRestore(category)}
-                className="flex-1 flex items-center justify-center gap-2 bg-green-50 hover:bg-green-100 text-green-600 font-semibold py-2 px-3 rounded-lg transition-colors"
-                title="Khôi phục danh mục"
-              >
-                Khôi phục
-              </button>
-              <button
-                onClick={() => onDeletePermanent && onDeletePermanent(category)}
-                className="flex-1 flex items-center justify-center gap-2 bg-red-100 hover:bg-red-200 text-red-700 font-semibold py-2 px-3 rounded-lg transition-colors"
-                title="Xóa vĩnh viễn"
-              >
-                Xóa vĩnh viễn
-              </button>
-            </>
-          ) : (
+              {isInactive ? (
+                <>
+                  <button
+                    onClick={() => onRestore && onRestore(category)}
+                    className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-3 rounded-lg transition-colors"
+                    title="Khôi phục danh mục"
+                  >
+                    Khôi phục
+                  </button>
+                  <button
+                    onClick={() => onDeletePermanent && onDeletePermanent(category)}
+                    className="flex-1 flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-3 rounded-lg transition-colors"
+                    title="Xóa vĩnh viễn"
+                  >
+                    Xóa vĩnh viễn
+                  </button>
+                </>
+              ) : (
             <>
               <button
                 onClick={() => onEdit(category)}
