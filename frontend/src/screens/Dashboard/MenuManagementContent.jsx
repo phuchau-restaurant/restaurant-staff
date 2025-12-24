@@ -86,7 +86,6 @@ const MenuManagementContent = () => {
       priceRange,
       sortBy
     );
-    console.log(filtered);
     setFilteredMenuItems(filtered);
   }, [menuItems, searchTerm, sortBy, statusFilter, categoryFilter, priceRange]);
 
@@ -130,7 +129,9 @@ const MenuManagementContent = () => {
 
       // Attach modifier groups
       if (menuData.selectedModifierGroups && menuData.selectedModifierGroups.length > 0) {
-        await menuService.attachModifierGroups(newMenuItem.id, menuData.selectedModifierGroups);
+        for (const groupId of menuData.selectedModifierGroups) {
+          await modifierService.addDishModifierGroup(newMenuItem.id, groupId);
+        }
       }
 
       // Refresh data
@@ -155,6 +156,11 @@ const MenuManagementContent = () => {
   const handleUpdateMenuItem = async (id, menuData) => {
     try {
       await menuService.updateMenuItem(id, menuData);
+
+      // Sync modifier groups
+      if (menuData.selectedModifierGroups !== undefined) {
+        await modifierService.syncDishModifierGroups(id, menuData.selectedModifierGroups);
+      }
 
       //Chưa có những tính năng này nên là comment chờ khi nào có thể làm sau
 
@@ -204,13 +210,14 @@ const MenuManagementContent = () => {
    */
   const handleDeleteMenuItem = async (id) => {
     try {
+      // Chỉ soft delete - set isAvailable = false
       await menuService.updateMenuItemStatus(id, false);
       setMenuItems(
         menuItems.map((item) =>
           item.id === id ? { ...item, isAvailable: false } : item
         )
       );
-      showAlert("Thành công", MESSAGES.DELETE_SUCCESS, "success");
+      showAlert("Thành công", "Món ăn đã được chuyển sang trạng thái ngừng bán", "success");
     } catch (error) {
       console.error("Delete menu item error:", error);
       showAlert(
@@ -313,9 +320,28 @@ const MenuManagementContent = () => {
   /**
    * Xử lý click edit
    */
-  const handleEditClick = (menuItem) => {
-    setEditingMenuItem(menuItem);
-    setShowForm(true);
+  const handleEditClick = async (menuItem) => {
+    try {
+      // Fetch modifier groups đã gắn cho dish này
+      const attachedModifiers = await modifierService.fetchDishModifierGroups(menuItem.id);
+      
+      // Lấy danh sách groupId từ response
+      const selectedModifierGroupIds = attachedModifiers.map(item => item.groupId || item.id);
+      
+      // Cập nhật menuItem với modifier groups đã chọn
+      const menuItemWithModifiers = {
+        ...menuItem,
+        modifierGroups: selectedModifierGroupIds.map(id => ({ id })),
+      };
+      
+      setEditingMenuItem(menuItemWithModifiers);
+      setShowForm(true);
+    } catch (error) {
+      console.error("Error fetching dish modifier groups:", error);
+      // Nếu lỗi thì vẫn mở form nhưng không có modifier groups
+      setEditingMenuItem(menuItem);
+      setShowForm(true);
+    }
   };
 
   /**

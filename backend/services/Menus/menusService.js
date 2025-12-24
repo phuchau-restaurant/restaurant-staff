@@ -39,7 +39,7 @@ class MenusService {
   }
 
   async createMenu(menuData) {
-    const { tenantId, name, price, categoryId } = menuData;
+    const { tenantId, name, price, categoryId, imgUrl } = menuData;
 
     // 1. Validation cơ bản
     if (!tenantId) throw new Error("Tenant ID is required");
@@ -47,6 +47,10 @@ class MenusService {
     if (!name || name.trim() === "") throw new Error("Menu name is required");
     if (price === undefined || price < 0) throw new Error("Price must be a positive number");
 
+    if (imgUrl && typeof imgUrl !== 'string') {
+        throw new Error("Image URL must be a string");
+    }
+      
     // 2. Check trùng tên (Optional - tùy logic nhà hàng có cho phép trùng tên ko)
     const existing = await this.menusRepo.findByName(tenantId, name.trim());
     if (existing && existing.length > 0) {
