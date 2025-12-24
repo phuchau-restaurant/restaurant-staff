@@ -115,14 +115,14 @@ const MenuListView = memo(({ menuItems, onEdit, onDelete }) => {
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-3">
                         <button
-                            onClick={() => onEdit(menuItem)}
+                            onClick={() => onEdit(item)}
                             className="text-xs flex-1 flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold py-2 px-1 rounded-lg transition-colors"
                         >
                             <Edit2 className="w-4 h-4" />
                             Chỉnh sửa
                         </button>
                         <button
-                        onClick={() => onDelete(menuItem)}
+                        onClick={() => onDelete(item)}
                         className="text-xs flex-1 flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-2 px-1 rounded-lg transition-colors"
                         title="Xóa"
                         >

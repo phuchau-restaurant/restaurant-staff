@@ -19,7 +19,7 @@ const MenuCard = memo(({ menuItem, onEdit, onDelete }) => {
           <img
             src={imageUrl}
             alt={menuItem.name}
-            className="w-full h-full object-cover"
+            className="m-1 w-full h-full object-cover rounded-[2px]"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">

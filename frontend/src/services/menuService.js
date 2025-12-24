@@ -16,17 +16,9 @@ const HEADERS = {
  * @param {string} categoryId - Lọc theo danh mục (optional)
  * @returns {Promise<Array>} Danh sách món ăn
  */
-export const fetchMenuItems = async (searchTerm = "", categoryId = "") => {
+export const fetchMenuItems = async () => {
   try {
-    const queryParams = new URLSearchParams();
-    if (searchTerm) queryParams.append("search", searchTerm);
-    if (categoryId) queryParams.append("categoryId", categoryId);
-
-    const url = `${BASE_URL}${
-      queryParams.toString() ? `?${queryParams.toString()}` : ""
-    }`;
-
-    const response = await fetch(url, { headers: HEADERS });
+    const response = await fetch(BASE_URL, { headers: HEADERS });
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -38,8 +30,7 @@ export const fetchMenuItems = async (searchTerm = "", categoryId = "") => {
     return [];
   } catch (error) {
     console.error("Fetch menu items error:", error);
-    // Return mock data for development
-    return getMockMenuItems();
+    throw error;
   }
 };
 
@@ -139,28 +130,35 @@ export const deleteMenuItem = async (menuId) => {
 
 /**
  * Upload ảnh cho món ăn (hỗ trợ nhiều ảnh)
- * POST /api/admin/menu/items/:id/photos
- * @param {string} menuId - ID món ăn
- * @param {File|File[]} files - File ảnh hoặc mảng files
+ * POST /api/admin/menu/items/photos
+ * @param {string} dishId - ID món ăn (dishId)
+ * @param {File|File[]} files - File ảnh hoặc mảng files từ máy tính
  * @returns {Promise<Object>} Thông tin ảnh đã upload
  */
-export const uploadMenuImage = async (menuId, files) => {
+export const uploadMenuImage = async (dishId, files) => {
   try {
     const formData = new FormData();
     
+    // Thêm dishId vào form data để backend biết ảnh này thuộc món ăn nào
+    formData.append("dishId", dishId);
+    
     // Hỗ trợ cả single file và multiple files
+    // Key là "images" theo API instruction
     if (Array.isArray(files)) {
       files.forEach((file) => {
-        formData.append("photos", file);
+        formData.append("images", file);
       });
     } else {
-      formData.append("photos", files);
+      formData.append("images", files);
     }
 
-    const response = await fetch(`${BASE_URL}/${menuId}/photos`, {
+    const ADMIN_BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/admin/menu/items`;
+    
+    const response = await fetch(`${ADMIN_BASE_URL}/photos`, {
       method: "POST",
       headers: {
         "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+        "Authorization": `Bearer ${localStorage.getItem("adminToken")}`,
       },
       body: formData,
     });
@@ -179,16 +177,20 @@ export const uploadMenuImage = async (menuId, files) => {
 
 /**
  * Xóa ảnh của món ăn
- * DELETE /api/admin/menu/items/:id/photos/:photoId
- * @param {string} menuId - ID món ăn
- * @param {string} photoId - ID ảnh
+ * DELETE /api/admin/menu/items/photos/:id
+ * @param {string} photoId - ID ảnh (từ bảng menu_item_photos)
  * @returns {Promise<void>}
  */
-export const deleteMenuImage = async (menuId, photoId) => {
+export const deleteMenuImage = async (photoId) => {
   try {
-    const response = await fetch(`${BASE_URL}/${menuId}/photos/${photoId}`, {
+    const ADMIN_BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/admin/menu/items`;
+    
+    const response = await fetch(`${ADMIN_BASE_URL}/photos/${photoId}`, {
       method: "DELETE",
-      headers: HEADERS,
+      headers: {
+        "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+        "Authorization": `Bearer ${localStorage.getItem("adminToken")}`,
+      },
     });
 
     const result = await response.json();
@@ -204,16 +206,20 @@ export const deleteMenuImage = async (menuId, photoId) => {
 
 /**
  * Set ảnh chính cho món ăn
- * PATCH /api/admin/menu/items/:id/photos/:photoId/primary
- * @param {string} menuId - ID món ăn
- * @param {string} photoId - ID ảnh
+ * PATCH /api/admin/menu/items/photos/:id
+ * @param {string} photoId - ID ảnh cần set làm primary
  * @returns {Promise<Object>}
  */
-export const setPrimaryImage = async (menuId, photoId) => {
+export const setPrimaryImage = async (photoId) => {
   try {
-    const response = await fetch(`${BASE_URL}/${menuId}/photos/${photoId}/primary`, {
+    const ADMIN_BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/admin/menu/items`;
+    
+    const response = await fetch(`${ADMIN_BASE_URL}/photos/${photoId}`, {
       method: "PATCH",
-      headers: HEADERS,
+      headers: {
+        "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+        "Authorization": `Bearer ${localStorage.getItem("adminToken")}`,
+      },
     });
 
     const result = await response.json();
@@ -224,6 +230,36 @@ export const setPrimaryImage = async (menuId, photoId) => {
     throw new Error(result.message || "Failed to set primary image");
   } catch (error) {
     console.error("Set primary image error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Lấy ảnh đại diện của món ăn
+ * GET /api/admin/menu/items/photos/primary?dish_id=:dishId
+ * @param {string} dishId - ID món ăn
+ * @returns {Promise<Object>} Thông tin ảnh primary
+ */
+export const getPrimaryImageFromAPI = async (dishId) => {
+  try {
+    const ADMIN_BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/admin/menu/items`;
+    
+    const response = await fetch(`${ADMIN_BASE_URL}/photos/primary?dish_id=${dishId}`, {
+      method: "GET",
+      headers: {
+        "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+        "Authorization": `Bearer ${localStorage.getItem("adminToken")}`,
+      },
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      return result.data;
+    }
+    throw new Error(result.message || "Failed to get primary image");
+  } catch (error) {
+    console.error("Get primary image error:", error);
     throw error;
   }
 };
@@ -255,67 +291,4 @@ export const attachModifierGroups = async (menuId, modifierGroupIds) => {
   }
 };
 
-/**
- * Mock data cho development
- */
-const getMockMenuItems = () => [
-  {
-    id: 1,
-    name: "Phở Bò",
-    description: "Phở bò truyền thống với nước dùng đậm đà",
-    price: 55000,
-    categoryId: 1,
-    categoryName: "Món chính",
-    imageUrl: "https://via.placeholder.com/400x300?text=Pho+Bo",
-    images: [
-      { id: 1, url: "https://via.placeholder.com/400x300?text=Pho+Bo+1", isPrimary: true },
-      { id: 2, url: "https://via.placeholder.com/400x300?text=Pho+Bo+2", isPrimary: false },
-    ],
-    isAvailable: true,
-    modifierGroups: [],
-    createdAt: "2024-01-15T10:00:00Z",
-  },
-  {
-    id: 2,
-    name: "Bún Chả",
-    description: "Bún chả Hà Nội với thịt nướng than hoa",
-    price: 45000,
-    categoryId: 1,
-    categoryName: "Món chính",
-    imageUrl: "https://via.placeholder.com/400x300?text=Bun+Cha",
-    images: [
-      { id: 3, url: "https://via.placeholder.com/400x300?text=Bun+Cha", isPrimary: true },
-    ],
-    isAvailable: true,
-    modifierGroups: [],
-    createdAt: "2024-01-16T10:00:00Z",
-  },
-  {
-    id: 3,
-    name: "Cơm Tấm",
-    description: "Cơm tấm sườn bì chả với đầy đủ topping",
-    price: 50000,
-    categoryId: 1,
-    categoryName: "Món chính",
-    imageUrl: "https://via.placeholder.com/400x300?text=Com+Tam",
-    images: [],
-    isAvailable: false,
-    modifierGroups: [],
-    createdAt: "2024-01-17T10:00:00Z",
-  },
-  {
-    id: 4,
-    name: "Trà Đào",
-    description: "Trà đào cam sả mát lạnh",
-    price: 25000,
-    categoryId: 2,
-    categoryName: "Đồ uống",
-    imageUrl: "https://via.placeholder.com/400x300?text=Tra+Dao",
-    images: [],
-    isAvailable: true,
-    modifierGroups: [],
-    createdAt: "2024-01-18T10:00:00Z",
-  },
-];
 
-export { getMockMenuItems };
