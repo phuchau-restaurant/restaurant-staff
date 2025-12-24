@@ -8,7 +8,7 @@ const router = express.Router();
 router.post("/", menuItemModifierGroupController.addLink);
 // Xóa liên kết
 router.delete("/", menuItemModifierGroupController.removeLink);
-// Tìm kiếm liên kết
+// Tìm kiếm liên kết (có thể chỉ truyền dishId để lấy hết group liên quan)
 router.get("/", menuItemModifierGroupController.findLink);
 
 export default router;

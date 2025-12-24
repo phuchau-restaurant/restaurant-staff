@@ -3,6 +3,7 @@ import { supabase } from "../../configs/database.js";
 import { MenuItemModifierGroup } from "../../models/MenuItemModifierGroup.js";
 
 export class MenuItemModifierGroupRepository {
+  
   constructor() {
     this.tableName = "menu_item_modifier_groups";
   }
@@ -29,13 +30,23 @@ export class MenuItemModifierGroupRepository {
     return true;
   }
 
-  // Tìm kiếm liên kết theo cặp dishId, groupId
+  // Tìm kiếm liên kết theo dishId và groupId
   async find(dishId, groupId) {
     const { data, error } = await supabase
       .from(this.tableName)
       .select()
       .eq("dish_id", dishId)
       .eq("group_id", groupId);
+    if (error) throw new Error(error.message);
+    return (data || []).map((row) => new MenuItemModifierGroup(row));
+  }
+
+  // Tìm tất cả group liên quan đến dishId
+  async findByDishId(dishId) {
+    const { data, error } = await supabase
+      .from(this.tableName)
+      .select()
+      .eq("dish_id", dishId);
     if (error) throw new Error(error.message);
     return (data || []).map((row) => new MenuItemModifierGroup(row));
   }

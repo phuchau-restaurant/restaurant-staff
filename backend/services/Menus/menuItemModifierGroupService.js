@@ -16,9 +16,14 @@ class MenuItemModifierGroupService {
     return await this.repo.remove(dishId, groupId);
   }
 
-  // Tìm kiếm liên kết cụ thể
+  // Tìm kiếm liên kết cụ thể (theo dishId và groupId)
   async findLink(dishId, groupId) {
     return await this.repo.find(dishId, groupId);
+  }
+
+  // Tìm tất cả group liên quan đến dishId
+  async findByDishId(dishId) {
+    return await this.repo.findByDishId(dishId);
   }
 }
 

@@ -86,7 +86,6 @@ const MenuManagementContent = () => {
       priceRange,
       sortBy
     );
-    console.log(filtered);
     setFilteredMenuItems(filtered);
   }, [menuItems, searchTerm, sortBy, statusFilter, categoryFilter, priceRange]);
 

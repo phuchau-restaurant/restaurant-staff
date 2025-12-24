@@ -37,8 +37,13 @@ class MenuItemModifierGroupController {
   findLink = async (req, res, next) => {
     try {
       const { dishId, groupId } = req.query;
-      if (!dishId || !groupId) throw new Error("dishId và groupId là bắt buộc");
-      const result = await this.service.findLink(dishId, groupId);
+      if (!dishId) throw new Error("dishId là bắt buộc");
+      let result;
+      if (groupId) {
+        result = await this.service.findLink(dishId, groupId);
+      } else {
+        result = await this.service.findByDishId(dishId);
+      }
       res
         .status(200)
         .json({ success: true, data: result.map((r) => r.toResponse()) });
