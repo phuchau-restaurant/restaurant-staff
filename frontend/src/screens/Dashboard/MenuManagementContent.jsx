@@ -156,29 +156,31 @@ const MenuManagementContent = () => {
     try {
       await menuService.updateMenuItem(id, menuData);
 
-      // Delete images if any
-      if (menuData.imagesToDelete && menuData.imagesToDelete.length > 0) {
-        for (const imageId of menuData.imagesToDelete) {
-          await menuService.deleteMenuImage(id, imageId);
-        }
-      }
+      //Chưa có những tính năng này nên là comment chờ khi nào có thể làm sau
 
-      // Upload new images if any
-      if (menuData.newImages && menuData.newImages.length > 0) {
-        for (const file of menuData.newImages) {
-          await menuService.uploadMenuImage(id, file);
-        }
-      }
+      // // Delete images if any
+      // if (menuData.imagesToDelete && menuData.imagesToDelete.length > 0) {
+      //   for (const imageId of menuData.imagesToDelete) {
+      //     await menuService.deleteMenuImage(id, imageId);
+      //   }
+      // }
 
-      // Set primary image
-      if (menuData.primaryImageId) {
-        await menuService.setPrimaryImage(id, menuData.primaryImageId);
-      }
+      // // Upload new images if any
+      // if (menuData.newImages && menuData.newImages.length > 0) {
+      //   for (const file of menuData.newImages) {
+      //     await menuService.uploadMenuImage(id, file);
+      //   }
+      // }
 
-      // Attach modifier groups
-      if (menuData.selectedModifierGroups) {
-        await menuService.attachModifierGroups(id, menuData.selectedModifierGroups);
-      }
+      // // Set primary image
+      // if (menuData.primaryImageId) {
+      //   await menuService.setPrimaryImage(id, menuData.primaryImageId);
+      // }
+
+      // // Attach modifier groups
+      // if (menuData.selectedModifierGroups) {
+      //   await menuService.attachModifierGroups(id, menuData.selectedModifierGroups);
+      // }
 
       // Refresh data
       const updatedMenuItems = await menuService.fetchMenuItems();

@@ -15,6 +15,6 @@ router.get("/:id", menusController.getById); // GET api/menus/:id
 // Routes cho ADMIN - quản lý menu
 router.post("/", menusController.create);
 router.put("/:id", menusController.update);
-//router.delete('/:id', menusController.delete);
+router.delete('/:id', menusController.delete);
 
 export default router;
