@@ -1,3 +1,4 @@
+//restaurant-staff/backend/middlewares/uploadMiddleware.js
 import multer from 'multer';
 
 // Cấu hình lưu trữ trong bộ nhớ tạm (RAM)
@@ -18,4 +19,6 @@ const upload = multer({
   fileFilter: fileFilter
 });
 
-export default upload;
+// Xuất ra 2 hàm: upload 1 ảnh và upload nhiều ảnh
+export const uploadSingle = upload.single('image');
+export const uploadArray = upload.array('images', 10); // Tối đa 10 ảnh 1 lúc

@@ -34,6 +34,7 @@ const PORT = process.env.PORT || 3000;
 // --- MIDDLEWARE ---
 app.use(cors()); // Cho phép Frontend gọi API
 app.use(express.json()); // QUAN TRỌNG: Để server đọc được JSON từ body request (req.body)
+app.use(express.urlencoded({ extended: true }));
 // [LOGGER] Đặt ở đây để ghi lại MỌI request bay vào server
 app.use(requestLogger);
 
