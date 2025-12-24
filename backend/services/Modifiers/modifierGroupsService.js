@@ -276,7 +276,7 @@ class ModifierGroupsService {
 
     // Xóa options không còn trong list mới
     for (const existingOpt of existingOptions) {
-      if (!incomingIds.includes(existingOpt.id)) {
+      if (!incomingIds.includes(existingOpt.id)) { 
         await this.optionsRepo.delete(existingOpt.id);
       }
     }
