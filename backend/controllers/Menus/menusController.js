@@ -78,7 +78,7 @@ class MenusController {
       });
 
       // Lọc bỏ id và tenantId
-      const { id: _id, tenantId: _tid, ...returnData } = newMenu;
+      const {tenantId: _tid, ...returnData } = newMenu;
 
       return res.status(201).json({
         success: true,

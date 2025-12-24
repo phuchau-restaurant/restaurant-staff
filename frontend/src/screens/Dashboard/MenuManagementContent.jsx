@@ -129,7 +129,9 @@ const MenuManagementContent = () => {
 
       // Attach modifier groups
       if (menuData.selectedModifierGroups && menuData.selectedModifierGroups.length > 0) {
-        await menuService.attachModifierGroups(newMenuItem.id, menuData.selectedModifierGroups);
+        for (const groupId of menuData.selectedModifierGroups) {
+          await modifierService.addDishModifierGroup(newMenuItem.id, groupId);
+        }
       }
 
       // Refresh data
@@ -208,6 +210,13 @@ const MenuManagementContent = () => {
    */
   const handleDeleteMenuItem = async (id) => {
     try {
+      // Xóa tất cả liên kết modifier groups trước
+      const attachedModifiers = await modifierService.fetchDishModifierGroups(id);
+      for (const modifier of attachedModifiers) {
+        const groupId = modifier.groupId || modifier.id;
+        await modifierService.removeDishModifierGroup(id, groupId);
+      }
+
       await menuService.deleteMenuItem(id);
       setMenuItems(menuItems.filter((item) => item.id !== id));
       showAlert("Thành công", MESSAGES.DELETE_SUCCESS, "success");
