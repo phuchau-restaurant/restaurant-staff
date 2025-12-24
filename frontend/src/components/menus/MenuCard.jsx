@@ -9,7 +9,7 @@ import { formatPrice, formatDate, getPrimaryImage } from "../../utils/menuUtils"
 const MenuCard = memo(({ menuItem, onEdit, onDelete }) => {
   const statusText = menuItem.isAvailable ? "Đang bán" : "Ngừng bán";
   const primaryImage = getPrimaryImage(menuItem.images);
-  const imageUrl = primaryImage?.url || menuItem.imageUrl;
+  const imageUrl = primaryImage?.url || menuItem.imgUrl;
 
   return (
     <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all h-full flex flex-col">
