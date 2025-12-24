@@ -69,6 +69,7 @@ export const fetchModifierGroupById = async (groupId) => {
  */
 export const createModifierGroup = async (groupData) => {
   try {
+    console.log("Creating modifier group with data:", groupData);
     const response = await fetch(`${BASE_URL}/modifier-groups`, {
       method: "POST",
       headers: HEADERS,
