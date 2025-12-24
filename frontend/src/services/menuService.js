@@ -291,4 +291,52 @@ export const attachModifierGroups = async (menuId, modifierGroupIds) => {
   }
 };
 
+/**
+ * Cập nhật trạng thái available của món ăn
+ * @param {string} menuId - ID món ăn
+ * @param {boolean} isAvailable - Trạng thái mới
+ * @returns {Promise<Object>}
+ */
+export const updateMenuItemStatus = async (menuId, isAvailable) => {
+  try {
+    const response = await fetch(`${BASE_URL}/${menuId}`, {
+      method: "PUT",
+      headers: HEADERS,
+      body: JSON.stringify({ isAvailable }),
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      return result.data;
+    }
+    throw new Error(result.message || "Failed to update menu item status");
+  } catch (error) {
+    console.error("Update menu item status error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Xóa vĩnh viễn món ăn (hard delete)
+ * @param {string} menuId - ID món ăn
+ * @returns {Promise<void>}
+ */
+export const deleteMenuItemPermanent = async (menuId) => {
+  try {
+    const response = await fetch(`${BASE_URL}/${menuId}/permanent`, {
+      method: "DELETE",
+      headers: HEADERS,
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.message || "Failed to permanently delete menu item");
+    }
+  } catch (error) {
+    console.error("Delete menu item permanent error:", error);
+    throw error;
+  }
+};
 

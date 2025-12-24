@@ -239,20 +239,18 @@ const MenuManagementContent = () => {
   };
 
   /**
-   * Xóa món ăn (soft delete)
+   * Xóa món ăn (soft delete - set isAvailable = false)
    */
   const handleDeleteMenuItem = async (id) => {
     try {
-      // Xóa tất cả liên kết modifier groups trước
-      const attachedModifiers = await modifierService.fetchDishModifierGroups(id);
-      for (const modifier of attachedModifiers) {
-        const groupId = modifier.groupId || modifier.id;
-        await modifierService.removeDishModifierGroup(id, groupId);
-      }
-
-      await menuService.deleteMenuItem(id);
-      setMenuItems(menuItems.filter((item) => item.id !== id));
-      showAlert("Thành công", MESSAGES.DELETE_SUCCESS, "success");
+      // Chỉ soft delete - set isAvailable = false
+      await menuService.updateMenuItemStatus(id, false);
+      setMenuItems(
+        menuItems.map((item) =>
+          item.id === id ? { ...item, isAvailable: false } : item
+        )
+      );
+      showAlert("Thành công", "Món ăn đã được chuyển sang trạng thái ngừng bán", "success");
     } catch (error) {
       console.error("Delete menu item error:", error);
       showAlert(
@@ -261,6 +259,74 @@ const MenuManagementContent = () => {
         "error"
       );
     }
+  };
+
+  /**
+   * Khôi phục món ăn (set isAvailable = true)
+   */
+  const handleRestoreMenuItem = async (menuItem) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Xác nhận khôi phục",
+      message: `Bạn có chắc chắn muốn khôi phục món "${menuItem.name}"?`,
+      onConfirm: async () => {
+        try {
+          await menuService.updateMenuItemStatus(menuItem.id, true);
+          setMenuItems(
+            menuItems.map((item) =>
+              item.id === menuItem.id ? { ...item, isAvailable: true } : item
+            )
+          );
+          showAlert("Thành công", "Đã khôi phục món ăn thành công", "success");
+        } catch (error) {
+          console.error("Restore menu item error:", error);
+          showAlert(
+            "Lỗi",
+            "Không thể khôi phục món ăn. Vui lòng thử lại!",
+            "error"
+          );
+        } finally {
+          setConfirmDialog({
+            isOpen: false,
+            title: "",
+            message: "",
+            onConfirm: null,
+          });
+        }
+      },
+    });
+  };
+
+  /**
+   * Xóa vĩnh viễn món ăn
+   */
+  const handleDeletePermanent = async (menuItem) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Xác nhận xóa vĩnh viễn",
+      message: `Bạn có chắc chắn muốn xóa VĨNH VIỄN món "${menuItem.name}"? Hành động này KHÔNG THỂ HOÀN TÁC!`,
+      onConfirm: async () => {
+        try {
+          await menuService.deleteMenuItemPermanent(menuItem.id);
+          setMenuItems(menuItems.filter((item) => item.id !== menuItem.id));
+          showAlert("Thành công", "Đã xóa vĩnh viễn món ăn", "success");
+        } catch (error) {
+          console.error("Delete permanent error:", error);
+          showAlert(
+            "Lỗi",
+            "Không thể xóa vĩnh viễn món ăn. Vui lòng thử lại!",
+            "error"
+          );
+        } finally {
+          setConfirmDialog({
+            isOpen: false,
+            title: "",
+            message: "",
+            onConfirm: null,
+          });
+        }
+      },
+    });
   };
 
   // ==================== HANDLERS ====================
@@ -499,6 +565,8 @@ const MenuManagementContent = () => {
                 menuItem={item}
                 onEdit={handleEditClick}
                 onDelete={handleDeleteClick}
+                onRestore={handleRestoreMenuItem}
+                onDeletePermanent={handleDeletePermanent}
               />
             ))}
           </div>
@@ -507,6 +575,8 @@ const MenuManagementContent = () => {
             menuItems={filteredMenuItems}
             onEdit={handleEditClick}
             onDelete={handleDeleteClick}
+            onRestore={handleRestoreMenuItem}
+            onDeletePermanent={handleDeletePermanent}
           />
         )}
 

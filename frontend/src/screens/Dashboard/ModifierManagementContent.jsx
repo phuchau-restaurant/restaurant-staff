@@ -139,12 +139,16 @@ const ModifierManagementContent = () => {
   };
 
   /**
-   * Xóa modifier group
+   * Xóa modifier group (soft delete - set isActive = false)
    */
   const handleDeleteGroup = async (id) => {
     try {
-      await modifierService.deleteModifierGroup(id);
-      setModifierGroups(modifierGroups.filter((g) => g.id !== id));
+      await modifierService.toggleModifierGroupStatus(id, false);
+      setModifierGroups(
+        modifierGroups.map((g) =>
+          g.id === id ? { ...g, isActive: false } : g
+        )
+      );
       showAlert("Thành công", MESSAGES.GROUP_DELETE_SUCCESS, "success");
     } catch (error) {
       console.error("Delete modifier group error:", error);
@@ -154,6 +158,74 @@ const ModifierManagementContent = () => {
         "error"
       );
     }
+  };
+
+  /**
+   * Khôi phục modifier group (set isActive = true)
+   */
+  const handleRestoreGroup = async (group) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Xác nhận khôi phục",
+      message: `Bạn có chắc chắn muốn khôi phục nhóm modifier "${group.name}"?`,
+      onConfirm: async () => {
+        try {
+          await modifierService.toggleModifierGroupStatus(group.id, true);
+          setModifierGroups(
+            modifierGroups.map((g) =>
+              g.id === group.id ? { ...g, isActive: true } : g
+            )
+          );
+          showAlert("Thành công", "Đã khôi phục nhóm modifier thành công", "success");
+        } catch (error) {
+          console.error("Restore modifier group error:", error);
+          showAlert(
+            "Lỗi",
+            "Không thể khôi phục nhóm modifier. Vui lòng thử lại!",
+            "error"
+          );
+        } finally {
+          setConfirmDialog({
+            isOpen: false,
+            title: "",
+            message: "",
+            onConfirm: null,
+          });
+        }
+      },
+    });
+  };
+
+  /**
+   * Xóa vĩnh viễn modifier group
+   */
+  const handleDeletePermanent = async (group) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Xác nhận xóa vĩnh viễn",
+      message: `Bạn có chắc chắn muốn xóa VĨNH VIỄN nhóm modifier "${group.name}"? Tất cả options trong nhóm này cũng sẽ bị xóa. Hành động này KHÔNG THỂ HOÀN TÁC!`,
+      onConfirm: async () => {
+        try {
+          await modifierService.deleteModifierGroupPermanent(group.id);
+          setModifierGroups(modifierGroups.filter((g) => g.id !== group.id));
+          showAlert("Thành công", "Đã xóa vĩnh viễn nhóm modifier", "success");
+        } catch (error) {
+          console.error("Delete permanent error:", error);
+          showAlert(
+            "Lỗi",
+            "Không thể xóa vĩnh viễn nhóm modifier. Vui lòng thử lại!",
+            "error"
+          );
+        } finally {
+          setConfirmDialog({
+            isOpen: false,
+            title: "",
+            message: "",
+            onConfirm: null,
+          });
+        }
+      },
+    });
   };
 
   /**
@@ -383,6 +455,8 @@ const ModifierManagementContent = () => {
                 onEdit={handleEditClick}
                 onDelete={handleDeleteClick}
                 onToggleStatus={handleToggleStatus}
+                onRestore={handleRestoreGroup}
+                onDeletePermanent={handleDeletePermanent}
               />
             ))}
           </div>
@@ -392,6 +466,8 @@ const ModifierManagementContent = () => {
             onEdit={handleEditClick}
             onDelete={handleDeleteClick}
             onToggleStatus={handleToggleStatus}
+            onRestore={handleRestoreGroup}
+            onDeletePermanent={handleDeletePermanent}
           />
         )}
 

@@ -297,7 +297,7 @@ export const createModifier = async (groupId, optionData) => {
     const response = await fetch(`${BASE_URL}/modifier-groups/${groupId}/options`, {
       method: "POST",
       headers: HEADERS,
-      body: JSON.stringify(modifierData),
+      body: JSON.stringify(optionData),
     });
 
     const result = await response.json();
@@ -325,7 +325,7 @@ export const updateModifier = async (groupId, optionId, optionData) => {
     const response = await fetch(`${BASE_URL}/modifier-options/${optionId}`, {
       method: "PUT",
       headers: HEADERS,
-      body: JSON.stringify(modifierData),
+      body: JSON.stringify(optionData),
     });
 
     const result = await response.json();
@@ -361,6 +361,29 @@ export const deleteModifier = async (groupId, optionId) => {
     }
   } catch (error) {
     console.error("Delete modifier error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Xóa vĩnh viễn modifier group (hard delete)
+ * @param {string} groupId - ID modifier group
+ * @returns {Promise<void>}
+ */
+export const deleteModifierGroupPermanent = async (groupId) => {
+  try {
+    const response = await fetch(`${BASE_URL}/modifier-groups/${groupId}/permanent`, {
+      method: "DELETE",
+      headers: HEADERS,
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.message || "Failed to permanently delete modifier group");
+    }
+  } catch (error) {
+    console.error("Delete modifier group permanent error:", error);
     throw error;
   }
 };
