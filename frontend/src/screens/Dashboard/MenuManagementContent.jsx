@@ -155,6 +155,11 @@ const MenuManagementContent = () => {
     try {
       await menuService.updateMenuItem(id, menuData);
 
+      // Sync modifier groups
+      if (menuData.selectedModifierGroups !== undefined) {
+        await modifierService.syncDishModifierGroups(id, menuData.selectedModifierGroups);
+      }
+
       //Chưa có những tính năng này nên là comment chờ khi nào có thể làm sau
 
       // // Delete images if any
@@ -240,9 +245,28 @@ const MenuManagementContent = () => {
   /**
    * Xử lý click edit
    */
-  const handleEditClick = (menuItem) => {
-    setEditingMenuItem(menuItem);
-    setShowForm(true);
+  const handleEditClick = async (menuItem) => {
+    try {
+      // Fetch modifier groups đã gắn cho dish này
+      const attachedModifiers = await modifierService.fetchDishModifierGroups(menuItem.id);
+      
+      // Lấy danh sách groupId từ response
+      const selectedModifierGroupIds = attachedModifiers.map(item => item.groupId || item.id);
+      
+      // Cập nhật menuItem với modifier groups đã chọn
+      const menuItemWithModifiers = {
+        ...menuItem,
+        modifierGroups: selectedModifierGroupIds.map(id => ({ id })),
+      };
+      
+      setEditingMenuItem(menuItemWithModifiers);
+      setShowForm(true);
+    } catch (error) {
+      console.error("Error fetching dish modifier groups:", error);
+      // Nếu lỗi thì vẫn mở form nhưng không có modifier groups
+      setEditingMenuItem(menuItem);
+      setShowForm(true);
+    }
   };
 
   /**
