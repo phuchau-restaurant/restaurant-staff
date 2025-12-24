@@ -7,6 +7,7 @@ const BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/admin/menu`;
 const HEADERS = {
   "Content-Type": "application/json",
   "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+  "Authorization": `Bearer ${localStorage.getItem("adminToken")}`,
 };
 
 // ==================== MODIFIER GROUPS ====================
@@ -68,6 +69,7 @@ export const fetchModifierGroupById = async (groupId) => {
  */
 export const createModifierGroup = async (groupData) => {
   try {
+    console.log("Creating modifier group with data:", groupData);
     const response = await fetch(`${BASE_URL}/modifier-groups`, {
       method: "POST",
       headers: HEADERS,
