@@ -8,10 +8,7 @@ import DashboardLayout from "./components/Dashboard/DashboardLayout";
 import KitchenScreen from "./screens/KitchenScreen";
 import WaiterScreen from "./screens/WaiterScreen";
 import OnboardingScreen from "./screens/OnboardingScreen";
-
-// Features (new architecture)
-import { TablesPage } from "./features/tables";
-import { CategoriesPage } from "./features/categories";
+import TablesScreen from "./screens/TablesScreen";
 
 function App() {
   return (
@@ -34,7 +31,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="/tables" element={<TablesPage />} />
+          <Route path="/tables" element={<TablesScreen />} />
           <Route
             path="/kitchen"
             element={
