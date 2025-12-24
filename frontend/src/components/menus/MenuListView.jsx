@@ -47,7 +47,7 @@ const MenuListView = memo(({ menuItems, onEdit, onDelete }) => {
           <tbody>
             {menuItems.map((item, index) => {
               const primaryImage = getPrimaryImage(item.images);
-              const imageUrl = primaryImage?.url || item.imageUrl;
+              const imageUrl = primaryImage?.url || item.imgUrl;
 
               return (
                 <tr
