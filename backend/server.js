@@ -18,6 +18,7 @@ import kitchenRoutes from "./routers/kitchen.routes.js";
 import appSettingsRoutes from "./routers/appSettings.routes.js";
 import adminRoutes from "./routers/admin.routes.js";
 import modifiersRoutes from "./routers/modifiers.routes.js";
+import menuItemModifierGroupRoutes from "./routers/menuItemModifierGroup.routes.js";
 
 //Import middlewares
 import { errorMiddleware } from "./middlewares/errorMiddleware.js";
@@ -47,6 +48,7 @@ app.use("/api/orders", ordersRoutes);
 app.use("/api/appsettings", appSettingsRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/admin/menu", modifiersRoutes);
+app.use("/api/menu-item-modifier-group", menuItemModifierGroupRoutes); // <-- thêm dòng này
 
 //route nghiệp vụ cho kitchen
 app.use("/api/kitchen", kitchenRoutes);
