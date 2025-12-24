@@ -20,6 +20,7 @@ import adminRoutes from "./routers/admin.routes.js";
 import uploadRoutes from './routers/upload.routes.js';
 import menuItemPhotoRoutes from "./routers/menuItemPhoto.routes.js";
 import modifiersRoutes from "./routers/modifiers.routes.js";
+import menuItemModifierGroupRoutes from "./routers/menuItemModifierGroup.routes.js";
 
 //Import middlewares
 import { errorMiddleware } from "./middlewares/errorMiddleware.js";
@@ -54,6 +55,7 @@ app.use('/api/upload', uploadRoutes);
 //route menu item photo
 app.use("/api/admin/menu/items", menuItemPhotoRoutes);
 app.use("/api/admin/menu", modifiersRoutes);
+app.use("/api/menu-item-modifier-group", menuItemModifierGroupRoutes); // <-- thêm dòng này
 
 //route nghiệp vụ cho kitchen
 app.use("/api/kitchen", kitchenRoutes);

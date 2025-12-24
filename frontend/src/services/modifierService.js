@@ -167,6 +167,125 @@ export const toggleModifierGroupStatus = async (groupId, isActive) => {
 // ==================== MODIFIER OPTIONS ====================
 
 /**
+ * Fetch danh sách modifier groups đã gắn cho một dish
+ * GET /api/menu-item-modifier-group?dishId=...
+ * @param {string} dishId - ID của dish
+ * @returns {Promise<Array>} Danh sách modifier group IDs đã gắn
+ */
+export const fetchDishModifierGroups = async (dishId) => {
+  try {
+    const url = `${import.meta.env.VITE_BACKEND_URL}/api/menu-item-modifier-group?dishId=${dishId}`;
+
+    const response = await fetch(url, { headers: HEADERS });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const result = await response.json();
+
+    if (result.success) {
+      // Trả về danh sách các group IDs
+      return result.data || [];
+    }
+    return [];
+  } catch (error) {
+    console.error("Fetch dish modifier groups error:", error);
+    return [];
+  }
+};
+
+/**
+ * Thêm liên kết modifier group cho dish
+ * POST /api/menu-item-modifier-group
+ * @param {string} dishId - ID của dish
+ * @param {string} groupId - ID của modifier group
+ * @returns {Promise<Object>} Kết quả thêm liên kết
+ */
+export const addDishModifierGroup = async (dishId, groupId) => {
+  try {
+    const url = `${import.meta.env.VITE_BACKEND_URL}/api/menu-item-modifier-group`;
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: HEADERS,
+      body: JSON.stringify({ dishId, groupId }),
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      return result.data;
+    }
+    throw new Error(result.message || "Failed to add modifier group link");
+  } catch (error) {
+    console.error("Add dish modifier group error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Xóa liên kết modifier group khỏi dish
+ * DELETE /api/menu-item-modifier-group
+ * @param {string} dishId - ID của dish
+ * @param {string} groupId - ID của modifier group
+ * @returns {Promise<void>}
+ */
+export const removeDishModifierGroup = async (dishId, groupId) => {
+  try {
+    const url = `${import.meta.env.VITE_BACKEND_URL}/api/menu-item-modifier-group`;
+
+    const response = await fetch(url, {
+      method: "DELETE",
+      headers: HEADERS,
+      body: JSON.stringify({ dishId, groupId }),
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.message || "Failed to remove modifier group link");
+    }
+  } catch (error) {
+    console.error("Remove dish modifier group error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Sync modifier groups cho dish (thêm mới và xóa các group không còn chọn)
+ * @param {string} dishId - ID của dish
+ * @param {Array<string>} selectedGroupIds - Danh sách group IDs được chọn
+ * @returns {Promise<void>}
+ */
+export const syncDishModifierGroups = async (dishId, selectedGroupIds) => {
+  try {
+    // Lấy danh sách modifier groups hiện tại
+    const currentGroups = await fetchDishModifierGroups(dishId);
+    const currentGroupIds = currentGroups.map(item => item.groupId || item.id);
+
+    // Tìm các group cần thêm (có trong selectedGroupIds nhưng không có trong currentGroupIds)
+    const groupsToAdd = selectedGroupIds.filter(id => !currentGroupIds.includes(id));
+
+    // Tìm các group cần xóa (có trong currentGroupIds nhưng không có trong selectedGroupIds)
+    const groupsToRemove = currentGroupIds.filter(id => !selectedGroupIds.includes(id));
+
+    // Thực hiện thêm
+    for (const groupId of groupsToAdd) {
+      await addDishModifierGroup(dishId, groupId);
+    }
+
+    // Thực hiện xóa
+    for (const groupId of groupsToRemove) {
+      await removeDishModifierGroup(dishId, groupId);
+    }
+
+    console.log(`Synced modifier groups for dish ${dishId}: Added ${groupsToAdd.length}, Removed ${groupsToRemove.length}`);
+  } catch (error) {
+    console.error("Sync dish modifier groups error:", error);
+    throw error;
+  }
+};
+
+/**
  * Tạo option mới trong group
  * POST /api/admin/menu/modifier-groups/:id/options
  * @param {string} groupId - ID modifier group
