@@ -17,6 +17,8 @@ import ordersRoutes from "./routers/orders.routes.js";
 import kitchenRoutes from "./routers/kitchen.routes.js";
 import appSettingsRoutes from "./routers/appSettings.routes.js";
 import adminRoutes from "./routers/admin.routes.js";
+import uploadRoutes from './routers/upload.routes.js';
+import menuItemPhotoRoutes from "./routers/menuItemPhoto.routes.js";
 import modifiersRoutes from "./routers/modifiers.routes.js";
 
 //Import middlewares
@@ -34,6 +36,7 @@ const PORT = process.env.PORT || 3000;
 // --- MIDDLEWARE ---
 app.use(cors()); // Cho phép Frontend gọi API
 app.use(express.json()); // QUAN TRỌNG: Để server đọc được JSON từ body request (req.body)
+app.use(express.urlencoded({ extended: true }));
 // [LOGGER] Đặt ở đây để ghi lại MỌI request bay vào server
 app.use(requestLogger);
 
@@ -46,6 +49,10 @@ app.use("/api/menus", menusRoutes);
 app.use("/api/orders", ordersRoutes);
 app.use("/api/appsettings", appSettingsRoutes);
 app.use("/api/admin", adminRoutes);
+//route upload image
+app.use('/api/upload', uploadRoutes);
+//route menu item photo
+app.use("/api/admin/menu/items", menuItemPhotoRoutes);
 app.use("/api/admin/menu", modifiersRoutes);
 
 //route nghiệp vụ cho kitchen
