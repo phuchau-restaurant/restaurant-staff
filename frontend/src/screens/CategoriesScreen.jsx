@@ -16,7 +16,7 @@ import * as categoriesService from "../services/categoryService";
  * CategoriesScreen - Màn hình quản lý danh mục menu
  */
 const CategoriesScreen = () => {
-  const { alert, showSuccess, showError, showWarning, closeAlert } = useAlert();
+  const { alert, showSuccess, showError, closeAlert } = useAlert();
 
   // State quản lý confirm dialog
   const [confirmDialog, setConfirmDialog] = useState({

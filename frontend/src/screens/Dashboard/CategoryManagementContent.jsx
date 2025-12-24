@@ -211,17 +211,19 @@ const CategoryManagementContent = () => {
       message: `Bạn có chắc chắn muốn khôi phục danh mục "${category.name}"?`,
       onConfirm: async () => {
         try {
-          await categoryService.updateCategoryStatus(
-            category.id,
-            true
-          );
-          setCategories(
-            categories.map((cat) =>
-              cat.id === category.id
-                ? { ...cat, isActive: true }
-                : cat
-            )
-          );
+          // Tạo payload đầy đủ các trường như update
+          // Tạo payload đầy đủ các trường, loại bỏ name
+          const { name, ...rest } = category;
+          const restoreData = {
+            ...rest,
+            isActive: true,
+          };
+          // Nếu backend dùng is_active thì đổi tên trường cho phù hợp
+          if (restoreData.is_active !== undefined) {
+            restoreData.is_active = true;
+          }
+          await categoryService.updateCategory(category.id, restoreData);
+          await fetchCategories();
           showAlert(
             "Thành công",
             "Đã khôi phục danh mục thành công",
@@ -257,9 +259,7 @@ const CategoryManagementContent = () => {
       onConfirm: async () => {
         try {
           await categoryService.deleteCategoryPermanent(category.id);
-          setCategories(
-            categories.filter((cat) => cat.id !== category.id)
-          );
+          setCategories(categories.filter((cat) => cat.id !== category.id));
           showAlert("Thành công", "Đã xóa vĩnh viễn danh mục", "success");
         } catch (error) {
           console.error("Delete permanent error:", error);
