@@ -6,7 +6,7 @@ import { formatPrice, formatDate, getPrimaryImage } from "../../utils/menuUtils"
  * MenuListView Component
  * Hiển thị món ăn dạng bảng cho list view
  */
-const MenuListView = memo(({ menuItems, onEdit, onDelete }) => {
+const MenuListView = memo(({ menuItems, onEdit, onDelete, onRestore, onDeletePermanent }) => {
   if (!menuItems || menuItems.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-sm p-8 text-center">
@@ -48,13 +48,15 @@ const MenuListView = memo(({ menuItems, onEdit, onDelete }) => {
             {menuItems.map((item, index) => {
               const primaryImage = getPrimaryImage(item.images);
               const imageUrl = primaryImage?.url || item.imgUrl;
+              const isInactive = item.isAvailable === false;
+              const inactiveStyle = isInactive ? "opacity-50 grayscale" : "";
 
               return (
                 <tr
                   key={item.id || index}
                   className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
                 >
-                  <td className="px-6 py-4">
+                  <td className={`px-6 py-4 ${inactiveStyle}`}>
                     <div className="flex items-center gap-3">
                       {imageUrl ? (
                         <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
@@ -79,7 +81,7 @@ const MenuListView = memo(({ menuItems, onEdit, onDelete }) => {
                       </div>
                     </div>
                   </td>
-                  <td className="pl-6 py-4">
+                  <td className={`pl-6 py-4 ${inactiveStyle}`}>
                     {item.categoryName ? (
                       <span className="">
                         {item.categoryName}
@@ -88,12 +90,12 @@ const MenuListView = memo(({ menuItems, onEdit, onDelete }) => {
                       <span className="text-gray-400">-</span>
                     )}
                   </td>
-                  <td className="text-right">
+                  <td className={`text-right ${inactiveStyle}`}>
                     <span className="font-semibold text-orange-600">
                       {formatPrice(item.price)}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-center">
+                  <td className={`px-6 py-4 text-center ${inactiveStyle}`}>
                     <span className="text-sm text-gray-600">
                       {item.images?.length || 0}
                     </span>
@@ -109,26 +111,47 @@ const MenuListView = memo(({ menuItems, onEdit, onDelete }) => {
                       {item.isAvailable ? "Đang bán" : "Ngừng bán"}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
+                  <td className={`px-6 py-4 text-sm text-gray-600 ${inactiveStyle}`}>
                     {formatDate(item.createdAt)}
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-3">
-                        <button
-                            onClick={() => onEdit(menuItem)}
-                            className="text-xs flex-1 flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold py-2 px-1 rounded-lg transition-colors"
-                        >
-                            <Edit2 className="w-4 h-4" />
-                            Chỉnh sửa
-                        </button>
-                        <button
-                        onClick={() => onDelete(menuItem)}
-                        className="text-xs flex-1 flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-2 px-1 rounded-lg transition-colors"
-                        title="Xóa"
-                        >
-                        <Trash2 className="w-4 h-4" />
-                        Xóa
-                        </button>
+                      {isInactive ? (
+                        <>
+                          <button
+                            onClick={() => onRestore && onRestore(item)}
+                            className="text-xs flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-2 px-3 rounded-lg transition-all shadow-md hover:shadow-lg"
+                            title="Khôi phục món ăn"
+                          >
+                            Khôi phục
+                          </button>
+                          <button
+                            onClick={() => onDeletePermanent && onDeletePermanent(item)}
+                            className="text-xs flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-2 px-3 rounded-lg transition-all shadow-md hover:shadow-lg"
+                            title="Xóa vĩnh viễn"
+                          >
+                            Xóa vĩnh viễn
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                              onClick={() => onEdit(item)}
+                              className="text-xs flex-1 flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold py-2 px-1 rounded-lg transition-colors"
+                          >
+                              <Edit2 className="w-4 h-4" />
+                              Chỉnh sửa
+                          </button>
+                          <button
+                          onClick={() => onDelete(item)}
+                          className="text-xs flex-1 flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-2 px-1 rounded-lg transition-colors"
+                          title="Xóa"
+                          >
+                          <Trash2 className="w-4 h-4" />
+                          Xóa
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>

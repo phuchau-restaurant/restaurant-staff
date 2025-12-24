@@ -6,15 +6,19 @@ import { formatPrice, formatDate, getPrimaryImage } from "../../utils/menuUtils"
  * MenuCard Component
  * Hiển thị món ăn dạng card cho grid view
  */
-const MenuCard = memo(({ menuItem, onEdit, onDelete }) => {
+const MenuCard = memo(({ menuItem, onEdit, onDelete, onRestore, onDeletePermanent }) => {
+  const isInactive = menuItem.isAvailable === false;
   const statusText = menuItem.isAvailable ? "Đang bán" : "Ngừng bán";
   const primaryImage = getPrimaryImage(menuItem.images);
   const imageUrl = primaryImage?.url || menuItem.imgUrl;
 
+  // Tạo biến class riêng để tái sử dụng cho các phần cần làm mờ
+  const inactiveStyle = isInactive ? "opacity-50 grayscale" : "";
+
   return (
     <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all h-full flex flex-col">
       {/* Hình ảnh */}
-      <div className="relative w-full h-48 bg-gradient-to-br from-orange-100 to-orange-200 overflow-hidden">
+      <div className={`relative w-full h-48 bg-gradient-to-br from-orange-100 to-orange-200 overflow-hidden ${inactiveStyle}`}>
         {imageUrl ? (
           <img
             src={imageUrl}
@@ -36,79 +40,103 @@ const MenuCard = memo(({ menuItem, onEdit, onDelete }) => {
           </div>
         )}
         
+        {/* Status badge */}
+        <div className="absolute top-2 right-2">
+          <span
+            className={`px-3 py-1 rounded-full text-xs font-semibold ${
+              menuItem.isAvailable 
+                ? "bg-green-100 text-green-700" 
+                : "bg-red-100 text-red-700"
+            }`}
+          >
+            {statusText}
+          </span>
+        </div>
       </div>
 
       {/* Nội dung */}
       <div className="p-4 flex flex-col flex-1">
-        <div className="flex items-start justify-between gap-2">
-            <h3 className="text-lg font-bold text-gray-800 line-clamp-1 flex-1">
-                {menuItem.name}
-            </h3>
-
-            {/* Status badge */}
-            <span
-                className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                menuItem.isAvailable 
-                    ? "bg-green-100 text-green-700" 
-                    : "bg-red-100 text-red-700"
-                }`}
-            >
-                {statusText}
-            </span>
-        </div>
-
-
-        {/* Category */}
-        {menuItem.categoryName && (
-        <div className="">
-            <span className="text-gray-400">
-            {menuItem.categoryName}
-            </span>
-        </div>
-        )}
-
-        {/* Description */}
-        <p className="mt-2 text-xs text-gray-500 mt-1 line-clamp-2 flex-1">
-          {menuItem.description || "Không có mô tả"}
-        </p>
-
-        <span className="ml-auto text-lg font-bold text-orange-600 whitespace-nowrap">
-            {formatPrice(menuItem.price)}
-        </span>
-
-        {/* Modifier groups */}
-        {menuItem.modifierGroups && menuItem.modifierGroups.length > 0 && (
-          <div className="mt-2">
-            <span className="text-xs text-gray-400">
-              {menuItem.modifierGroups.length} modifier group(s)
-            </span>
+        {/* Phần text bị làm mờ khi inactive */}
+        <div className={inactiveStyle}>
+          <div className="flex items-start justify-between gap-2">
+              <h3 className="text-lg font-bold text-gray-800 line-clamp-1 flex-1">
+                  {menuItem.name}
+              </h3>
           </div>
-        )}
 
-        <div className="mt-2 pt-2 border-t border-gray-200">
-          <p className="text-xs text-gray-400">
-            Tạo ngày: {formatDate(menuItem.createdAt)}
+          {/* Category */}
+          {menuItem.categoryName && (
+          <div className="">
+              <span className="text-gray-400">
+              {menuItem.categoryName}
+              </span>
+          </div>
+          )}
+
+          {/* Description */}
+          <p className="mt-2 text-xs text-gray-500 mt-1 line-clamp-2 flex-1">
+            {menuItem.description || "Không có mô tả"}
           </p>
+
+          <span className="ml-auto text-lg font-bold text-orange-600 whitespace-nowrap">
+              {formatPrice(menuItem.price)}
+          </span>
+
+          {/* Modifier groups */}
+          {menuItem.modifierGroups && menuItem.modifierGroups.length > 0 && (
+            <div className="mt-2">
+              <span className="text-xs text-gray-400">
+                {menuItem.modifierGroups.length} modifier group(s)
+              </span>
+            </div>
+          )}
+
+          <div className="mt-2 pt-2 border-t border-gray-200">
+            <p className="text-xs text-gray-400">
+              Tạo ngày: {formatDate(menuItem.createdAt)}
+            </p>
+          </div>
         </div>
 
-        {/* Action buttons */}
-        <div className="mt-4 flex gap-2">
-          <button
-            onClick={() => onEdit(menuItem)}
-            className="flex-1 flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold py-2 px-3 rounded-lg transition-colors"
-          >
-            <Edit2 className="w-4 h-4" />
-            Chỉnh sửa
-          </button>
-          {onDelete && (
-            <button
-              onClick={() => onDelete(menuItem)}
-              className="flex-1 flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-2 px-3 rounded-lg transition-colors"
-              title="Xóa"
-            >
-              <Trash2 className="w-4 h-4" />
-              Xóa
-            </button>
+        {/* Action buttons - luôn sáng màu */}
+        <div className="mt-4 flex gap-2 pt-2">
+          {isInactive ? (
+            <>
+              <button
+                onClick={() => onRestore && onRestore(menuItem)}
+                className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-2.5 px-3 rounded-lg transition-all shadow-md hover:shadow-lg"
+                title="Khôi phục món ăn"
+              >
+                Khôi phục
+              </button>
+              <button
+                onClick={() => onDeletePermanent && onDeletePermanent(menuItem)}
+                className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-2.5 px-3 rounded-lg transition-all shadow-md hover:shadow-lg"
+                title="Xóa vĩnh viễn"
+              >
+                Xóa vĩnh viễn
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => onEdit(menuItem)}
+                className="flex-1 flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold py-2 px-3 rounded-lg transition-colors"
+              >
+                <Edit2 className="w-4 h-4" />
+                Chỉnh sửa
+              </button>
+              {onDelete && (
+                <button
+                  onClick={() => onDelete(menuItem)}
+                  className="flex-1 flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-2 px-3 rounded-lg transition-colors"
+                  title="Xóa"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Xóa
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>

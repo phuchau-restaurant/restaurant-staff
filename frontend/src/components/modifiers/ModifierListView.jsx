@@ -6,7 +6,7 @@ import { formatPrice, formatDate, countActiveModifiers } from "../../utils/modif
  * ModifierListView Component
  * Hiển thị modifier groups dạng bảng cho list view
  */
-const ModifierListView = memo(({ groups, onEdit, onDelete, onToggleStatus }) => {
+const ModifierListView = memo(({ groups, onEdit, onDelete, onToggleStatus, onRestore, onDeletePermanent }) => {
   const [expandedRows, setExpandedRows] = useState({});
 
   const toggleRow = (groupId) => {
@@ -60,6 +60,8 @@ const ModifierListView = memo(({ groups, onEdit, onDelete, onToggleStatus }) => 
             {groups.map((group, index) => {
               const isExpanded = expandedRows[group.id];
               const activeCount = countActiveModifiers(group);
+              const isInactive = group.isActive === false;
+              const inactiveStyle = isInactive ? "opacity-50" : "";
 
               return (
                 <>
@@ -81,15 +83,15 @@ const ModifierListView = memo(({ groups, onEdit, onDelete, onToggleStatus }) => 
                         </button>
                       )}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className={`px-6 py-4 ${inactiveStyle}`}>
                       <span className="font-semibold text-gray-800">
                         {group.name}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">
+                    <td className={`px-6 py-4 text-sm text-gray-600 max-w-xs truncate ${inactiveStyle}`}>
                       {group.description || "-"}
                     </td>
-                    <td className="px-6 py-4 text-center">
+                    <td className={`px-6 py-4 text-center ${inactiveStyle}`}>
                       <span className="text-sm">
                         {group.modifiers?.length || 0}
                         <span className="text-gray-400 ml-1">
@@ -97,7 +99,7 @@ const ModifierListView = memo(({ groups, onEdit, onDelete, onToggleStatus }) => 
                         </span>
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-center">
+                    <td className={`px-6 py-4 text-center ${inactiveStyle}`}>
                       <span
                         className={`px-2 py-1 rounded text-xs font-medium ${
                           group.isRequired
@@ -108,45 +110,58 @@ const ModifierListView = memo(({ groups, onEdit, onDelete, onToggleStatus }) => 
                         {group.isRequired ? "Có" : "Không"}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-center text-sm text-gray-600">
+                    <td className={`px-6 py-4 text-center text-sm text-gray-600 ${inactiveStyle}`}>
                       {group.minSelect || 0} - {group.maxSelect || "∞"}
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <button
-                        onClick={() => onToggleStatus(group)}
-                        className="inline-flex items-center gap-1"
-                        title={group.isActive ? "Click để tắt" : "Click để bật"}
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-medium ${
+                          group.isActive
+                            ? "bg-green-100 text-green-700"
+                            : "bg-gray-100 text-gray-600"
+                        }`}
                       >
-                        {group.isActive ? (
-                          <>
-                            <ToggleRight className="w-6 h-6 text-green-500" />
-                            <span className="text-xs text-green-600">Active</span>
-                          </>
-                        ) : (
-                          <>
-                            <ToggleLeft className="w-6 h-6 text-gray-400" />
-                            <span className="text-xs text-gray-500">Inactive</span>
-                          </>
-                        )}
-                      </button>
+                        {group.isActive ? "Active" : "Inactive"}
+                      </span>
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex gap-2">
-                        <button
-                        onClick={() => onEdit(group)}
-                            className="text-xs flex-1 flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold py-2 px-1 rounded-lg transition-colors"
-                        >
-                            <Edit2 className="w-4 h-4" />
-                            Chỉnh sửa
-                        </button>
-                        <button
-                        onClick={() => onDelete(group)}
-                        className="text-xs flex-1 flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-2 px-1 rounded-lg transition-colors"
-                        title="Xóa"
-                        >
-                        <Trash2 className="w-4 h-4" />
-                        Xóa
-                        </button>
+                        {isInactive ? (
+                          <>
+                            <button
+                              onClick={() => onRestore && onRestore(group)}
+                              className="text-xs flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-2 px-3 rounded-lg transition-all shadow-md hover:shadow-lg"
+                              title="Khôi phục nhóm modifier"
+                            >
+                              Khôi phục
+                            </button>
+                            <button
+                              onClick={() => onDeletePermanent && onDeletePermanent(group)}
+                              className="text-xs flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-2 px-3 rounded-lg transition-all shadow-md hover:shadow-lg"
+                              title="Xóa vĩnh viễn"
+                            >
+                              Xóa vĩnh viễn
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                            onClick={() => onEdit(group)}
+                                className="text-xs flex-1 flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold py-2 px-1 rounded-lg transition-colors"
+                            >
+                                <Edit2 className="w-4 h-4" />
+                                Chỉnh sửa
+                            </button>
+                            <button
+                            onClick={() => onDelete(group)}
+                            className="text-xs flex-1 flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-2 px-1 rounded-lg transition-colors"
+                            title="Xóa"
+                            >
+                            <Trash2 className="w-4 h-4" />
+                            Xóa
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>

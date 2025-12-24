@@ -7,6 +7,7 @@ const BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/admin/menu`;
 const HEADERS = {
   "Content-Type": "application/json",
   "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+  "Authorization": `Bearer ${localStorage.getItem("adminToken")}`,
 };
 
 // ==================== MODIFIER GROUPS ====================
@@ -31,6 +32,7 @@ export const fetchModifierGroups = async (searchTerm = "") => {
     }
     const result = await response.json();
 
+    console.log("Fetch modifier groups result:", result.data);
     if (result.success) {
       return result.data || [];
     }
@@ -240,6 +242,29 @@ export const deleteModifier = async (groupId, optionId) => {
     }
   } catch (error) {
     console.error("Delete modifier error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Xóa vĩnh viễn modifier group (hard delete)
+ * @param {string} groupId - ID modifier group
+ * @returns {Promise<void>}
+ */
+export const deleteModifierGroupPermanent = async (groupId) => {
+  try {
+    const response = await fetch(`${BASE_URL}/modifier-groups/${groupId}/permanent`, {
+      method: "DELETE",
+      headers: HEADERS,
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.message || "Failed to permanently delete modifier group");
+    }
+  } catch (error) {
+    console.error("Delete modifier group permanent error:", error);
     throw error;
   }
 };
