@@ -17,9 +17,13 @@ class ModifierGroupsController {
   getAll = async (req, res, next) => {
     try {
       const tenantId = req.tenantId;
-      const { search } = req.query;
 
-      const data = await this.modifierGroupsService.getAllGroups(tenantId, search);
+      const { search, status } = req.query;
+      const data = await this.modifierGroupsService.getAllGroups(
+        tenantId,
+        search,
+        status
+      );
 
       return res.status(200).json({
         success: true,
@@ -64,7 +68,10 @@ class ModifierGroupsController {
       const tenantId = req.tenantId;
       const groupData = req.body;
 
-      const newGroup = await this.modifierGroupsService.createGroup(groupData, tenantId);
+      const newGroup = await this.modifierGroupsService.createGroup(
+        groupData,
+        tenantId
+      );
 
       return res.status(201).json({
         success: true,
@@ -88,7 +95,11 @@ class ModifierGroupsController {
       const { id } = req.params;
       const updateData = req.body;
 
-      const updatedGroup = await this.modifierGroupsService.updateGroup(id, updateData, tenantId);
+      const updatedGroup = await this.modifierGroupsService.updateGroup(
+        id,
+        updateData,
+        tenantId
+      );
 
       return res.status(200).json({
         success: true,
@@ -143,11 +154,17 @@ class ModifierGroupsController {
         });
       }
 
-      const updatedGroup = await this.modifierGroupsService.toggleGroupStatus(id, isActive, tenantId);
+      const updatedGroup = await this.modifierGroupsService.toggleGroupStatus(
+        id,
+        isActive,
+        tenantId
+      );
 
       return res.status(200).json({
         success: true,
-        message: `Modifier group ${isActive ? "activated" : "deactivated"} successfully`,
+        message: `Modifier group ${
+          isActive ? "activated" : "deactivated"
+        } successfully`,
         data: updatedGroup,
       });
     } catch (error) {
@@ -169,7 +186,11 @@ class ModifierGroupsController {
       const { id: groupId } = req.params;
       const optionData = req.body;
 
-      const newOption = await this.modifierGroupsService.createOption(groupId, optionData, tenantId);
+      const newOption = await this.modifierGroupsService.createOption(
+        groupId,
+        optionData,
+        tenantId
+      );
 
       return res.status(201).json({
         success: true,
@@ -194,7 +215,11 @@ class ModifierGroupsController {
       const { id: optionId } = req.params;
       const optionData = req.body;
 
-      const updatedOption = await this.modifierGroupsService.updateOption(optionId, optionData, tenantId);
+      const updatedOption = await this.modifierGroupsService.updateOption(
+        optionId,
+        optionData,
+        tenantId
+      );
 
       return res.status(200).json({
         success: true,

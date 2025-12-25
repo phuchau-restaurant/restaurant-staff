@@ -6,7 +6,13 @@ import { validateMenuItemData } from "../../utils/menuUtils";
  * MenuForm Component
  * Form để add/edit món ăn với hỗ trợ multi-image upload
  */
-const MenuForm = ({ menuItem, categories = [], modifierGroups = [], onSubmit, onClose }) => {
+const MenuForm = ({
+  menuItem,
+  categories = [],
+  modifierGroups = [],
+  onSubmit,
+  onClose,
+}) => {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -30,9 +36,10 @@ const MenuForm = ({ menuItem, categories = [], modifierGroups = [], onSubmit, on
         description: menuItem.description || "",
         price: menuItem.price || "",
         categoryId: menuItem.categoryId || "",
-        isAvailable: menuItem.isAvailable !== undefined ? menuItem.isAvailable : true,
+        isAvailable:
+          menuItem.isAvailable !== undefined ? menuItem.isAvailable : true,
         images: menuItem.images || [],
-        selectedModifierGroups: menuItem.modifierGroups?.map(g => g.id) || [],
+        selectedModifierGroups: menuItem.modifierGroups?.map((g) => g.id) || [],
       });
     }
   }, [menuItem]);
@@ -140,7 +147,8 @@ const MenuForm = ({ menuItem, categories = [], modifierGroups = [], onSubmit, on
     e.preventDefault();
 
     // Validate
-    const { isValid, errors: validationErrors } = validateMenuItemData(formData);
+    const { isValid, errors: validationErrors } =
+      validateMenuItemData(formData);
     if (!isValid) {
       setErrors(validationErrors);
       return;
@@ -152,7 +160,8 @@ const MenuForm = ({ menuItem, categories = [], modifierGroups = [], onSubmit, on
         ...formData,
         newImages: newImages.map((img) => img.file),
         imagesToDelete,
-        primaryImageId: formData.images.find((img) => img.isPrimary)?.id ||
+        primaryImageId:
+          formData.images.find((img) => img.isPrimary)?.id ||
           newImages.find((img) => img.isPrimary)?.id,
       });
     } catch (error) {
@@ -186,8 +195,10 @@ const MenuForm = ({ menuItem, categories = [], modifierGroups = [], onSubmit, on
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Basic Info Section */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-gray-700 border-b pb-2">Thông tin cơ bản</h3>
-            
+            <h3 className="font-semibold text-gray-700 border-b pb-2">
+              Thông tin cơ bản
+            </h3>
+
             {/* Name */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -234,7 +245,9 @@ const MenuForm = ({ menuItem, categories = [], modifierGroups = [], onSubmit, on
                   ))}
                 </select>
                 {errors.categoryId && (
-                  <p className="text-red-600 text-sm mt-1">{errors.categoryId}</p>
+                  <p className="text-red-600 text-sm mt-1">
+                    {errors.categoryId}
+                  </p>
                 )}
               </div>
 
@@ -286,7 +299,10 @@ const MenuForm = ({ menuItem, categories = [], modifierGroups = [], onSubmit, on
                 onChange={handleInputChange}
                 className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
-              <label htmlFor="isAvailable" className="text-sm font-medium text-gray-700">
+              <label
+                htmlFor="isAvailable"
+                className="text-sm font-medium text-gray-700"
+              >
                 Đang bán
               </label>
             </div>
@@ -294,8 +310,10 @@ const MenuForm = ({ menuItem, categories = [], modifierGroups = [], onSubmit, on
 
           {/* Images Section */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-gray-700 border-b pb-2">Hình ảnh</h3>
-            
+            <h3 className="font-semibold text-gray-700 border-b pb-2">
+              Hình ảnh
+            </h3>
+
             {/* Image Grid */}
             <div className="grid grid-cols-3 gap-4">
               {allImages.map((img) => (
@@ -310,7 +328,7 @@ const MenuForm = ({ menuItem, categories = [], modifierGroups = [], onSubmit, on
                     alt="Preview"
                     className="w-full h-full object-cover"
                   />
-                  
+
                   {/* Primary badge */}
                   {img.isPrimary && (
                     <div className="absolute top-1 left-1">
@@ -363,39 +381,41 @@ const MenuForm = ({ menuItem, categories = [], modifierGroups = [], onSubmit, on
           </div>
 
           {/* Modifier Groups Section */}
-          {modifierGroups.length > 0 && (
+          {modifierGroups.filter((g) => g.isActive).length > 0 && (
             <div className="space-y-4">
-              <h3 className="font-semibold text-gray-700 border-b pb-2">Modifier Groups</h3>
-              
+              <h3 className="font-semibold text-gray-700 border-b pb-2">
+                Modifier Groups
+              </h3>
               <div className="grid grid-cols-2 gap-3">
-                {modifierGroups.map((group) => (
-                  <label
-                    key={group.id}
-                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                      formData.selectedModifierGroups.includes(group.id)
-                        ? "bg-blue-50 border-blue-300"
-                        : "bg-white border-gray-200 hover:bg-gray-50"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={formData.selectedModifierGroups.includes(group.id)}
-                      onChange={() => handleModifierGroupToggle(group.id)}
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                    />
-                    <div className="flex-1">
-                      <span className="font-medium text-gray-800">{group.name}</span>
-                      <p className="text-xs text-gray-500">
-                        {group.modifiers?.length || 0} options
-                      </p>
-                    </div>
-                    {!group.isActive && (
-                      <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-xs rounded">
-                        Inactive
-                      </span>
-                    )}
-                  </label>
-                ))}
+                {modifierGroups
+                  .filter((group) => group.isActive)
+                  .map((group) => (
+                    <label
+                      key={group.id}
+                      className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                        formData.selectedModifierGroups.includes(group.id)
+                          ? "bg-blue-50 border-blue-300"
+                          : "bg-white border-gray-200 hover:bg-gray-50"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formData.selectedModifierGroups.includes(
+                          group.id
+                        )}
+                        onChange={() => handleModifierGroupToggle(group.id)}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <div className="flex-1">
+                        <span className="font-medium text-gray-800">
+                          {group.name}
+                        </span>
+                        <p className="text-xs text-gray-500">
+                          {group.modifiers?.length || 0} options
+                        </p>
+                      </div>
+                    </label>
+                  ))}
               </div>
             </div>
           )}

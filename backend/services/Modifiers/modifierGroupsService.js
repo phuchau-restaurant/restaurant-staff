@@ -16,10 +16,14 @@ class ModifierGroupsService {
    * @param {string} tenantId - ID của tenant
    * @param {string} search - Từ khóa tìm kiếm (optional)
    */
-  async getAllGroups(tenantId, search = "") {
+  async getAllGroups(tenantId, search = "", status) {
     if (!tenantId) throw new Error("Tenant ID is required");
 
-    const groups = await this.groupsRepo.getAllWithOptions(tenantId, search);
+    const groups = await this.groupsRepo.getAllWithOptions(
+      tenantId,
+      search,
+      status
+    );
     return groups.map((g) => g.toResponse());
   }
 
@@ -52,7 +56,10 @@ class ModifierGroupsService {
     }
 
     // Check trùng tên
-    const isDuplicate = await this.groupsRepo.checkDuplicateName(tenantId, name.trim());
+    const isDuplicate = await this.groupsRepo.checkDuplicateName(
+      tenantId,
+      name.trim()
+    );
     if (isDuplicate) {
       throw new Error(`Modifier group '${name}' already exists`);
     }
@@ -90,7 +97,10 @@ class ModifierGroupsService {
    */
   async updateGroup(id, data, tenantId) {
     // Kiểm tra group tồn tại
-    const existingGroup = await this.groupsRepo.getByIdWithOptions(id, tenantId);
+    const existingGroup = await this.groupsRepo.getByIdWithOptions(
+      id,
+      tenantId
+    );
     if (!existingGroup) {
       throw new Error("Modifier group not found");
     }
@@ -99,14 +109,21 @@ class ModifierGroupsService {
 
     // Check trùng tên (nếu có thay đổi tên)
     if (name && name.trim() !== existingGroup.name) {
-      const isDuplicate = await this.groupsRepo.checkDuplicateName(tenantId, name.trim(), id);
+      const isDuplicate = await this.groupsRepo.checkDuplicateName(
+        tenantId,
+        name.trim(),
+        id
+      );
       if (isDuplicate) {
         throw new Error(`Modifier group '${name}' already exists`);
       }
     }
 
     // Validate selection logic
-    if (groupData.minSelections !== undefined || groupData.maxSelection !== undefined) {
+    if (
+      groupData.minSelections !== undefined ||
+      groupData.maxSelection !== undefined
+    ) {
       this._validateSelectionLogic({
         minSelections: groupData.minSelections ?? existingGroup.minSelections,
         maxSelection: groupData.maxSelection ?? existingGroup.maxSelection,
@@ -256,12 +273,16 @@ class ModifierGroupsService {
 
     if (minSelections !== undefined && maxSelection !== undefined) {
       if (minSelections > maxSelection) {
-        throw new Error("Minimum selections cannot be greater than maximum selection");
+        throw new Error(
+          "Minimum selections cannot be greater than maximum selection"
+        );
       }
     }
 
     if (isRequired && minSelections !== undefined && minSelections < 1) {
-      throw new Error("Required modifier group must have minimum selections >= 1");
+      throw new Error(
+        "Required modifier group must have minimum selections >= 1"
+      );
     }
   }
 
@@ -276,7 +297,7 @@ class ModifierGroupsService {
 
     // Xóa options không còn trong list mới
     for (const existingOpt of existingOptions) {
-      if (!incomingIds.includes(existingOpt.id)) { 
+      if (!incomingIds.includes(existingOpt.id)) {
         await this.optionsRepo.delete(existingOpt.id);
       }
     }
