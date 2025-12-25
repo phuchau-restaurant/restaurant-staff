@@ -25,7 +25,8 @@ export class ModifierGroupsRepository extends BaseRepository {
       .insert([dbPayload])
       .select();
 
-    if (error) throw new Error(`Create modifier group failed: ${error.message}`);
+    if (error)
+      throw new Error(`Create modifier group failed: ${error.message}`);
 
     return result?.[0] ? new ModifierGroups(result[0]) : null;
   }
@@ -50,7 +51,8 @@ export class ModifierGroupsRepository extends BaseRepository {
       .eq(this.primaryKey, id)
       .select();
 
-    if (error) throw new Error(`Update modifier group failed: ${error.message}`);
+    if (error)
+      throw new Error(`Update modifier group failed: ${error.message}`);
 
     return data?.[0] ? new ModifierGroups(data[0]) : null;
   }
@@ -77,10 +79,11 @@ export class ModifierGroupsRepository extends BaseRepository {
    * @param {string} tenantId - ID của tenant
    * @param {string} search - Từ khóa tìm kiếm (optional)
    */
-  async getAllWithOptions(tenantId, search = "") {
+  async getAllWithOptions(tenantId, search = "", status) {
     let query = supabase
       .from(this.tableName)
-      .select(`
+      .select(
+        `
         *,
         modifier_options (
           id,
@@ -89,13 +92,20 @@ export class ModifierGroupsRepository extends BaseRepository {
           is_active,
           created_at
         )
-      `)
+      `
+      )
       .eq("tenant_id", tenantId)
       .order("display_order", { ascending: true });
 
     // Tìm kiếm theo tên
     if (search) {
       query = query.ilike("name", `%${search}%`);
+    }
+    // Lọc theo trạng thái
+    if (status === "active") {
+      query = query.eq("is_active", true);
+    } else if (status === "inactive") {
+      query = query.eq("is_active", false);
     }
 
     const { data, error } = await query;
@@ -105,8 +115,8 @@ export class ModifierGroupsRepository extends BaseRepository {
     // Map sang model và transform modifier_options thành modifiers
     return (data || []).map((item) => {
       const group = new ModifierGroups(item);
-      group.modifiers = (item.modifier_options || []).map(
-        (opt) => new ModifierOptions(opt).toResponse()
+      group.modifiers = (item.modifier_options || []).map((opt) =>
+        new ModifierOptions(opt).toResponse()
       );
       return group;
     });
@@ -118,7 +128,8 @@ export class ModifierGroupsRepository extends BaseRepository {
   async getByIdWithOptions(id, tenantId) {
     const { data, error } = await supabase
       .from(this.tableName)
-      .select(`
+      .select(
+        `
         *,
         modifier_options (
           id,
@@ -127,7 +138,8 @@ export class ModifierGroupsRepository extends BaseRepository {
           is_active,
           created_at
         )
-      `)
+      `
+      )
       .eq("id", id)
       .eq("tenant_id", tenantId)
       .single();
@@ -139,8 +151,8 @@ export class ModifierGroupsRepository extends BaseRepository {
     if (!data) return null;
 
     const group = new ModifierGroups(data);
-    group.modifiers = (data.modifier_options || []).map(
-      (opt) => new ModifierOptions(opt).toResponse()
+    group.modifiers = (data.modifier_options || []).map((opt) =>
+      new ModifierOptions(opt).toResponse()
     );
     return group;
   }

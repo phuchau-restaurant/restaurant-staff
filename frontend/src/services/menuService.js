@@ -30,7 +30,9 @@ export const fetchMenuItems = async () => {
     return [];
   } catch (error) {
     console.error("Fetch menu items error:", error);
-    throw error;
+
+    return [];
+
   }
 };
 
@@ -339,4 +341,5 @@ export const deleteMenuItemPermanent = async (menuId) => {
     throw error;
   }
 };
+
 
