@@ -43,7 +43,16 @@ export class MenuItemPhotoRepository extends BaseRepository {
     }
     return data ? new MenuItemPhoto(data) : null;
   }
-
+  async getByDishId(dishId) {
+    const { data, error } = await supabase
+      .from(this.tableName)
+      .select("*")
+      .eq("dish_id", dishId);
+    if (error) {
+        throw new Error(`[MenuItemPhoto] GetByDishId failed: ${error.message}`);
+    }
+    return data.map(item => new MenuItemPhoto(item));;
+  }
   // Override GetById để trả về Model
   async getById(id) {
       const data = await super.getById(id);
