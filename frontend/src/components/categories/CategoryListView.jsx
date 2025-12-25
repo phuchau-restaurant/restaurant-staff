@@ -40,7 +40,7 @@ const CategoryListView = memo(({ categories, onEdit, onDelete }) => {
             <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
               Ngày tạo
             </th>
-            <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">
+            <th className="px-6 py-3 text-center text-sm font-semibold text-gray-700">
               Hành động
             </th>
           </tr>
@@ -94,20 +94,21 @@ const CategoryListView = memo(({ categories, onEdit, onDelete }) => {
               </td>
               <td className="px-6 py-4 text-right">
                 <div className="flex justify-end gap-3">
-                  <button
-                    onClick={() => onEdit(category)}
-                    className="text-blue-600 hover:text-blue-800 transition-colors"
-                    title="Chỉnh sửa"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => onDelete(category)}
-                    className="text-red-600 hover:text-red-800 transition-colors"
-                    title="Xóa"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                        <button
+                        onClick={() => onEdit(category)}
+                            className="text-xs flex-1 flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold py-2 px-1 rounded-lg transition-colors"
+                        >
+                            <Edit2 className="w-4 h-4" />
+                            Chỉnh sửa
+                        </button>
+                        <button
+                        onClick={() => onDelete(category)}
+                        className="text-xs flex-1 flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-2 px-1 rounded-lg transition-colors"
+                        title="Xóa"
+                        >
+                        <Trash2 className="w-4 h-4" />
+                        Xóa
+                        </button>
                 </div>
               </td>
             </tr>

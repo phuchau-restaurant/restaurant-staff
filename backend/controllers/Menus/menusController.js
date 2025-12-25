@@ -19,9 +19,9 @@ class MenusController {
         onlyAvailable
       );
 
-      // Lọc bỏ id và tenantId từ danh sách
+      // Lọc bỏ  tenantId từ danh sách
       const returnData = data.map((item) => {
-        const { id, tenantId, ...rest } = item;
+        const { tenantId, ...rest } = item;
         return rest;
       });
       //Nếu có categoryId được truyền vào thì lấy nó và search, nếu không thì null
@@ -78,7 +78,7 @@ class MenusController {
       });
 
       // Lọc bỏ id và tenantId
-      const { id: _id, tenantId: _tid, ...returnData } = newMenu;
+      const {tenantId: _tid, ...returnData } = newMenu;
 
       return res.status(201).json({
         success: true,

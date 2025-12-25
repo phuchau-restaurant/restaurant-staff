@@ -25,4 +25,7 @@ router.patch('/photos/:id', menuItemPhotoController.setPrimary);
 // Yêu cầu Body (JSON/Form): { "dishId": 123 }
 router.get('/photos/primary', menuItemPhotoController.getPrimary);
 
+//5 Get api/menu/items/photos?dishId = 123
+router.get('/photos', menuItemPhotoController.getByDishId);
+
 export default router;

@@ -6,6 +6,8 @@ import {
   Package,
   BarChart3,
   MessageSquare,
+  UtensilsCrossed,
+  Settings2,
 } from "lucide-react";
 
 const Sidebar = ({ activeMenu = "dashboard", onNavigate }) => {
@@ -14,6 +16,8 @@ const Sidebar = ({ activeMenu = "dashboard", onNavigate }) => {
     { id: "orders", label: "Order Management", icon: ShoppingBag },
     { id: "tables", label: "Table Management", icon: Table },
     { id: "inventory", label: "Category Management", icon: Package },
+    { id: "menus", label: "Menu Management", icon: UtensilsCrossed },
+    { id: "modifiers", label: "Modifier Management", icon: Settings2 },
     { id: "sales", label: "Sales Reports", icon: BarChart3 },
     { id: "feedback", label: "Customer Feedback", icon: MessageSquare },
   ];
