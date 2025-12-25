@@ -19,12 +19,9 @@ import appSettingsRoutes from "./routers/appSettings.routes.js";
 import adminRoutes from "./routers/admin.routes.js";
 import uploadRoutes from './routers/upload.routes.js';
 import menuItemPhotoRoutes from "./routers/menuItemPhoto.routes.js";
-<<<<<<< HEAD
-=======
 import modifiersRoutes from "./routers/modifiers.routes.js";
 import menuItemModifierGroupRoutes from "./routers/menuItemModifierGroup.routes.js";
 
->>>>>>> develop
 //Import middlewares
 import { errorMiddleware } from "./middlewares/errorMiddleware.js";
 import { requestLogger } from "./middlewares/loggerMiddleware.js";
