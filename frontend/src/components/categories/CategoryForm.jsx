@@ -366,36 +366,6 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
               </p>
             </div>
 
-            {/* Image */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Hình ảnh
-              </label>
-              <div className="space-y-2">
-                {formData.image && (
-                  <div className="relative w-full h-32 rounded-lg overflow-hidden border border-gray-300">
-                    <img
-                      src={formData.image}
-                      alt="Preview"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-                <label className="flex items-center justify-center w-full px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition-colors">
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Upload className="w-4 h-4" />
-                    <span className="text-sm">Chọn hình ảnh</span>
-                  </div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-            </div>
-
             {/* Active status */}
             <div className="flex items-center gap-3">
               <input
@@ -414,9 +384,8 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
               </label>
             </div>
 
-            {/* Icon & Modifier */}
+            {/* Icon Picker only */}
             <div className="pt-2 border-t border-gray-100 mt-2">
-              {/* Icon Picker */}
               <div className="mb-4">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Icon đại diện
@@ -472,96 +441,6 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
                 )}
                 <p className="text-xs text-gray-500 mt-1">
                   Icon sẽ hiển thị cùng tên danh mục.
-                </p>
-              </div>
-
-              {/* Modifiers */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Modifiers (tuỳ chọn)
-                </label>
-                <div className="flex gap-2 mb-2">
-                  <div className="relative flex-1">
-                    <input
-                      type="text"
-                      value={modifierInput}
-                      onFocus={() => setShowModifierOptions(true)}
-                      onBlur={() =>
-                        setTimeout(() => setShowModifierOptions(false), 150)
-                      }
-                      onChange={(e) => setModifierInput(e.target.value)}
-                      placeholder="Nhập tên modifier..."
-                      className="w-full px-3 py-2 border rounded-lg focus:outline-none focus: ring-2 border-gray-300 focus:ring-blue-500"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          handleAddModifier();
-                        }
-                      }}
-                    />
-                    {showModifierOptions && (
-                      <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 p-2 flex flex-wrap gap-2">
-                        {SUGGESTED_MODIFIERS.filter(
-                          (mod) =>
-                            !formData.modifiers.includes(mod) &&
-                            (!modifierInput ||
-                              mod
-                                .toLowerCase()
-                                .includes(modifierInput.toLowerCase()))
-                        ).map((mod) => (
-                          <button
-                            type="button"
-                            key={mod}
-                            className="px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-full border border-blue-200 text-xs font-medium transition-colors"
-                            onMouseDown={() => handleAddModifier(mod)}
-                          >
-                            {mod}
-                          </button>
-                        ))}
-                        {SUGGESTED_MODIFIERS.filter(
-                          (mod) =>
-                            !formData.modifiers.includes(mod) &&
-                            (!modifierInput ||
-                              mod
-                                .toLowerCase()
-                                .includes(modifierInput.toLowerCase()))
-                        ).length === 0 && (
-                          <span className="text-xs text-gray-400">
-                            Không có gợi ý
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleAddModifier()}
-                    className="px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                  >
-                    Thêm
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {formData.modifiers.map((mod) => (
-                    <span
-                      key={mod}
-                      className="inline-flex items-center bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm gap-1 border border-gray-200"
-                    >
-                      {mod}
-                      <button
-                        type="button"
-                        className="ml-1 text-gray-400 hover:text-red-500"
-                        onClick={() => handleRemoveModifier(mod)}
-                        aria-label="Xoá modifier"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Modifier là các tuỳ chọn thêm cho danh mục (ví dụ: size,
-                  topping...)
                 </p>
               </div>
             </div>
