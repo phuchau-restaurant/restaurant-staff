@@ -7,7 +7,7 @@ const BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/admin/menu`;
 const HEADERS = {
   "Content-Type": "application/json",
   "x-tenant-id": import.meta.env.VITE_TENANT_ID,
-  "Authorization": `Bearer ${localStorage.getItem("adminToken")}`,
+  Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
 };
 
 // ==================== MODIFIER GROUPS ====================
@@ -38,7 +38,7 @@ export const fetchModifierGroups = async (searchTerm = "") => {
     return [];
   } catch (error) {
     console.error("Fetch modifier groups error:", error);
-    return getMockModifierGroups();
+    return [];
   }
 };
 
@@ -49,7 +49,9 @@ export const fetchModifierGroups = async (searchTerm = "") => {
  */
 export const fetchModifierGroupById = async (groupId) => {
   try {
-    const response = await fetch(`${BASE_URL}/modifier-groups/${groupId}`, { headers: HEADERS });
+    const response = await fetch(`${BASE_URL}/modifier-groups/${groupId}`, {
+      headers: HEADERS,
+    });
     const result = await response.json();
 
     if (result.success) {
@@ -174,7 +176,9 @@ export const toggleModifierGroupStatus = async (groupId, isActive) => {
  */
 export const fetchDishModifierGroups = async (dishId) => {
   try {
-    const url = `${import.meta.env.VITE_BACKEND_URL}/api/menu-item-modifier-group?dishId=${dishId}`;
+    const url = `${
+      import.meta.env.VITE_BACKEND_URL
+    }/api/menu-item-modifier-group?dishId=${dishId}`;
 
     const response = await fetch(url, { headers: HEADERS });
     if (!response.ok) {
@@ -202,7 +206,9 @@ export const fetchDishModifierGroups = async (dishId) => {
  */
 export const addDishModifierGroup = async (dishId, groupId) => {
   try {
-    const url = `${import.meta.env.VITE_BACKEND_URL}/api/menu-item-modifier-group`;
+    const url = `${
+      import.meta.env.VITE_BACKEND_URL
+    }/api/menu-item-modifier-group`;
 
     const response = await fetch(url, {
       method: "POST",
@@ -231,7 +237,9 @@ export const addDishModifierGroup = async (dishId, groupId) => {
  */
 export const removeDishModifierGroup = async (dishId, groupId) => {
   try {
-    const url = `${import.meta.env.VITE_BACKEND_URL}/api/menu-item-modifier-group`;
+    const url = `${
+      import.meta.env.VITE_BACKEND_URL
+    }/api/menu-item-modifier-group`;
 
     const response = await fetch(url, {
       method: "DELETE",
@@ -260,13 +268,19 @@ export const syncDishModifierGroups = async (dishId, selectedGroupIds) => {
   try {
     // Lấy danh sách modifier groups hiện tại
     const currentGroups = await fetchDishModifierGroups(dishId);
-    const currentGroupIds = currentGroups.map(item => item.groupId || item.id);
+    const currentGroupIds = currentGroups.map(
+      (item) => item.groupId || item.id
+    );
 
     // Tìm các group cần thêm (có trong selectedGroupIds nhưng không có trong currentGroupIds)
-    const groupsToAdd = selectedGroupIds.filter(id => !currentGroupIds.includes(id));
+    const groupsToAdd = selectedGroupIds.filter(
+      (id) => !currentGroupIds.includes(id)
+    );
 
     // Tìm các group cần xóa (có trong currentGroupIds nhưng không có trong selectedGroupIds)
-    const groupsToRemove = currentGroupIds.filter(id => !selectedGroupIds.includes(id));
+    const groupsToRemove = currentGroupIds.filter(
+      (id) => !selectedGroupIds.includes(id)
+    );
 
     // Thực hiện thêm
     for (const groupId of groupsToAdd) {
@@ -278,7 +292,9 @@ export const syncDishModifierGroups = async (dishId, selectedGroupIds) => {
       await removeDishModifierGroup(dishId, groupId);
     }
 
-    console.log(`Synced modifier groups for dish ${dishId}: Added ${groupsToAdd.length}, Removed ${groupsToRemove.length}`);
+    console.log(
+      `Synced modifier groups for dish ${dishId}: Added ${groupsToAdd.length}, Removed ${groupsToRemove.length}`
+    );
   } catch (error) {
     console.error("Sync dish modifier groups error:", error);
     throw error;
@@ -294,11 +310,14 @@ export const syncDishModifierGroups = async (dishId, selectedGroupIds) => {
  */
 export const createModifier = async (groupId, optionData) => {
   try {
-    const response = await fetch(`${BASE_URL}/modifier-groups/${groupId}/options`, {
-      method: "POST",
-      headers: HEADERS,
-      body: JSON.stringify(modifierData),
-    });
+    const response = await fetch(
+      `${BASE_URL}/modifier-groups/${groupId}/options`,
+      {
+        method: "POST",
+        headers: HEADERS,
+        body: JSON.stringify(modifierData),
+      }
+    );
 
     const result = await response.json();
 
@@ -364,74 +383,3 @@ export const deleteModifier = async (groupId, optionId) => {
     throw error;
   }
 };
-
-// ==================== MOCK DATA ====================
-
-/**
- * Mock data cho development
- */
-const getMockModifierGroups = () => [
-  {
-    id: 1,
-    name: "Size",
-    description: "Chọn kích cỡ cho món",
-    isRequired: true,
-    minSelect: 1,
-    maxSelect: 1,
-    isActive: true,
-    modifiers: [
-      { id: 1, name: "Nhỏ", price: 0, isDefault: true, isActive: true },
-      { id: 2, name: "Vừa", price: 5000, isDefault: false, isActive: true },
-      { id: 3, name: "Lớn", price: 10000, isDefault: false, isActive: true },
-    ],
-    createdAt: "2024-01-10T10:00:00Z",
-  },
-  {
-    id: 2,
-    name: "Topping",
-    description: "Thêm topping cho món",
-    isRequired: false,
-    minSelect: 0,
-    maxSelect: 5,
-    isActive: true,
-    modifiers: [
-      { id: 4, name: "Trứng chiên", price: 8000, isDefault: false, isActive: true },
-      { id: 5, name: "Thịt thêm", price: 15000, isDefault: false, isActive: true },
-      { id: 6, name: "Rau thêm", price: 5000, isDefault: false, isActive: true },
-    ],
-    createdAt: "2024-01-11T10:00:00Z",
-  },
-  {
-    id: 3,
-    name: "Độ ngọt",
-    description: "Chọn độ ngọt cho đồ uống",
-    isRequired: true,
-    minSelect: 1,
-    maxSelect: 1,
-    isActive: false,
-    modifiers: [
-      { id: 7, name: "Không đường", price: 0, isDefault: false, isActive: true },
-      { id: 8, name: "Ít đường", price: 0, isDefault: false, isActive: true },
-      { id: 9, name: "Bình thường", price: 0, isDefault: true, isActive: true },
-      { id: 10, name: "Nhiều đường", price: 0, isDefault: false, isActive: true },
-    ],
-    createdAt: "2024-01-12T10:00:00Z",
-  },
-  {
-    id: 4,
-    name: "Đá",
-    description: "Chọn lượng đá",
-    isRequired: false,
-    minSelect: 0,
-    maxSelect: 1,
-    isActive: true,
-    modifiers: [
-      { id: 11, name: "Không đá", price: 0, isDefault: false, isActive: true },
-      { id: 12, name: "Ít đá", price: 0, isDefault: false, isActive: true },
-      { id: 13, name: "Đá bình thường", price: 0, isDefault: true, isActive: true },
-    ],
-    createdAt: "2024-01-13T10:00:00Z",
-  },
-];
-
-export { getMockModifierGroups };

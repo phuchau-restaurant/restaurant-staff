@@ -38,8 +38,7 @@ export const fetchMenuItems = async (searchTerm = "", categoryId = "") => {
     return [];
   } catch (error) {
     console.error("Fetch menu items error:", error);
-    // Return mock data for development
-    return getMockMenuItems();
+    return [];
   }
 };
 
@@ -254,68 +253,3 @@ export const attachModifierGroups = async (menuId, modifierGroupIds) => {
     throw error;
   }
 };
-
-/**
- * Mock data cho development
- */
-const getMockMenuItems = () => [
-  {
-    id: 1,
-    name: "Phở Bò",
-    description: "Phở bò truyền thống với nước dùng đậm đà",
-    price: 55000,
-    categoryId: 1,
-    categoryName: "Món chính",
-    imageUrl: "https://via.placeholder.com/400x300?text=Pho+Bo",
-    images: [
-      { id: 1, url: "https://via.placeholder.com/400x300?text=Pho+Bo+1", isPrimary: true },
-      { id: 2, url: "https://via.placeholder.com/400x300?text=Pho+Bo+2", isPrimary: false },
-    ],
-    isAvailable: true,
-    modifierGroups: [],
-    createdAt: "2024-01-15T10:00:00Z",
-  },
-  {
-    id: 2,
-    name: "Bún Chả",
-    description: "Bún chả Hà Nội với thịt nướng than hoa",
-    price: 45000,
-    categoryId: 1,
-    categoryName: "Món chính",
-    imageUrl: "https://via.placeholder.com/400x300?text=Bun+Cha",
-    images: [
-      { id: 3, url: "https://via.placeholder.com/400x300?text=Bun+Cha", isPrimary: true },
-    ],
-    isAvailable: true,
-    modifierGroups: [],
-    createdAt: "2024-01-16T10:00:00Z",
-  },
-  {
-    id: 3,
-    name: "Cơm Tấm",
-    description: "Cơm tấm sườn bì chả với đầy đủ topping",
-    price: 50000,
-    categoryId: 1,
-    categoryName: "Món chính",
-    imageUrl: "https://via.placeholder.com/400x300?text=Com+Tam",
-    images: [],
-    isAvailable: false,
-    modifierGroups: [],
-    createdAt: "2024-01-17T10:00:00Z",
-  },
-  {
-    id: 4,
-    name: "Trà Đào",
-    description: "Trà đào cam sả mát lạnh",
-    price: 25000,
-    categoryId: 2,
-    categoryName: "Đồ uống",
-    imageUrl: "https://via.placeholder.com/400x300?text=Tra+Dao",
-    images: [],
-    isAvailable: true,
-    modifierGroups: [],
-    createdAt: "2024-01-18T10:00:00Z",
-  },
-];
-
-export { getMockMenuItems };
