@@ -80,6 +80,19 @@ class MenuItemPhotoController {
       return res.status(400).json({ message: error.message });
     }
   }
+  getByDishId = async (req, res) => {
+    try {
+      const { dishId } = req.query; // Lấy từ query parameter
+      const photos = await this.menuItemPhotoService.getPhotosByDishId(dishId);
+
+      return res.status(200).json({
+        success: true,
+        data: photos
+      });
+    } catch (error) {
+      return res.status(400).json({ message: error.message });
+    }
+  }
 }
 
 export default MenuItemPhotoController;
