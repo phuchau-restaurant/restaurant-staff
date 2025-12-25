@@ -68,7 +68,6 @@ const MenuForm = ({
       id: `new-${Date.now()}-${Math.random()}`,
       file,
       url: URL.createObjectURL(file),
-      isPrimary: formData.images.length === 0 && newImages.length === 0,
       isNew: true,
     }));
 
