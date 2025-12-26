@@ -246,7 +246,7 @@ export default class AdminService {
         expiresIn: `${QR_EXPIRE_DAYS}d`,
       });
 
-      const customerLoginUrl = `${FRONTEND_URL}/customer/login?token=${jwtToken}`;
+      const customerLoginUrl = `${FRONTEND_URL}/login?token=${jwtToken}`;
 
       // 4. Generate QR code theo format
       if (format === "pdf") {
@@ -417,7 +417,7 @@ export default class AdminService {
           expiresIn: `${QR_EXPIRE_DAYS}d`,
         });
 
-        const customerLoginUrl = `${FRONTEND_URL}/customer/login?token=${jwtToken}`;
+        const customerLoginUrl = `${FRONTEND_URL}/login?token=${jwtToken}`;
 
         // Generate theo format
         if (format === "png" || format === "all") {
