@@ -342,4 +342,33 @@ export const deleteMenuItemPermanent = async (menuId) => {
   }
 };
 
+/**
+ * Lấy tất cả ảnh của món ăn theo dishId
+ * GET /api/admin/menu/items/photos?dishId=:dishId
+ * @param {string} dishId - ID món ăn
+ * @returns {Promise<Array>} Danh sách ảnh của món ăn
+ */
+export const getPhotosByDishId = async (dishId) => {
+  try {
+    const ADMIN_BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/admin/menu/items`;
+    
+    const response = await fetch(`${ADMIN_BASE_URL}/photos?dishId=${dishId}`, {
+      method: "GET",
+      headers: {
+        "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+        "Authorization": `Bearer ${localStorage.getItem("adminToken")}`,
+      },
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      return result.data || [];
+    }
+    return [];
+  } catch (error) {
+    console.error("Get photos by dish id error:", error);
+    return [];
+  }
+};
 

@@ -102,7 +102,38 @@ const MenuManagementContent = () => {
         categoryService.fetchCategories(),
         modifierService.fetchModifierGroups(),
       ]);
-      setMenuItems(menuData);
+      
+      // Tạo map categoryId -> categoryName để lookup nhanh
+      const categoryMap = {};
+      categoryData.forEach(cat => {
+        categoryMap[cat.id] = cat.name;
+      });
+      
+      // Fetch ảnh cho từng món ăn và map categoryName
+      const menuItemsWithImages = await Promise.all(
+        menuData.map(async (item) => {
+          try {
+            const photos = await menuService.getPhotosByDishId(item.id);
+            return {
+              ...item,
+              categoryName: categoryMap[item.categoryId] || "",
+              images: photos.map(photo => ({
+                id: photo.id,
+                url: photo.url,
+                isPrimary: photo.isPrimary || photo.is_primary || false
+              }))
+            };
+          } catch (error) {
+            // Nếu lỗi thì giữ nguyên item không có images
+            return {
+              ...item,
+              categoryName: categoryMap[item.categoryId] || ""
+            };
+          }
+        })
+      );
+      
+      setMenuItems(menuItemsWithImages);
       setCategories(categoryData);
       setModifierGroups(modifierData);
     } catch (error) {
@@ -379,12 +410,23 @@ const MenuManagementContent = () => {
       // Lấy danh sách groupId từ response
       const selectedModifierGroupIds = attachedModifiers.map(item => item.groupId || item.id);
       
-      // Nếu menuDetail không có images, dùng images từ state (nếu có)
+      // Fetch tất cả ảnh của món ăn từ API
       let images = [];
+      try {
+        const dishPhotos = await menuService.getPhotosByDishId(menuItem.id);
+        if (dishPhotos && dishPhotos.length > 0) {
+          images = dishPhotos.map(photo => ({
+            id: photo.id,
+            url: photo.url,
+            isPrimary: photo.isPrimary || photo.is_primary || false
+          }));
+        }
+      } catch (photoError) {
+        console.warn("Could not fetch dish photos:", photoError);
+      }
 
-      if (Array.isArray(menuDetail.images) && menuDetail.images.length > 0) {
-        images = menuDetail.images;
-      } else if (menuDetail.imgUrl) {
+      // Nếu API không trả về ảnh, fallback sang imgUrl
+      if (images.length === 0 && menuDetail.imgUrl) {
         images = [
           {
             id: `primary-${menuDetail.id}`,
