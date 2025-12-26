@@ -39,7 +39,6 @@ export const fetchModifierGroups = async (searchTerm = "", pagination = null) =>
     }
     const result = await response.json();
 
-    console.log("Fetch modifier groups result:", result.data);
     if (result.success) {
       // Nếu có pagination trong response, trả về cả data và pagination
       if (result.pagination) {

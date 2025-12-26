@@ -13,7 +13,6 @@ import LoadingOverlay from "../../components/SpinnerLoad/LoadingOverlay";
 
 // Services & Utils
 import * as menuService from "../../services/menuService";
-import * as categoryService from "../../services/categoryService";
 import * as modifierService from "../../services/modifierService";
 import { filterAndSortMenuItems, getPrimaryImage } from "../../utils/menuUtils";
 import {
@@ -107,7 +106,7 @@ const MenuManagementContent = () => {
       setInitialLoading(true);
       const [menuResult, categoryData, modifierData] = await Promise.all([
         menuService.fetchMenuItems({ pageNumber: currentPage, pageSize: pageSize }),
-        categoryService.fetchCategories(),
+        menuService.fetchActiveCategories(),
         modifierService.fetchModifierGroups(),
       ]);
       
@@ -698,7 +697,7 @@ const MenuManagementContent = () => {
         {showForm && (
           <MenuForm
             menuItem={editingMenuItem}
-            categories={categories}
+            categories={categoryFilter}
             modifierGroups={modifierGroups}
             onSubmit={handleFormSubmit}
             onClose={handleCloseForm}

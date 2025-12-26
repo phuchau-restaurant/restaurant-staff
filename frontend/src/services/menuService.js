@@ -4,10 +4,40 @@
  */
 
 const BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/menus`;
+const CATEGORIES_URL = `${import.meta.env.VITE_BACKEND_URL}/api/categories`;
 const HEADERS = {
   "Content-Type": "application/json",
   "x-tenant-id": import.meta.env.VITE_TENANT_ID,
   "Authorization": `Bearer ${localStorage.getItem("adminToken")}`,
+};
+
+/**
+ * Fetch danh sách danh mục đang hoạt động (chỉ lấy is_active = true)
+ * Dùng cho dropdown chọn danh mục khi tạo/sửa món ăn
+ * @returns {Promise<Array>} Danh sách danh mục đang hoạt động
+ */
+export const fetchActiveCategories = async () => {
+  try {
+    const url = `${CATEGORIES_URL}?status=active`;
+
+    const response = await fetch(url, { headers: HEADERS });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const result = await response.json();
+
+    if (result.success) {
+      // Xử lý response có pagination hoặc không
+      if (result.pagination) {
+        return result.data || [];
+      }
+      return result.data || [];
+    }
+    return [];
+  } catch (error) {
+    console.error("Fetch active categories error:", error);
+    return [];
+  }
 };
 
 /**

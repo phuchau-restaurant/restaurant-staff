@@ -20,7 +20,7 @@ router.get("/", async (req, res, next) => {
       // Gọi controller với filter trạng thái
       const isActive = status === "active";
       // Giả định controller.getAll nhận filter qua req.query
-      req.query.isActive = isActive;
+      req.query.active = isActive.toString();
     }
     await categoriesController.getAll(req, res, next);
   } catch (err) {

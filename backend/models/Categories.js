@@ -12,7 +12,6 @@ export class Categories {
     this.urlIcon = data.url_icon || data.urlIcon || "";
     this.description = data.description || data.desc || "";
 
-    this.imageUrl = data.image_url || data.imageUrl || "";
     this.createdAt = data.created_at || data.createdAt || null;
 
     // Đảm bảo isActive luôn là boolean hoặc undefined

@@ -126,14 +126,14 @@ class CategoriesService {
   }
 
   /**
-   * Xóa danh mục
-   * (Lưu ý: Cân nhắc dùng Soft Delete (is_active=false) thay vì xóa hẳn nếu dữ liệu quan trọng)
+   * Xóa danh mục (Soft Delete)
+   * Cập nhật is_active = false thay vì xóa hẳn khỏi database
    */
   async deleteCategory(id, tenantId) {
-    // Kiểm tra tồn tại
+    // Kiểm tra tồn tại và quyền sở hữu
     await this.getCategoryById(id, tenantId);
     // Soft delete: cập nhật is_active = false
-    return await this.categoryRepo.delete(id);
+    return await this.categoryRepo.update(id, { isActive: false });
   }
 }
 

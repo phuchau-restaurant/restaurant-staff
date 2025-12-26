@@ -10,7 +10,7 @@ import TableListView from "../components/tables/TableListView";
 import TableFormInline from "../components/tables/TableFormInline";
 import AlertModal from "../components/Modal/AlertModal";
 import ConfirmModal from "../components/Modal/ConfirmModal";
-import Pagination from "../components/common/Pagination";
+import Pagination from "../components/SpinnerLoad/Pagination";
 import { useAlert } from "../hooks/useAlert";
 
 // QR Management Screen
