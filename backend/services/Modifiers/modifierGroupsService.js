@@ -15,16 +15,28 @@ class ModifierGroupsService {
    * Lấy tất cả modifier groups của tenant (kèm options)
    * @param {string} tenantId - ID của tenant
    * @param {string} search - Từ khóa tìm kiếm (optional)
+   * @param {string} status - Trạng thái (active/inactive)
+   * @param {object|null} pagination - { pageNumber, pageSize } (optional)
    */
-  async getAllGroups(tenantId, search = "", status) {
+  async getAllGroups(tenantId, search = "", status, pagination = null) {
     if (!tenantId) throw new Error("Tenant ID is required");
 
-    const groups = await this.groupsRepo.getAllWithOptions(
+    const result = await this.groupsRepo.getAllWithOptions(
       tenantId,
       search,
-      status
+      status,
+      pagination
     );
-    return groups.map((g) => g.toResponse());
+
+    // Nếu có phân trang, result là object { data, pagination }
+    if (pagination && pagination.pageNumber && pagination.pageSize) {
+      return {
+        data: result.data.map((g) => g.toResponse()),
+        pagination: result.pagination
+      };
+    }
+
+    return result.map((g) => g.toResponse());
   }
 
   /**

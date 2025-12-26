@@ -8,6 +8,7 @@ import MenuListView from "../../components/menus/MenuListView";
 import MenuForm from "../../components/menus/MenuForm";
 import AlertModal from "../../components/Modal/AlertModal";
 import ConfirmModal from "../../components/Modal/ConfirmModal";
+import Pagination from "../../components/common/Pagination";
 
 // Services & Utils
 import * as menuService from "../../services/menuService";
@@ -42,6 +43,11 @@ const MenuManagementContent = () => {
   const [modifierGroups, setModifierGroups] = useState([]);
   const [initialLoading, setInitialLoading] = useState(true);
 
+  // State quản lý phân trang
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(12);
+  const [paginationInfo, setPaginationInfo] = useState(null);
+
   // State quản lý UI
   const [viewMode, setViewMode] = useState(VIEW_MODES.GRID);
   const [showForm, setShowForm] = useState(false);
@@ -74,7 +80,7 @@ const MenuManagementContent = () => {
   // Fetch dữ liệu ban đầu
   useEffect(() => {
     fetchInitialData();
-  }, []);
+  }, [currentPage, pageSize]);
 
   // Filter và sort phía client
   useEffect(() => {
@@ -97,15 +103,28 @@ const MenuManagementContent = () => {
   const fetchInitialData = async () => {
     try {
       setInitialLoading(true);
-      const [menuData, categoryData, modifierData] = await Promise.all([
-        menuService.fetchMenuItems(),
+      const [menuResult, categoryData, modifierData] = await Promise.all([
+        menuService.fetchMenuItems({ pageNumber: currentPage, pageSize: pageSize }),
         categoryService.fetchCategories(),
         modifierService.fetchModifierGroups(),
       ]);
       
+      // Xử lý response có pagination hoặc không
+      let menuData = [];
+      if (menuResult.pagination) {
+        menuData = menuResult.data;
+        setPaginationInfo(menuResult.pagination);
+      } else {
+        menuData = Array.isArray(menuResult) ? menuResult : [];
+        setPaginationInfo(null);
+      }
+      
+      // Xử lý categoryData có thể có pagination
+      const categoryList = categoryData.data || categoryData || [];
+      
       // Tạo map categoryId -> categoryName để lookup nhanh
       const categoryMap = {};
-      categoryData.forEach(cat => {
+      categoryList.forEach(cat => {
         categoryMap[cat.id] = cat.name;
       });
       
@@ -134,14 +153,29 @@ const MenuManagementContent = () => {
       );
       
       setMenuItems(menuItemsWithImages);
-      setCategories(categoryData);
-      setModifierGroups(modifierData);
+      setCategories(categoryList);
+      setModifierGroups(modifierData.data || modifierData || []);
     } catch (error) {
       console.error("Fetch initial data error:", error);
       showAlert("Lỗi", "Không thể tải dữ liệu. Vui lòng thử lại!", "error");
     } finally {
       setInitialLoading(false);
     }
+  };
+
+  /**
+   * Xử lý thay đổi trang
+   */
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  /**
+   * Xử lý thay đổi số items mỗi trang
+   */
+  const handlePageSizeChange = (size) => {
+    setPageSize(size);
+    setCurrentPage(1); // Reset về trang 1 khi thay đổi pageSize
   };
 
   /**
@@ -634,6 +668,19 @@ const MenuManagementContent = () => {
             onDelete={handleDeleteClick}
             onRestore={handleRestoreMenuItem}
             onDeletePermanent={handleDeletePermanent}
+          />
+        )}
+
+        {/* Pagination */}
+        {paginationInfo && (
+          <Pagination
+            currentPage={paginationInfo.pageNumber}
+            totalPages={paginationInfo.totalPages}
+            totalItems={paginationInfo.totalItems}
+            pageSize={paginationInfo.pageSize}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            pageSizeOptions={[12, 24, 48, 96]}
           />
         )}
 

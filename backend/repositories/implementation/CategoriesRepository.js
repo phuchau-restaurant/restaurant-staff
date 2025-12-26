@@ -81,12 +81,20 @@ async getById(id) {
     return rawData ? new Categories(rawData) : null; // Map sang Model
 }
 
-async getAll(filters = {}) {
-  // 1. Gọi cha để lấy dữ liệu thô từ DB (Snake_case)
-  const rawData = await super.getAll(filters);    
+async getAll(filters = {}, pagination = null) {
+  // 1. Gọi cha để lấy dữ liệu thô từ DB (Snake_case) với phân trang
+  const result = await super.getAll(filters, pagination);    
   
-  // 2. Map sang Model (CamelCase) để đồng bộ với toàn hệ thống
-  return rawData.map(item => new Categories(item));
+  // 2. Nếu có phân trang, result là object { data, pagination }
+  if (pagination && pagination.pageNumber && pagination.pageSize) {
+    return {
+      data: result.data.map(item => new Categories(item)),
+      pagination: result.pagination
+    };
+  }
+  
+  // 3. Nếu không có phân trang, result là array - Map sang Model
+  return result.map(item => new Categories(item));
 }
 
   async delete(id) {

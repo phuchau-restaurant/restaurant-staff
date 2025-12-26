@@ -44,9 +44,19 @@ export class TablesRepository extends BaseRepository {
   }
 
   // --- Override GetAll ---
-  async getAll(filters = {}) {
-    const rawData = await super.getAll(filters);
-    return rawData.map(item => new Tables(item));
+  async getAll(filters = {}, pagination = null) {
+    const result = await super.getAll(filters, pagination);
+    
+    // Nếu có phân trang, result là object { data, pagination }
+    if (pagination && pagination.pageNumber && pagination.pageSize) {
+      return {
+        data: result.data.map(item => new Tables(item)),
+        pagination: result.pagination
+      };
+    }
+    
+    // Nếu không có phân trang, result là array
+    return result.map(item => new Tables(item));
   }
 
   // --- Override GetById ---

@@ -12,31 +12,56 @@ class CategoriesController {
     this.categoriesService = categoriesService;
   }
 
-  // [GET] /api/categories
+  // [GET] /api/categories?active=true&pageNumber=1&pageSize=10
   getAll = async (req, res, next) => {
     try {
       const tenantId = req.tenantId;
-      let onlyActive = undefined;
-      if (typeof req.query.isActive !== "undefined") {
-        // Được gán từ router khi có status=active|inactive
-        onlyActive =
-          req.query.isActive === true || req.query.isActive === "true";
-      } else if (typeof req.query.status === "string") {
-        if (req.query.status === "active") onlyActive = true;
-        else if (req.query.status === "inactive") onlyActive = false;
+      
+      const onlyActive = req.query.active === 'true';
+      const { pageNumber, pageSize } = req.query;
+
+      // Xử lý phân trang nếu có
+      let pagination = null;
+      if (pageNumber && pageSize) {
+        pagination = {
+          pageNumber: parseInt(pageNumber, 10),
+          pageSize: parseInt(pageSize, 10)
+        };
+        if (pagination.pageNumber < 1) pagination.pageNumber = 1;
+        if (pagination.pageSize < 1) pagination.pageSize = 10;
+        if (pagination.pageSize > 100) pagination.pageSize = 100;
       }
+
       // Gọi Service
-      const data = await this.categoriesService.getCategoriesByTenant(
-        tenantId,
-        onlyActive
-      );
-      const returnData = data.map(({ tenantId, ...rest }) => rest);
-      return res.status(200).json({
+      const result = await this.categoriesService.getCategoriesByTenant(tenantId, onlyActive, pagination);
+      
+      // Xử lý response dựa trên có phân trang hay không
+      let categoryData, paginationInfo;
+      if (pagination) {
+        categoryData = result.data;
+        paginationInfo = result.pagination;
+      } else {
+        categoryData = result;
+        paginationInfo = null;
+      }
+
+      const returnData = categoryData.map(({ tenantId, ...rest }) => rest);
+
+      // Build response
+      const response = { 
         message: "Categories fetched successfully",
-        success: true,
-        total: returnData.length,
-        data: returnData,
-      });
+        success: true, 
+        total: paginationInfo ? paginationInfo.totalItems : returnData.length,
+        data: returnData
+      };
+
+      // Thêm thông tin phân trang nếu có
+      if (paginationInfo) {
+        response.pagination = paginationInfo;
+      }
+
+      return res.status(200).json(response);
+
     } catch (error) {
       next(error);
     }

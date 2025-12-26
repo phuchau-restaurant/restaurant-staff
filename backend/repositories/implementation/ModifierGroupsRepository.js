@@ -78,8 +78,10 @@ export class ModifierGroupsRepository extends BaseRepository {
    * Lấy tất cả modifier groups với options (modifiers) kèm theo
    * @param {string} tenantId - ID của tenant
    * @param {string} search - Từ khóa tìm kiếm (optional)
+   * @param {string} status - Trạng thái (active/inactive)
+   * @param {object|null} pagination - { pageNumber, pageSize } (optional)
    */
-  async getAllWithOptions(tenantId, search = "", status) {
+  async getAllWithOptions(tenantId, search = "", status, pagination = null) {
     let query = supabase
       .from(this.tableName)
       .select(
@@ -92,7 +94,8 @@ export class ModifierGroupsRepository extends BaseRepository {
           is_active,
           created_at
         )
-      `
+      `,
+        { count: "exact" }
       )
       .eq("tenant_id", tenantId)
       .order("display_order", { ascending: true });
@@ -108,18 +111,41 @@ export class ModifierGroupsRepository extends BaseRepository {
       query = query.eq("is_active", false);
     }
 
-    const { data, error } = await query;
+    // Áp dụng phân trang nếu có
+    if (pagination && pagination.pageNumber && pagination.pageSize) {
+      const { pageNumber, pageSize } = pagination;
+      const from = (pageNumber - 1) * pageSize;
+      const to = from + pageSize - 1;
+      query = query.range(from, to);
+    }
+
+    const { data, error, count } = await query;
 
     if (error) throw new Error(`GetAllWithOptions failed: ${error.message}`);
 
     // Map sang model và transform modifier_options thành modifiers
-    return (data || []).map((item) => {
+    const mappedData = (data || []).map((item) => {
       const group = new ModifierGroups(item);
       group.modifiers = (item.modifier_options || []).map((opt) =>
         new ModifierOptions(opt).toResponse()
       );
       return group;
     });
+
+    // Trả về object chứa data và thông tin phân trang nếu có
+    if (pagination && pagination.pageNumber && pagination.pageSize) {
+      return {
+        data: mappedData,
+        pagination: {
+          pageNumber: pagination.pageNumber,
+          pageSize: pagination.pageSize,
+          totalItems: count || 0,
+          totalPages: Math.ceil((count || 0) / pagination.pageSize)
+        }
+      };
+    }
+
+    return mappedData;
   }
 
   /**

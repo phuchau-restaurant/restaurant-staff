@@ -13,8 +13,9 @@ class CategoriesService {
    * Lấy danh sách danh mục của một nhà hàng (Tenant)
    * @param {string} tenantId - ID của nhà hàng (Bắt buộc)
    * @param {boolean} onlyActive - Nếu true, chỉ lấy danh mục đang hoạt động
+   * @param {object|null} pagination - { pageNumber, pageSize } (optional)
    */
-  async getCategoriesByTenant(tenantId, onlyActive = false) {
+  async getCategoriesByTenant(tenantId, onlyActive = false, pagination = null) {
     if (!tenantId) throw new Error("Missing tenantId");
 
     const filters = { tenant_id: tenantId };
@@ -24,7 +25,7 @@ class CategoriesService {
     }
 
     // Gọi xuống Repository để lấy dữ liệu
-    return await this.categoryRepo.getAll(filters);
+    return await this.categoryRepo.getAll(filters, pagination);
   }
 
   /**

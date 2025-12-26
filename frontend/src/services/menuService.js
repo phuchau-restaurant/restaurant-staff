@@ -12,27 +12,43 @@ const HEADERS = {
 
 /**
  * Fetch danh sách món ăn từ API
- * @param {string} searchTerm - Tìm kiếm theo tên (optional)
- * @param {string} categoryId - Lọc theo danh mục (optional)
- * @returns {Promise<Array>} Danh sách món ăn
+ * @param {Object} pagination - { pageNumber, pageSize } (optional)
+ * @returns {Promise<Object|Array>} Danh sách món ăn hoặc object có pagination
  */
-export const fetchMenuItems = async () => {
+export const fetchMenuItems = async (pagination = null) => {
   try {
-    const response = await fetch(BASE_URL, { headers: HEADERS });
+    const queryParams = new URLSearchParams();
+    
+    // Thêm pagination params nếu có
+    if (pagination && pagination.pageNumber && pagination.pageSize) {
+      queryParams.append("pageNumber", pagination.pageNumber);
+      queryParams.append("pageSize", pagination.pageSize);
+    }
+
+    const url = `${BASE_URL}${
+      queryParams.toString() ? `?${queryParams.toString()}` : ""
+    }`;
+
+    const response = await fetch(url, { headers: HEADERS });
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const result = await response.json();
 
     if (result.success) {
+      // Nếu có pagination trong response, trả về cả data và pagination
+      if (result.pagination) {
+        return {
+          data: result.data || [],
+          pagination: result.pagination
+        };
+      }
       return result.data || [];
     }
-    return [];
+    return pagination ? { data: [], pagination: null } : [];
   } catch (error) {
     console.error("Fetch menu items error:", error);
-
-    return [];
-
+    return pagination ? { data: [], pagination: null } : [];
   }
 };
 

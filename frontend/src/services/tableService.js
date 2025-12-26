@@ -14,13 +14,20 @@ const HEADERS = {
  * Fetch danh sách bàn từ API
  * @param {string} statusFilter - Lọc theo trạng thái (optional)
  * @param {string} areaFilter - Lọc theo khu vực (optional)
- * @returns {Promise<Array>} Danh sách bàn
+ * @param {Object} pagination - { pageNumber, pageSize } (optional)
+ * @returns {Promise<Object|Array>} Danh sách bàn hoặc object có pagination
  */
-export const fetchTables = async (statusFilter = "", areaFilter = "") => {
+export const fetchTables = async (statusFilter = "", areaFilter = "", pagination = null) => {
   try {
     const queryParams = new URLSearchParams();
     if (statusFilter) queryParams.append("status", statusFilter);
     if (areaFilter) queryParams.append("location", areaFilter);
+    
+    // Thêm pagination params nếu có
+    if (pagination && pagination.pageNumber && pagination.pageSize) {
+      queryParams.append("pageNumber", pagination.pageNumber);
+      queryParams.append("pageSize", pagination.pageSize);
+    }
 
     const url = `${BASE_URL}${
       queryParams.toString() ? `?${queryParams.toString()}` : ""
@@ -30,9 +37,16 @@ export const fetchTables = async (statusFilter = "", areaFilter = "") => {
     const result = await response.json();
 
     if (result.success) {
+      // Nếu có pagination trong response, trả về cả data và pagination
+      if (result.pagination) {
+        return {
+          data: result.data || [],
+          pagination: result.pagination
+        };
+      }
       return result.data || [];
     }
-    return [];
+    return pagination ? { data: [], pagination: null } : [];
   } catch (error) {
     console.error("Fetch tables error:", error);
     throw error;

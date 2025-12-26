@@ -35,13 +35,19 @@ export const deleteCategoryPermanent = async (categoryId) => {
 /**
  * Fetch danh sách danh mục từ API
  * @param {string} searchTerm - Tìm kiếm theo tên (optional)
- * @returns {Promise<Array>} Danh sách danh mục
+ * @param {Object} pagination - { pageNumber, pageSize } (optional)
+ * @returns {Promise<Object|Array>} Danh sách danh mục hoặc object có pagination
  */
-export const fetchCategories = async (searchTerm = "", status = "") => {
+export const fetchCategories = async (searchTerm = "", pagination = null) => {
   try {
     const queryParams = new URLSearchParams();
     if (searchTerm) queryParams.append("search", searchTerm);
-    if (status) queryParams.append("status", status);
+    
+    // Thêm pagination params nếu có
+    if (pagination && pagination.pageNumber && pagination.pageSize) {
+      queryParams.append("pageNumber", pagination.pageNumber);
+      queryParams.append("pageSize", pagination.pageSize);
+    }
 
     const url = `${BASE_URL}${
       queryParams.toString() ? `?${queryParams.toString()}` : ""
@@ -54,12 +60,20 @@ export const fetchCategories = async (searchTerm = "", status = "") => {
     const result = await response.json();
 
     if (result.success) {
+      // Nếu có pagination trong response, trả về cả data và pagination
+      if (result.pagination) {
+        return {
+          data: result.data || [],
+          pagination: result.pagination
+        };
+      }
       return result.data || [];
     }
-    return [];
+    return pagination ? { data: [], pagination: null } : [];
   } catch (error) {
     console.error("Fetch categories error:", error);
-    return [];
+    // Return mock data for development
+    return pagination ? { data: [], pagination: null } : [];
   }
 };
 
