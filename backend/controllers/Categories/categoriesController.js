@@ -165,6 +165,24 @@ class CategoriesController {
       next(error);
     }
   };
+
+  // [DELETE] /api/categories/:id/permanent - Xóa vĩnh viễn
+  deletePermanent = async (req, res, next) => {
+    try {
+      const tenantId = req.tenantId;
+      const { id } = req.params;
+
+      await this.categoriesService.deletePermanent(id, tenantId);
+
+      return res.status(200).json({
+        success: true,
+        message: "Category permanently deleted successfully",
+      });
+    } catch (error) {
+      error.statusCode = 400;
+      next(error);
+    }
+  };
 }
 
 export default CategoriesController;

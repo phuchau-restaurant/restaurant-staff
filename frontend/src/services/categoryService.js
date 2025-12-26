@@ -5,13 +5,13 @@ const HEADERS = {
 };
 
 /**
- * Xóa vĩnh viễn danh mục
+ * Xóa vĩnh viễn danh mục (Hard Delete)
  * @param {string} categoryId - ID danh mục
  * @returns {Promise<void>}
  */
 export const deleteCategoryPermanent = async (categoryId) => {
   try {
-    const response = await fetch(`${BASE_URL}/${categoryId}`, {
+    const response = await fetch(`${BASE_URL}/${categoryId}/permanent`, {
       method: "DELETE",
       headers: HEADERS,
     });

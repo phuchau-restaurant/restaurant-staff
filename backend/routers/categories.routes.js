@@ -27,7 +27,11 @@ router.post("/", categoriesController.create);
 // [PUT] /api/categories/:id
 router.put("/:id", categoriesController.update);
 
-// 5. Xóa (Cần ID để biết xóa cái nào)
+// 5. Xóa vĩnh viễn (phải đặt trước route /:id để tránh conflict)
+// [DELETE] /api/categories/:id/permanent
+router.delete("/:id/permanent", categoriesController.deletePermanent);
+
+// 6. Xóa mềm (Soft delete - set is_active = false)
 // [DELETE] /api/categories/:id
 router.delete("/:id", categoriesController.delete);
 

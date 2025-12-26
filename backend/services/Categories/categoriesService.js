@@ -135,6 +135,17 @@ class CategoriesService {
     // Soft delete: cập nhật is_active = false
     return await this.categoryRepo.update(id, { isActive: false });
   }
+
+  /**
+   * Xóa vĩnh viễn danh mục (Hard Delete)
+   * Xóa hẳn record khỏi database
+   */
+  async deletePermanent(id, tenantId) {
+    // Kiểm tra tồn tại và quyền sở hữu
+    await this.getCategoryById(id, tenantId);
+    // Hard delete: xóa khỏi database
+    return await this.categoryRepo.delete(id);
+  }
 }
 
 //export default new CategoriesService(); - singleton: 3 lớp

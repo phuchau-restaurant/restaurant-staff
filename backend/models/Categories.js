@@ -6,18 +6,25 @@ export class Categories {
     this.id = data.id || data.category_id || null;
     this.tenantId = data.tenant_id || data.tenantId;
     this.name = data.name;
-    this.displayOrder = data.display_order || data.displayOrder;
-    this.isActive =
-      data.is_active !== undefined ? data.is_active : data.isActive;
-    this.urlIcon = data.url_icon || data.urlIcon || "";
-    this.description = data.description || data.desc || "";
+    
+    // Chỉ set các giá trị nếu chúng thực sự tồn tại trong data
+    if (data.display_order !== undefined || data.displayOrder !== undefined) {
+      this.displayOrder = data.display_order || data.displayOrder;
+    }
+    
+    if (data.url_icon !== undefined || data.urlIcon !== undefined) {
+      this.urlIcon = data.url_icon || data.urlIcon;
+    }
+    
+    if (data.description !== undefined || data.desc !== undefined) {
+      this.description = data.description || data.desc;
+    }
 
     this.createdAt = data.created_at || data.createdAt || null;
 
     // Đảm bảo isActive luôn là boolean hoặc undefined
     if (data.is_active !== undefined) this.isActive = data.is_active;
     else if (data.isActive !== undefined) this.isActive = data.isActive;
-    else this.isActive = undefined;
   }
 
   /**
