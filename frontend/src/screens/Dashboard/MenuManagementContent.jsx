@@ -8,7 +8,8 @@ import MenuListView from "../../components/menus/MenuListView";
 import MenuForm from "../../components/menus/MenuForm";
 import AlertModal from "../../components/Modal/AlertModal";
 import ConfirmModal from "../../components/Modal/ConfirmModal";
-import Pagination from "../../components/common/Pagination";
+import Pagination from "../../components/SpinnerLoad/Pagination";
+import LoadingOverlay from "../../components/SpinnerLoad/LoadingOverlay";
 
 // Services & Utils
 import * as menuService from "../../services/menuService";
@@ -52,6 +53,7 @@ const MenuManagementContent = () => {
   const [viewMode, setViewMode] = useState(VIEW_MODES.GRID);
   const [showForm, setShowForm] = useState(false);
   const [editingMenuItem, setEditingMenuItem] = useState(null);
+  const [isLoadingForm, setIsLoadingForm] = useState(false);
 
   // State quản lý filters
   const [searchTerm, setSearchTerm] = useState("");
@@ -434,6 +436,7 @@ const MenuManagementContent = () => {
    * Xử lý click edit
    */
   const handleEditClick = async (menuItem) => {
+    setIsLoadingForm(true);
     try {
       // Fetch chi tiết món để lấy đầy đủ thông tin (có thể bao gồm images)
       const menuDetail = await menuService.fetchMenuItemById(menuItem.id);
@@ -488,6 +491,8 @@ const MenuManagementContent = () => {
         images: menuItem.images || []
       });
       setShowForm(true);
+    } finally {
+      setIsLoadingForm(false);
     }
   };
 
@@ -682,6 +687,11 @@ const MenuManagementContent = () => {
             onPageSizeChange={handlePageSizeChange}
             pageSizeOptions={[12, 24, 48, 96]}
           />
+        )}
+
+        {/* Loading Overlay */}
+        {isLoadingForm && (
+          <LoadingOverlay message="Đang tải dữ liệu món ăn..." />
         )}
 
         {/* Form Modal */}

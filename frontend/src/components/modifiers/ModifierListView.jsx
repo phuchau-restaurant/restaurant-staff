@@ -1,12 +1,12 @@
 import { memo, useState } from "react";
-import { Edit2, Trash2, ToggleLeft, ToggleRight, ChevronDown, ChevronUp } from "lucide-react";
+import { Edit2, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { formatPrice, formatDate, countActiveModifiers } from "../../utils/modifierUtils";
 
 /**
  * ModifierListView Component
  * Hiển thị modifier groups dạng bảng cho list view
  */
-const ModifierListView = memo(({ groups, onEdit, onDelete, onToggleStatus, onRestore, onDeletePermanent }) => {
+const ModifierListView = memo(({ groups, onEdit, onDelete, onRestore, onDeletePermanent }) => {
   const [expandedRows, setExpandedRows] = useState({});
 
   const toggleRow = (groupId) => {
@@ -115,13 +115,13 @@ const ModifierListView = memo(({ groups, onEdit, onDelete, onToggleStatus, onRes
                     </td>
                     <td className="px-6 py-4 text-center">
                       <span
-                        className={`px-2 py-1 rounded text-xs font-medium ${
+                        className={`px-2 py-1 rounded text-xs font-semibold ${
                           group.isActive
                             ? "bg-green-100 text-green-700"
-                            : "bg-gray-100 text-gray-600"
+                            : "bg-red-100 text-red-700"
                         }`}
                       >
-                        {group.isActive ? "Active" : "Inactive"}
+                        {group.isActive ? "Hoạt động" : "Không hoạt động"}
                       </span>
                     </td>
                     <td className="px-4 py-4">
@@ -177,7 +177,6 @@ const ModifierListView = memo(({ groups, onEdit, onDelete, onToggleStatus, onRes
                                 <th className="text-left py-2 font-medium">Tên option</th>
                                 <th className="text-right py-2 font-medium">Giá thêm</th>
                                 <th className="text-center py-2 font-medium">Mặc định</th>
-                                <th className="text-center py-2 font-medium">Trạng thái</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -193,17 +192,6 @@ const ModifierListView = memo(({ groups, onEdit, onDelete, onToggleStatus, onRes
                                         Mặc định
                                       </span>
                                     )}
-                                  </td>
-                                  <td className="py-1.5 text-center">
-                                    <span
-                                      className={`px-2 py-0.5 rounded text-xs ${
-                                        mod.isActive
-                                          ? "bg-green-100 text-green-600"
-                                          : "bg-gray-100 text-gray-500"
-                                      }`}
-                                    >
-                                      {mod.isActive ? "Active" : "Inactive"}
-                                    </span>
                                   </td>
                                 </tr>
                               ))}

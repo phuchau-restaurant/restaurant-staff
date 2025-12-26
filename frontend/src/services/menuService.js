@@ -342,7 +342,7 @@ export const updateMenuItemStatus = async (menuId, isAvailable) => {
  */
 export const deleteMenuItemPermanent = async (menuId) => {
   try {
-    const response = await fetch(`${BASE_URL}/${menuId}/permanent`, {
+    const response = await fetch(`${BASE_URL}/${menuId}`, {
       method: "DELETE",
       headers: HEADERS,
     });
