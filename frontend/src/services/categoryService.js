@@ -4,7 +4,6 @@ const HEADERS = {
   "x-tenant-id": import.meta.env.VITE_TENANT_ID,
 };
 
-
 /**
  * Xóa vĩnh viễn danh mục
  * @param {string} categoryId - ID danh mục
@@ -33,16 +32,16 @@ export const deleteCategoryPermanent = async (categoryId) => {
  * Category Service - API calls cho quản lý danh mục
  */
 
-
 /**
  * Fetch danh sách danh mục từ API
  * @param {string} searchTerm - Tìm kiếm theo tên (optional)
  * @returns {Promise<Array>} Danh sách danh mục
  */
-export const fetchCategories = async (searchTerm = "") => {
+export const fetchCategories = async (searchTerm = "", status = "") => {
   try {
     const queryParams = new URLSearchParams();
     if (searchTerm) queryParams.append("search", searchTerm);
+    if (status) queryParams.append("status", status);
 
     const url = `${BASE_URL}${
       queryParams.toString() ? `?${queryParams.toString()}` : ""
@@ -50,7 +49,6 @@ export const fetchCategories = async (searchTerm = "") => {
 
     const response = await fetch(url, { headers: HEADERS });
     if (!response.ok) {
-      // Ném lỗi để rơi vào block catch và trả về mock data
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const result = await response.json();
@@ -61,7 +59,6 @@ export const fetchCategories = async (searchTerm = "") => {
     return [];
   } catch (error) {
     console.error("Fetch categories error:", error);
-    // Return mock data for development
     return [];
   }
 };

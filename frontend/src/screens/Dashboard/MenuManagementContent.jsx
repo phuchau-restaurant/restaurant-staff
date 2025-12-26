@@ -129,8 +129,13 @@ const MenuManagementContent = () => {
         // Set ảnh đầu tiên làm primary nếu có upload thành công
         if (uploadedPhotos && uploadedPhotos.length > 0) {
           await menuService.setPrimaryImage(uploadedPhotos[0].id);
+          
+          // Cập nhật imageUrl vào database để khi load lại trang vẫn có ảnh
+          const primaryPhotoUrl = uploadedPhotos[0].url;
+          await menuService.updateMenuItem(newMenuItem.id, { imageUrl: primaryPhotoUrl });
+          
           // Gán imgUrl từ ảnh primary để hiển thị ngay
-          newMenuItem.imgUrl = uploadedPhotos[0].url;
+          newMenuItem.imgUrl = primaryPhotoUrl;
           newMenuItem.images = uploadedPhotos.map(p => ({
             id: p.id,
             url: p.url,
@@ -190,12 +195,22 @@ const MenuManagementContent = () => {
         const hasExistingPrimary = menuData.images?.some(img => img.isPrimary);
         if (!hasExistingPrimary && uploadedPhotos && uploadedPhotos.length > 0) {
           await menuService.setPrimaryImage(uploadedPhotos[0].id);
+          
+          // Cập nhật imageUrl vào database để khi load lại trang vẫn có ảnh
+          const primaryPhotoUrl = uploadedPhotos[0].url;
+          await menuService.updateMenuItem(id, { imageUrl: primaryPhotoUrl });
         }
       }
 
       // Set primary image if specified (chỉ khi là ảnh cũ, không phải ảnh mới upload)
       if (menuData.primaryImageId && !menuData.primaryImageId.toString().startsWith('new-')) {
         await menuService.setPrimaryImage(menuData.primaryImageId);
+        
+        // Cập nhật imageUrl vào database khi thay đổi ảnh chính
+        const primaryImage = menuData.images?.find(img => img.id === menuData.primaryImageId);
+        if (primaryImage?.url) {
+          await menuService.updateMenuItem(id, { imageUrl: primaryImage.url });
+        }
       }
 
       // Cập nhật state trực tiếp thay vì fetch lại
