@@ -8,6 +8,7 @@ import CategoryList from "../../components/categories/CategoryList";
 import CategoryForm from "../../components/categories/CategoryForm";
 import AlertModal from "../../components/Modal/AlertModal";
 import ConfirmModal from "../../components/Modal/ConfirmModal";
+import Pagination from "../../components/common/Pagination";
 
 // Services & Utils
 import * as categoryService from "../../services/categoryService";
@@ -34,6 +35,11 @@ const CategoryManagementContent = () => {
   const [categories, setCategories] = useState([]);
   const [filteredCategories, setFilteredCategories] = useState([]);
   const [initialLoading, setInitialLoading] = useState(true);
+
+  // State quản lý phân trang
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(12);
+  const [paginationInfo, setPaginationInfo] = useState(null);
 
   // State quản lý UI
   const [viewMode, setViewMode] = useState(VIEW_MODES.GRID);
@@ -62,10 +68,10 @@ const CategoryManagementContent = () => {
 
   // ==================== LIFECYCLE ====================
 
-  // Fetch dữ liệu ban đầu
+  // Fetch dữ liệu khi page hoặc pageSize thay đổi
   useEffect(() => {
     fetchCategories();
-  }, []);
+  }, [currentPage, pageSize]);
 
   // Filter và sort phía client
   useEffect(() => {
@@ -87,14 +93,40 @@ const CategoryManagementContent = () => {
   const fetchCategories = async () => {
     try {
       setInitialLoading(true);
-      const data = await categoryService.fetchCategories(searchTerm);
-      setCategories(data);
+      const result = await categoryService.fetchCategories(searchTerm, {
+        pageNumber: currentPage,
+        pageSize: pageSize
+      });
+      
+      // Xử lý response có pagination hoặc không
+      if (result.pagination) {
+        setCategories(result.data);
+        setPaginationInfo(result.pagination);
+      } else {
+        setCategories(result);
+        setPaginationInfo(null);
+      }
     } catch (error) {
       console.error("Fetch categories error:", error);
       showAlert("Lỗi", "Không thể tải danh mục. Vui lòng thử lại!", "error");
     } finally {
       setInitialLoading(false);
     }
+  };
+
+  /**
+   * Xử lý thay đổi trang
+   */
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  /**
+   * Xử lý thay đổi số items mỗi trang
+   */
+  const handlePageSizeChange = (size) => {
+    setPageSize(size);
+    setCurrentPage(1); // Reset về trang 1 khi thay đổi pageSize
   };
 
   /**
@@ -526,6 +558,19 @@ const CategoryManagementContent = () => {
           />
         )}
       </div>
+
+      {/* Pagination */}
+      {paginationInfo && (
+        <Pagination
+          currentPage={paginationInfo.pageNumber}
+          totalPages={paginationInfo.totalPages}
+          totalItems={paginationInfo.totalItems}
+          pageSize={paginationInfo.pageSize}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+          pageSizeOptions={[12, 24, 48, 96]}
+        />
+      )}
 
       {/* Form Modal */}
       {showForm && (

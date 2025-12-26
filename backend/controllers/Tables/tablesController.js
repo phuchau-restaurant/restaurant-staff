@@ -5,31 +5,62 @@ class TablesController {
     this.tablesService = tablesService;
   }
 
-  // [GET] /api/admin/tables?location=<tableLocation>&status=<tableStatus>
+  // [GET] /api/admin/tables?location=<tableLocation>&status=<tableStatus>&pageNumber=1&pageSize=10
   getAll = async (req, res, next) => {
     try {
       const tenantId = req.tenantId;
-      const { location, status } = req.query;
+      const { location, status, pageNumber, pageSize } = req.query;
       
       const filters = {};
       if (location) filters.location = location;
       if (status) filters.status = status;
 
-      const data = await this.tablesService.getAllTables(tenantId, filters);
+      // Xử lý phân trang nếu có
+      let pagination = null;
+      if (pageNumber && pageSize) {
+        pagination = {
+          pageNumber: parseInt(pageNumber, 10),
+          pageSize: parseInt(pageSize, 10)
+        };
+        if (pagination.pageNumber < 1) pagination.pageNumber = 1;
+        if (pagination.pageSize < 1) pagination.pageSize = 10;
+        if (pagination.pageSize > 100) pagination.pageSize = 100;
+      }
+
+      const result = await this.tablesService.getAllTables(tenantId, filters, pagination);
+
+      // Xử lý response dựa trên có phân trang hay không
+      let tableData, paginationInfo;
+      if (pagination) {
+        tableData = result.data;
+        paginationInfo = result.pagination;
+      } else {
+        tableData = result;
+        paginationInfo = null;
+      }
 
       // Clean response
-      const returnData = data.map(t => {
+      const returnData = tableData.map(t => {
           const { tenantId: _tid, ...rest } = t;
           return rest;
       });
       const locationMess = location ? ` with location '${location}'` : "";
       const statusMess = status ? ` and status '${status}'` : "";
-      return res.status(200).json({
+      
+      // Build response
+      const response = {
         success: true,
         message: `Tables fetched successfully${locationMess}${statusMess}`,
-        total: returnData.length,
+        total: paginationInfo ? paginationInfo.totalItems : returnData.length,
         data: returnData
-      });
+      };
+
+      // Thêm thông tin phân trang nếu có
+      if (paginationInfo) {
+        response.pagination = paginationInfo;
+      }
+
+      return res.status(200).json(response);
     } catch (error) {
       next(error);
     }

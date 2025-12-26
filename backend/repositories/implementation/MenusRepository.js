@@ -75,11 +75,20 @@ async getById(id) {
     const rawData = await super.getById(id); // Gọi cha lấy raw data
     return rawData ? new Menus(rawData) : null; // Map sang Model
 }
- async getAll(filters = {}) {
-    // Gọi hàm cha để lấy data thô (đã xử lý logic filter)
-    const rawData = await super.getAll(filters);
-    // Map sang Model
-    return rawData.map(item => new Menus(item));
+ async getAll(filters = {}, pagination = null) {
+    // Gọi hàm cha để lấy data thô (đã xử lý logic filter và phân trang)
+    const result = await super.getAll(filters, pagination);
+    
+    // Nếu có phân trang, result là object { data, pagination }
+    if (pagination && pagination.pageNumber && pagination.pageSize) {
+      return {
+        data: result.data.map(item => new Menus(item)),
+        pagination: result.pagination
+      };
+    }
+    
+    // Nếu không có phân trang, result là array
+    return result.map(item => new Menus(item));
   }
 
 

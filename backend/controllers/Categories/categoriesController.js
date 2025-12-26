@@ -12,25 +12,56 @@ class CategoriesController {
       this.categoriesService = categoriesService;
     }
 
-  // [GET] /api/categories
+  // [GET] /api/categories?active=true&pageNumber=1&pageSize=10
   getAll = async (req, res, next) => {
     try {
       // Lấy trực tiếp từ req.tenantId (do Middleware đã gắn vào)
       const tenantId = req.tenantId;
       
       const onlyActive = req.query.active === 'true';
+      const { pageNumber, pageSize } = req.query;
+
+      // Xử lý phân trang nếu có
+      let pagination = null;
+      if (pageNumber && pageSize) {
+        pagination = {
+          pageNumber: parseInt(pageNumber, 10),
+          pageSize: parseInt(pageSize, 10)
+        };
+        if (pagination.pageNumber < 1) pagination.pageNumber = 1;
+        if (pagination.pageSize < 1) pagination.pageSize = 10;
+        if (pagination.pageSize > 100) pagination.pageSize = 100;
+      }
 
       // Gọi Service
-      const data = await this.categoriesService.getCategoriesByTenant(tenantId, onlyActive); //sử dụng this vì tại constructor đã inject service vào this.categoriesService
+      const result = await this.categoriesService.getCategoriesByTenant(tenantId, onlyActive, pagination);
       
-      const returnData = data.map(({ tenantId, ...rest }) => rest);
+      // Xử lý response dựa trên có phân trang hay không
+      let categoryData, paginationInfo;
+      if (pagination) {
+        categoryData = result.data;
+        paginationInfo = result.pagination;
+      } else {
+        categoryData = result;
+        paginationInfo = null;
+      }
 
-      return res.status(200).json({ 
+      const returnData = categoryData.map(({ tenantId, ...rest }) => rest);
+
+      // Build response
+      const response = { 
         message: "Categories fetched successfully",
         success: true, 
-        total: returnData.length,
+        total: paginationInfo ? paginationInfo.totalItems : returnData.length,
         data: returnData
-       });
+      };
+
+      // Thêm thông tin phân trang nếu có
+      if (paginationInfo) {
+        response.pagination = paginationInfo;
+      }
+
+      return res.status(200).json(response);
 
     } catch (error) {
       //return res.status(500).json({ success: false, message: error.message });
