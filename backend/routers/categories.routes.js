@@ -13,20 +13,7 @@ router.use(tenantMiddleware);
 
 // 1. Lấy danh sách (có thể kèm filter ?status=active|inactive)
 // [GET] /api/categories
-router.get("/", async (req, res, next) => {
-  try {
-    const { status } = req.query;
-    if (status === "active" || status === "inactive") {
-      // Gọi controller với filter trạng thái
-      const isActive = status === "active";
-      // Giả định controller.getAll nhận filter qua req.query
-      req.query.active = isActive.toString();
-    }
-    await categoriesController.getAll(req, res, next);
-  } catch (err) {
-    next(err);
-  }
-});
+router.get("/", categoriesController.getAll);
 
 // 2. Lấy chi tiết một category theo ID
 // [GET] /api/categories/:id

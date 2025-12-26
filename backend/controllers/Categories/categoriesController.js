@@ -12,12 +12,18 @@ class CategoriesController {
     this.categoriesService = categoriesService;
   }
 
-  // [GET] /api/categories?active=true&pageNumber=1&pageSize=10
+  // [GET] /api/categories?status=active&pageNumber=1&pageSize=10
   getAll = async (req, res, next) => {
     try {
       const tenantId = req.tenantId;
       
-      const onlyActive = req.query.active === 'true';
+      // Xử lý filter theo status
+      const { status } = req.query;
+      let onlyActive = false;
+      if (status === 'active') {
+        onlyActive = true;
+      }
+      
       const { pageNumber, pageSize } = req.query;
 
       // Xử lý phân trang nếu có

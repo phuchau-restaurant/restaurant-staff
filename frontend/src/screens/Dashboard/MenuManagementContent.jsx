@@ -697,7 +697,7 @@ const MenuManagementContent = () => {
         {showForm && (
           <MenuForm
             menuItem={editingMenuItem}
-            categories={categoryFilter}
+            categories={categories}
             modifierGroups={modifierGroups}
             onSubmit={handleFormSubmit}
             onClose={handleCloseForm}
