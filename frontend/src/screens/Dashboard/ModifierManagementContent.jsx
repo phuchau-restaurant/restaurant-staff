@@ -8,6 +8,7 @@ import ModifierListView from "../../components/modifiers/ModifierListView";
 import ModifierGroupForm from "../../components/modifiers/ModifierGroupForm";
 import AlertModal from "../../components/Modal/AlertModal";
 import ConfirmModal from "../../components/Modal/ConfirmModal";
+import Pagination from "../../components/SpinnerLoad/Pagination";
 
 // Services & Utils
 import * as modifierService from "../../services/modifierService";
@@ -36,6 +37,11 @@ const ModifierManagementContent = () => {
   const [filteredGroups, setFilteredGroups] = useState([]);
   const [initialLoading, setInitialLoading] = useState(true);
 
+  // State quản lý phân trang
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(12);
+  const [paginationInfo, setPaginationInfo] = useState(null);
+
   // State quản lý UI
   const [viewMode, setViewMode] = useState(VIEW_MODES.GRID);
   const [showForm, setShowForm] = useState(false);
@@ -63,10 +69,10 @@ const ModifierManagementContent = () => {
 
   // ==================== LIFECYCLE ====================
 
-  // Fetch dữ liệu ban đầu
+  // Fetch dữ liệu khi page hoặc pageSize thay đổi
   useEffect(() => {
     fetchModifierGroups();
-  }, []);
+  }, [currentPage, pageSize]);
 
   // Filter và sort phía client
   useEffect(() => {
@@ -87,14 +93,40 @@ const ModifierManagementContent = () => {
   const fetchModifierGroups = async () => {
     try {
       setInitialLoading(true);
-      const data = await modifierService.fetchModifierGroups();
-      setModifierGroups(data);
+      const result = await modifierService.fetchModifierGroups(searchTerm, {
+        pageNumber: currentPage,
+        pageSize: pageSize
+      });
+      
+      // Xử lý response có pagination hoặc không
+      if (result.pagination) {
+        setModifierGroups(result.data);
+        setPaginationInfo(result.pagination);
+      } else {
+        setModifierGroups(result);
+        setPaginationInfo(null);
+      }
     } catch (error) {
       console.error("Fetch modifier groups error:", error);
       showAlert("Lỗi", "Không thể tải dữ liệu. Vui lòng thử lại!", "error");
     } finally {
       setInitialLoading(false);
     }
+  };
+
+  /**
+   * Xử lý thay đổi trang
+   */
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  /**
+   * Xử lý thay đổi số items mỗi trang
+   */
+  const handlePageSizeChange = (size) => {
+    setPageSize(size);
+    setCurrentPage(1); // Reset về trang 1 khi thay đổi pageSize
   };
 
   /**
@@ -368,7 +400,7 @@ const ModifierManagementContent = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4  gap-4 mb-6">
           <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-100">
             <div className="flex items-center justify-between">
               <div>
@@ -447,7 +479,7 @@ const ModifierManagementContent = () => {
             </button>
           </div>
         ) : viewMode === VIEW_MODES.GRID ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredGroups.map((group) => (
               <ModifierGroupCard
                 key={group.id}
@@ -468,6 +500,19 @@ const ModifierManagementContent = () => {
             onToggleStatus={handleToggleStatus}
             onRestore={handleRestoreGroup}
             onDeletePermanent={handleDeletePermanent}
+          />
+        )}
+
+        {/* Pagination */}
+        {paginationInfo && (
+          <Pagination
+            currentPage={paginationInfo.pageNumber}
+            totalPages={paginationInfo.totalPages}
+            totalItems={paginationInfo.totalItems}
+            pageSize={paginationInfo.pageSize}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            pageSizeOptions={[12, 24, 48, 96]}
           />
         )}
 

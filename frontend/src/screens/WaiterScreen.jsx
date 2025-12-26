@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { MOCK_ORDERS } from "../components/Kitchen/mockData";
 import WaiterHeader from "../components/Waiter/WaiterHeader";
 import WaiterOrdersGrid from "../components/Waiter/WaiterOrdersGrid";
 
 const WaiterScreen = () => {
-  const [orders, setOrders] = useState(MOCK_ORDERS);
+  const [orders, setOrders] = useState([]);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [searchOrderId, setSearchOrderId] = useState("");
 

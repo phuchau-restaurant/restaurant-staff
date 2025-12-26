@@ -11,22 +11,58 @@ class ModifierGroupsController {
   // ==================== MODIFIER GROUPS ====================
 
   /**
-   * [GET] /api/admin/menu/modifier-groups
-   * Lấy danh sách modifier groups (có thể search)
+   * [GET] /api/admin/menu/modifier-groups?search=&status=&pageNumber=1&pageSize=10
+   * Lấy danh sách modifier groups (có thể search và phân trang)
    */
   getAll = async (req, res, next) => {
     try {
       const tenantId = req.tenantId;
-      const { search } = req.query;
 
-      const data = await this.modifierGroupsService.getAllGroups(tenantId, search);
+      const { search, status, pageNumber, pageSize } = req.query;
 
-      return res.status(200).json({
+      // Xử lý phân trang nếu có
+      let pagination = null;
+      if (pageNumber && pageSize) {
+        pagination = {
+          pageNumber: parseInt(pageNumber, 10),
+          pageSize: parseInt(pageSize, 10)
+        };
+        if (pagination.pageNumber < 1) pagination.pageNumber = 1;
+        if (pagination.pageSize < 1) pagination.pageSize = 10;
+        if (pagination.pageSize > 100) pagination.pageSize = 100;
+      }
+
+      const result = await this.modifierGroupsService.getAllGroups(
+        tenantId,
+        search,
+        status,
+        pagination
+      );
+
+      // Xử lý response dựa trên có phân trang hay không
+      let groupData, paginationInfo;
+      if (pagination) {
+        groupData = result.data;
+        paginationInfo = result.pagination;
+      } else {
+        groupData = result;
+        paginationInfo = null;
+      }
+
+      // Build response
+      const response = {
         success: true,
         message: "Modifier groups fetched successfully",
-        total: data.length,
-        data,
-      });
+        total: paginationInfo ? paginationInfo.totalItems : groupData.length,
+        data: groupData,
+      };
+
+      // Thêm thông tin phân trang nếu có
+      if (paginationInfo) {
+        response.pagination = paginationInfo;
+      }
+
+      return res.status(200).json(response);
     } catch (error) {
       next(error);
     }
@@ -64,7 +100,10 @@ class ModifierGroupsController {
       const tenantId = req.tenantId;
       const groupData = req.body;
 
-      const newGroup = await this.modifierGroupsService.createGroup(groupData, tenantId);
+      const newGroup = await this.modifierGroupsService.createGroup(
+        groupData,
+        tenantId
+      );
 
       return res.status(201).json({
         success: true,
@@ -88,7 +127,11 @@ class ModifierGroupsController {
       const { id } = req.params;
       const updateData = req.body;
 
-      const updatedGroup = await this.modifierGroupsService.updateGroup(id, updateData, tenantId);
+      const updatedGroup = await this.modifierGroupsService.updateGroup(
+        id,
+        updateData,
+        tenantId
+      );
 
       return res.status(200).json({
         success: true,
@@ -143,11 +186,17 @@ class ModifierGroupsController {
         });
       }
 
-      const updatedGroup = await this.modifierGroupsService.toggleGroupStatus(id, isActive, tenantId);
+      const updatedGroup = await this.modifierGroupsService.toggleGroupStatus(
+        id,
+        isActive,
+        tenantId
+      );
 
       return res.status(200).json({
         success: true,
-        message: `Modifier group ${isActive ? "activated" : "deactivated"} successfully`,
+        message: `Modifier group ${
+          isActive ? "activated" : "deactivated"
+        } successfully`,
         data: updatedGroup,
       });
     } catch (error) {
@@ -169,7 +218,11 @@ class ModifierGroupsController {
       const { id: groupId } = req.params;
       const optionData = req.body;
 
-      const newOption = await this.modifierGroupsService.createOption(groupId, optionData, tenantId);
+      const newOption = await this.modifierGroupsService.createOption(
+        groupId,
+        optionData,
+        tenantId
+      );
 
       return res.status(201).json({
         success: true,
@@ -194,7 +247,11 @@ class ModifierGroupsController {
       const { id: optionId } = req.params;
       const optionData = req.body;
 
-      const updatedOption = await this.modifierGroupsService.updateOption(optionId, optionData, tenantId);
+      const updatedOption = await this.modifierGroupsService.updateOption(
+        optionId,
+        optionData,
+        tenantId
+      );
 
       return res.status(200).json({
         success: true,

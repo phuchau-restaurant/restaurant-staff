@@ -10,6 +10,7 @@ import TableListView from "../components/tables/TableListView";
 import TableFormInline from "../components/tables/TableFormInline";
 import AlertModal from "../components/Modal/AlertModal";
 import ConfirmModal from "../components/Modal/ConfirmModal";
+import Pagination from "../components/common/Pagination";
 import { useAlert } from "../hooks/useAlert";
 
 // QR Management Screen
@@ -53,6 +54,11 @@ const TablesScreen = () => {
   const [initialLoading, setInitialLoading] = useState(true);
   const [isFetching, setIsFetching] = useState(false);
 
+  // State quản lý phân trang
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(12);
+  const [paginationInfo, setPaginationInfo] = useState(null);
+
   // State quản lý UI
   const [viewMode, setViewMode] = useState("grid");
   const [showForm, setShowForm] = useState(false);
@@ -76,10 +82,10 @@ const TablesScreen = () => {
     fetchLocationOptions();
   }, []);
 
-  // Refetch khi filters thay đổi (server-side filtering)
+  // Refetch khi filters hoặc pagination thay đổi (server-side filtering)
   useEffect(() => {
     fetchTables();
-  }, [statusFilter, areaFilter]);
+  }, [statusFilter, areaFilter, currentPage, pageSize]);
 
   // Filter và sort phía client (search và sort)
   useEffect(() => {
@@ -95,8 +101,19 @@ const TablesScreen = () => {
   const fetchTables = async () => {
     try {
       setIsFetching(true);
-      const data = await tableService.fetchTables(statusFilter, areaFilter);
-      setTables(data);
+      const result = await tableService.fetchTables(statusFilter, areaFilter, {
+        pageNumber: currentPage,
+        pageSize: pageSize
+      });
+      
+      // Xử lý response có pagination hoặc không
+      if (result.pagination) {
+        setTables(result.data);
+        setPaginationInfo(result.pagination);
+      } else {
+        setTables(result);
+        setPaginationInfo(null);
+      }
     } catch (error) {
       console.error("Fetch tables error:", error);
       setTables([]);
@@ -104,6 +121,21 @@ const TablesScreen = () => {
       setIsFetching(false);
       setInitialLoading(false);
     }
+  };
+
+  /**
+   * Xử lý thay đổi trang
+   */
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  /**
+   * Xử lý thay đổi số items mỗi trang
+   */
+  const handlePageSizeChange = (size) => {
+    setPageSize(size);
+    setCurrentPage(1); // Reset về trang 1 khi thay đổi pageSize
   };
 
   /**
@@ -321,6 +353,19 @@ const TablesScreen = () => {
                 onEdit={handleEditTable}
                 onToggleStatus={toggleOccupiedStatus}
                 onToggleActive={toggleTableActive}
+              />
+            )}
+
+            {/* Pagination */}
+            {paginationInfo && !showForm && (
+              <Pagination
+                currentPage={paginationInfo.pageNumber}
+                totalPages={paginationInfo.totalPages}
+                totalItems={paginationInfo.totalItems}
+                pageSize={paginationInfo.pageSize}
+                onPageChange={handlePageChange}
+                onPageSizeChange={handlePageSizeChange}
+                pageSizeOptions={[12, 24, 48, 96]}
               />
             )}
           </div>

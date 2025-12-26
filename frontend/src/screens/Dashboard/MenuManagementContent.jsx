@@ -8,12 +8,14 @@ import MenuListView from "../../components/menus/MenuListView";
 import MenuForm from "../../components/menus/MenuForm";
 import AlertModal from "../../components/Modal/AlertModal";
 import ConfirmModal from "../../components/Modal/ConfirmModal";
+import Pagination from "../../components/SpinnerLoad/Pagination";
+import LoadingOverlay from "../../components/SpinnerLoad/LoadingOverlay";
 
 // Services & Utils
 import * as menuService from "../../services/menuService";
 import * as categoryService from "../../services/categoryService";
 import * as modifierService from "../../services/modifierService";
-import { filterAndSortMenuItems } from "../../utils/menuUtils";
+import { filterAndSortMenuItems, getPrimaryImage } from "../../utils/menuUtils";
 import {
   STATUS_OPTIONS,
   MESSAGES,
@@ -42,10 +44,16 @@ const MenuManagementContent = () => {
   const [modifierGroups, setModifierGroups] = useState([]);
   const [initialLoading, setInitialLoading] = useState(true);
 
+  // State quản lý phân trang
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(12);
+  const [paginationInfo, setPaginationInfo] = useState(null);
+
   // State quản lý UI
   const [viewMode, setViewMode] = useState(VIEW_MODES.GRID);
   const [showForm, setShowForm] = useState(false);
   const [editingMenuItem, setEditingMenuItem] = useState(null);
+  const [isLoadingForm, setIsLoadingForm] = useState(false);
 
   // State quản lý filters
   const [searchTerm, setSearchTerm] = useState("");
@@ -74,7 +82,7 @@ const MenuManagementContent = () => {
   // Fetch dữ liệu ban đầu
   useEffect(() => {
     fetchInitialData();
-  }, []);
+  }, [currentPage, pageSize]);
 
   // Filter và sort phía client
   useEffect(() => {
@@ -97,20 +105,79 @@ const MenuManagementContent = () => {
   const fetchInitialData = async () => {
     try {
       setInitialLoading(true);
-      const [menuData, categoryData, modifierData] = await Promise.all([
-        menuService.fetchMenuItems(),
+      const [menuResult, categoryData, modifierData] = await Promise.all([
+        menuService.fetchMenuItems({ pageNumber: currentPage, pageSize: pageSize }),
         categoryService.fetchCategories(),
         modifierService.fetchModifierGroups(),
       ]);
-      setMenuItems(menuData);
-      setCategories(categoryData);
-      setModifierGroups(modifierData);
+      
+      // Xử lý response có pagination hoặc không
+      let menuData = [];
+      if (menuResult.pagination) {
+        menuData = menuResult.data;
+        setPaginationInfo(menuResult.pagination);
+      } else {
+        menuData = Array.isArray(menuResult) ? menuResult : [];
+        setPaginationInfo(null);
+      }
+      
+      // Xử lý categoryData có thể có pagination
+      const categoryList = categoryData.data || categoryData || [];
+      
+      // Tạo map categoryId -> categoryName để lookup nhanh
+      const categoryMap = {};
+      categoryList.forEach(cat => {
+        categoryMap[cat.id] = cat.name;
+      });
+      
+      // Fetch ảnh cho từng món ăn và map categoryName
+      const menuItemsWithImages = await Promise.all(
+        menuData.map(async (item) => {
+          try {
+            const photos = await menuService.getPhotosByDishId(item.id);
+            return {
+              ...item,
+              categoryName: categoryMap[item.categoryId] || "",
+              images: photos.map(photo => ({
+                id: photo.id,
+                url: photo.url,
+                isPrimary: photo.isPrimary || photo.is_primary || false
+              }))
+            };
+          } catch (error) {
+            // Nếu lỗi thì giữ nguyên item không có images
+            return {
+              ...item,
+              categoryName: categoryMap[item.categoryId] || ""
+            };
+          }
+        })
+      );
+      
+      setMenuItems(menuItemsWithImages);
+      setCategories(categoryList);
+      setModifierGroups(modifierData.data || modifierData || []);
     } catch (error) {
       console.error("Fetch initial data error:", error);
       showAlert("Lỗi", "Không thể tải dữ liệu. Vui lòng thử lại!", "error");
     } finally {
       setInitialLoading(false);
     }
+  };
+
+  /**
+   * Xử lý thay đổi trang
+   */
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  /**
+   * Xử lý thay đổi số items mỗi trang
+   */
+  const handlePageSizeChange = (size) => {
+    setPageSize(size);
+    setCurrentPage(1); // Reset về trang 1 khi thay đổi pageSize
   };
 
   /**
@@ -121,9 +188,26 @@ const MenuManagementContent = () => {
       const newMenuItem = await menuService.createMenuItem(menuData);
       
       // Upload images if any
+      let uploadedPhotos = [];
       if (menuData.newImages && menuData.newImages.length > 0) {
-        for (const file of menuData.newImages) {
-          await menuService.uploadMenuImage(newMenuItem.id, file);
+        // Upload tất cả ảnh một lần (API hỗ trợ multi-upload)
+        uploadedPhotos = await menuService.uploadMenuImage(newMenuItem.id, menuData.newImages);
+        
+        // Set ảnh đầu tiên làm primary nếu có upload thành công
+        if (uploadedPhotos && uploadedPhotos.length > 0) {
+          await menuService.setPrimaryImage(uploadedPhotos[0].id);
+          
+          // Cập nhật imageUrl vào database để khi load lại trang vẫn có ảnh
+          const primaryPhotoUrl = uploadedPhotos[0].url;
+          await menuService.updateMenuItem(newMenuItem.id, { imageUrl: primaryPhotoUrl });
+          
+          // Gán imgUrl từ ảnh primary để hiển thị ngay
+          newMenuItem.imgUrl = primaryPhotoUrl;
+          newMenuItem.images = uploadedPhotos.map(p => ({
+            id: p.id,
+            url: p.url,
+            isPrimary: p.isPrimary || p.is_primary
+          }));
         }
       }
 
@@ -134,9 +218,8 @@ const MenuManagementContent = () => {
         }
       }
 
-      // Refresh data
-      const updatedMenuItems = await menuService.fetchMenuItems();
-      setMenuItems(updatedMenuItems);
+      // Thêm món mới vào state thay vì fetch lại toàn bộ
+      setMenuItems(prev => [...prev, newMenuItem]);
       
       setShowForm(false);
       showAlert("Thành công", MESSAGES.CREATE_SUCCESS, "success");
@@ -162,35 +245,67 @@ const MenuManagementContent = () => {
         await modifierService.syncDishModifierGroups(id, menuData.selectedModifierGroups);
       }
 
-      //Chưa có những tính năng này nên là comment chờ khi nào có thể làm sau
+      // Delete images if any
+      if (menuData.imagesToDelete && menuData.imagesToDelete.length > 0) {
+        for (const imageId of menuData.imagesToDelete) {
+          await menuService.deleteMenuImage(imageId);
+        }
+      }
 
-      // // Delete images if any
-      // if (menuData.imagesToDelete && menuData.imagesToDelete.length > 0) {
-      //   for (const imageId of menuData.imagesToDelete) {
-      //     await menuService.deleteMenuImage(id, imageId);
-      //   }
-      // }
+      // Upload new images if any
+      let uploadedPhotos = [];
+      if (menuData.newImages && menuData.newImages.length > 0) {
+        // Upload tất cả ảnh một lần (API hỗ trợ multi-upload)
+        uploadedPhotos = await menuService.uploadMenuImage(id, menuData.newImages);
+        
+        // Nếu chưa có ảnh primary, set ảnh đầu tiên làm primary
+        const hasExistingPrimary = menuData.images?.some(img => img.isPrimary);
+        if (!hasExistingPrimary && uploadedPhotos && uploadedPhotos.length > 0) {
+          await menuService.setPrimaryImage(uploadedPhotos[0].id);
+          
+          // Cập nhật imageUrl vào database để khi load lại trang vẫn có ảnh
+          const primaryPhotoUrl = uploadedPhotos[0].url;
+          await menuService.updateMenuItem(id, { imageUrl: primaryPhotoUrl });
+        }
+      }
 
-      // // Upload new images if any
-      // if (menuData.newImages && menuData.newImages.length > 0) {
-      //   for (const file of menuData.newImages) {
-      //     await menuService.uploadMenuImage(id, file);
-      //   }
-      // }
+      // Set primary image if specified (chỉ khi là ảnh cũ, không phải ảnh mới upload)
+      if (menuData.primaryImageId && !menuData.primaryImageId.toString().startsWith('new-')) {
+        await menuService.setPrimaryImage(menuData.primaryImageId);
+        
+        // Cập nhật imageUrl vào database khi thay đổi ảnh chính
+        const primaryImage = menuData.images?.find(img => img.id === menuData.primaryImageId);
+        if (primaryImage?.url) {
+          await menuService.updateMenuItem(id, { imageUrl: primaryImage.url });
+        }
+      }
 
-      // // Set primary image
-      // if (menuData.primaryImageId) {
-      //   await menuService.setPrimaryImage(id, menuData.primaryImageId);
-      // }
-
-      // // Attach modifier groups
-      // if (menuData.selectedModifierGroups) {
-      //   await menuService.attachModifierGroups(id, menuData.selectedModifierGroups);
-      // }
-
-      // Refresh data
-      const updatedMenuItems = await menuService.fetchMenuItems();
-      setMenuItems(updatedMenuItems);
+      // Cập nhật state trực tiếp thay vì fetch lại
+      setMenuItems(prev => prev.map(item => {
+        if (item.id === id) {
+          // Tính toán danh sách ảnh mới
+          const remainingImages = (menuData.images || [])
+            .filter(img => !menuData.imagesToDelete?.includes(img.id));
+          const newUploadedImages = (uploadedPhotos || []).map(p => ({
+            id: p.id,
+            url: p.url,
+            isPrimary: p.isPrimary || p.is_primary
+          }));
+          const allImages = [...remainingImages, ...newUploadedImages];
+          
+          return {
+            ...item,
+            name: menuData.name,
+            description: menuData.description,
+            price: menuData.price,
+            categoryId: menuData.categoryId,
+            isAvailable: menuData.isAvailable,
+            imgUrl: getPrimaryImage(allImages)?.url || item.imgUrl,
+            images: allImages
+          };
+        }
+        return item;
+      }));
 
       setShowForm(false);
       setEditingMenuItem(null);
@@ -321,26 +436,63 @@ const MenuManagementContent = () => {
    * Xử lý click edit
    */
   const handleEditClick = async (menuItem) => {
+    setIsLoadingForm(true);
     try {
+      // Fetch chi tiết món để lấy đầy đủ thông tin (có thể bao gồm images)
+      const menuDetail = await menuService.fetchMenuItemById(menuItem.id);
+      
       // Fetch modifier groups đã gắn cho dish này
       const attachedModifiers = await modifierService.fetchDishModifierGroups(menuItem.id);
       
       // Lấy danh sách groupId từ response
       const selectedModifierGroupIds = attachedModifiers.map(item => item.groupId || item.id);
       
-      // Cập nhật menuItem với modifier groups đã chọn
+      // Fetch tất cả ảnh của món ăn từ API
+      let images = [];
+      try {
+        const dishPhotos = await menuService.getPhotosByDishId(menuItem.id);
+        if (dishPhotos && dishPhotos.length > 0) {
+          images = dishPhotos.map(photo => ({
+            id: photo.id,
+            url: photo.url,
+            isPrimary: photo.isPrimary || photo.is_primary || false
+          }));
+        }
+      } catch (photoError) {
+        console.warn("Could not fetch dish photos:", photoError);
+      }
+
+      // Nếu API không trả về ảnh, fallback sang imgUrl
+      if (images.length === 0 && menuDetail.imgUrl) {
+        images = [
+          {
+            id: `primary-${menuDetail.id}`,
+            url: menuDetail.imgUrl,
+            isPrimary: true,
+          },
+        ];
+      }
+
+      // Cập nhật menuItem với modifier groups đã chọn và images
       const menuItemWithModifiers = {
-        ...menuItem,
+        ...menuDetail,
+        id: menuItem.id,
+        images,
         modifierGroups: selectedModifierGroupIds.map(id => ({ id })),
       };
       
       setEditingMenuItem(menuItemWithModifiers);
       setShowForm(true);
     } catch (error) {
-      console.error("Error fetching dish modifier groups:", error);
-      // Nếu lỗi thì vẫn mở form nhưng không có modifier groups
-      setEditingMenuItem(menuItem);
+      console.error("Error fetching dish details:", error);
+      // Nếu lỗi thì vẫn mở form nhưng dùng data từ state
+      setEditingMenuItem({
+        ...menuItem,
+        images: menuItem.images || []
+      });
       setShowForm(true);
+    } finally {
+      setIsLoadingForm(false);
     }
   };
 
@@ -522,6 +674,24 @@ const MenuManagementContent = () => {
             onRestore={handleRestoreMenuItem}
             onDeletePermanent={handleDeletePermanent}
           />
+        )}
+
+        {/* Pagination */}
+        {paginationInfo && (
+          <Pagination
+            currentPage={paginationInfo.pageNumber}
+            totalPages={paginationInfo.totalPages}
+            totalItems={paginationInfo.totalItems}
+            pageSize={paginationInfo.pageSize}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            pageSizeOptions={[12, 24, 48, 96]}
+          />
+        )}
+
+        {/* Loading Overlay */}
+        {isLoadingForm && (
+          <LoadingOverlay message="Đang tải dữ liệu món ăn..." />
         )}
 
         {/* Form Modal */}

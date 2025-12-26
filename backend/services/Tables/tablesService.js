@@ -29,11 +29,17 @@ class TablesService {
     }
   }
 
-  async getAllTables(tenantId, filters = {}) {
+  /**
+   * Lấy danh sách tables của tenant
+   * @param {string} tenantId - ID của tenant
+   * @param {object} filters - Các filter (location, status)
+   * @param {object|null} pagination - { pageNumber, pageSize } (optional)
+   */
+  async getAllTables(tenantId, filters = {}, pagination = null) {
     if (!tenantId) throw new Error("Tenant ID is required");
     // Force tenant_id vào filter
     filters.tenant_id = tenantId;
-    return await this.tablesRepo.getAll(filters);
+    return await this.tablesRepo.getAll(filters, pagination);
   }
 
   async getTableById(id, tenantId) {

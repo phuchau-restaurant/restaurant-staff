@@ -4,7 +4,6 @@ const HEADERS = {
   "x-tenant-id": import.meta.env.VITE_TENANT_ID,
 };
 
-
 /**
  * Xóa vĩnh viễn danh mục
  * @param {string} categoryId - ID danh mục
@@ -33,16 +32,22 @@ export const deleteCategoryPermanent = async (categoryId) => {
  * Category Service - API calls cho quản lý danh mục
  */
 
-
 /**
  * Fetch danh sách danh mục từ API
  * @param {string} searchTerm - Tìm kiếm theo tên (optional)
- * @returns {Promise<Array>} Danh sách danh mục
+ * @param {Object} pagination - { pageNumber, pageSize } (optional)
+ * @returns {Promise<Object|Array>} Danh sách danh mục hoặc object có pagination
  */
-export const fetchCategories = async (searchTerm = "") => {
+export const fetchCategories = async (searchTerm = "", pagination = null) => {
   try {
     const queryParams = new URLSearchParams();
     if (searchTerm) queryParams.append("search", searchTerm);
+    
+    // Thêm pagination params nếu có
+    if (pagination && pagination.pageNumber && pagination.pageSize) {
+      queryParams.append("pageNumber", pagination.pageNumber);
+      queryParams.append("pageSize", pagination.pageSize);
+    }
 
     const url = `${BASE_URL}${
       queryParams.toString() ? `?${queryParams.toString()}` : ""
@@ -50,19 +55,25 @@ export const fetchCategories = async (searchTerm = "") => {
 
     const response = await fetch(url, { headers: HEADERS });
     if (!response.ok) {
-      // Ném lỗi để rơi vào block catch và trả về mock data
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const result = await response.json();
 
     if (result.success) {
+      // Nếu có pagination trong response, trả về cả data và pagination
+      if (result.pagination) {
+        return {
+          data: result.data || [],
+          pagination: result.pagination
+        };
+      }
       return result.data || [];
     }
-    return [];
+    return pagination ? { data: [], pagination: null } : [];
   } catch (error) {
     console.error("Fetch categories error:", error);
     // Return mock data for development
-    return [];
+    return pagination ? { data: [], pagination: null } : [];
   }
 };
 

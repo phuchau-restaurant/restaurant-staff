@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { X, Upload, Trash2, Star, Plus } from "lucide-react";
 import { validateMenuItemData } from "../../utils/menuUtils";
 
@@ -6,7 +6,13 @@ import { validateMenuItemData } from "../../utils/menuUtils";
  * MenuForm Component
  * Form để add/edit món ăn với hỗ trợ multi-image upload
  */
-const MenuForm = ({ menuItem, categories = [], modifierGroups = [], onSubmit, onClose }) => {
+const MenuForm = ({
+  menuItem,
+  categories = [],
+  modifierGroups = [],
+  onSubmit,
+  onClose,
+}) => {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -30,9 +36,10 @@ const MenuForm = ({ menuItem, categories = [], modifierGroups = [], onSubmit, on
         description: menuItem.description || "",
         price: menuItem.price || "",
         categoryId: menuItem.categoryId || "",
-        isAvailable: menuItem.isAvailable !== undefined ? menuItem.isAvailable : true,
+        isAvailable:
+          menuItem.isAvailable !== undefined ? menuItem.isAvailable : true,
         images: menuItem.images || [],
-        selectedModifierGroups: menuItem.modifierGroups?.map(g => g.id) || [],
+        selectedModifierGroups: menuItem.modifierGroups?.map((g) => g.id) || [],
       });
     }
   }, [menuItem]);
@@ -61,7 +68,6 @@ const MenuForm = ({ menuItem, categories = [], modifierGroups = [], onSubmit, on
       id: `new-${Date.now()}-${Math.random()}`,
       file,
       url: URL.createObjectURL(file),
-      isPrimary: formData.images.length === 0 && newImages.length === 0,
       isNew: true,
     }));
 
@@ -140,7 +146,8 @@ const MenuForm = ({ menuItem, categories = [], modifierGroups = [], onSubmit, on
     e.preventDefault();
 
     // Validate
-    const { isValid, errors: validationErrors } = validateMenuItemData(formData);
+    const { isValid, errors: validationErrors } =
+      validateMenuItemData(formData);
     if (!isValid) {
       setErrors(validationErrors);
       return;
@@ -152,7 +159,8 @@ const MenuForm = ({ menuItem, categories = [], modifierGroups = [], onSubmit, on
         ...formData,
         newImages: newImages.map((img) => img.file),
         imagesToDelete,
-        primaryImageId: formData.images.find((img) => img.isPrimary)?.id ||
+        primaryImageId:
+          formData.images.find((img) => img.isPrimary)?.id ||
           newImages.find((img) => img.isPrimary)?.id,
       });
     } catch (error) {
@@ -166,11 +174,117 @@ const MenuForm = ({ menuItem, categories = [], modifierGroups = [], onSubmit, on
     (img) => !imagesToDelete.includes(img.id)
   );
 
+  // Drag & resize state
+  const modalRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [modalPos, setModalPos] = useState({
+    x: window.innerWidth / 2 - 400,
+    y: window.innerHeight / 2 - 300,
+  });
+  const [modalSize, setModalSize] = useState({ width: 800, height: 600 });
+  const [isResizing, setIsResizing] = useState(false);
+  const [resizeStart, setResizeStart] = useState({
+    x: 0,
+    y: 0,
+    width: 800,
+    height: 600,
+  });
+
+  // Drag handlers
+  const onDragStart = (e) => {
+    setIsDragging(true);
+    setDragOffset({
+      x: e.clientX - modalPos.x,
+      y: e.clientY - modalPos.y,
+    });
+  };
+  const onDrag = (e) => {
+    if (!isDragging) return;
+    setModalPos({
+      x: e.clientX - dragOffset.x,
+      y: e.clientY - dragOffset.y,
+    });
+  };
+  const onDragEnd = () => setIsDragging(false);
+
+  // Resize handlers
+  const onResizeStart = (e) => {
+    setIsResizing(true);
+    setResizeStart({
+      x: e.clientX,
+      y: e.clientY,
+      width: modalSize.width,
+      height: modalSize.height,
+    });
+    e.stopPropagation();
+  };
+  const onResize = (e) => {
+    if (!isResizing) return;
+    setModalSize({
+      width: Math.max(400, resizeStart.width + (e.clientX - resizeStart.x)),
+      height: Math.max(300, resizeStart.height + (e.clientY - resizeStart.y)),
+    });
+  };
+  const onResizeEnd = () => setIsResizing(false);
+
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener("mousemove", onDrag);
+      window.addEventListener("mouseup", onDragEnd);
+    } else {
+      window.removeEventListener("mousemove", onDrag);
+      window.removeEventListener("mouseup", onDragEnd);
+    }
+    return () => {
+      window.removeEventListener("mousemove", onDrag);
+      window.removeEventListener("mouseup", onDragEnd);
+    };
+  }, [isDragging, dragOffset, modalPos]);
+
+  useEffect(() => {
+    if (isResizing) {
+      window.addEventListener("mousemove", onResize);
+      window.addEventListener("mouseup", onResizeEnd);
+    } else {
+      window.removeEventListener("mousemove", onResize);
+      window.removeEventListener("mouseup", onResizeEnd);
+    }
+    return () => {
+      window.removeEventListener("mousemove", onResize);
+      window.removeEventListener("mouseup", onResizeEnd);
+    };
+  }, [isResizing, resizeStart, modalSize]);
+
   return (
-    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white z-10">
+    <div className="fixed inset-0 bg-black/10 backdrop-blur-sm z-50 p-4 select-none">
+      <div
+        ref={modalRef}
+        style={{
+          position: "absolute",
+          left: modalPos.x,
+          top: modalPos.y,
+          width: modalSize.width,
+          height: modalSize.height,
+          minWidth: 400,
+          minHeight: 300,
+          maxWidth: "100vw",
+          maxHeight: "100vh",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
+          background: "white",
+          borderRadius: 12,
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+        }}
+        className="shadow-2xl border border-gray-200"
+      >
+        {/* Drag bar */}
+        <div
+          className="cursor-move bg-gray-100 px-6 py-3 flex items-center justify-between border-b border-gray-200"
+          onMouseDown={onDragStart}
+          style={{ userSelect: "none" }}
+        >
           <h2 className="text-xl font-bold text-gray-800">
             {menuItem ? "Chỉnh sửa món ăn" : "Thêm món ăn mới"}
           </h2>
@@ -182,12 +296,15 @@ const MenuForm = ({ menuItem, categories = [], modifierGroups = [], onSubmit, on
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        {/* Form - Scrollable content */}
+        <div className="flex-1 overflow-y-auto p-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Info Section */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-gray-700 border-b pb-2">Thông tin cơ bản</h3>
-            
+            <h3 className="font-semibold text-gray-700 border-b pb-2">
+              Thông tin cơ bản
+            </h3>
+
             {/* Name */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -234,7 +351,9 @@ const MenuForm = ({ menuItem, categories = [], modifierGroups = [], onSubmit, on
                   ))}
                 </select>
                 {errors.categoryId && (
-                  <p className="text-red-600 text-sm mt-1">{errors.categoryId}</p>
+                  <p className="text-red-600 text-sm mt-1">
+                    {errors.categoryId}
+                  </p>
                 )}
               </div>
 
@@ -286,7 +405,10 @@ const MenuForm = ({ menuItem, categories = [], modifierGroups = [], onSubmit, on
                 onChange={handleInputChange}
                 className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
-              <label htmlFor="isAvailable" className="text-sm font-medium text-gray-700">
+              <label
+                htmlFor="isAvailable"
+                className="text-sm font-medium text-gray-700"
+              >
                 Đang bán
               </label>
             </div>
@@ -294,8 +416,10 @@ const MenuForm = ({ menuItem, categories = [], modifierGroups = [], onSubmit, on
 
           {/* Images Section */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-gray-700 border-b pb-2">Hình ảnh</h3>
-            
+            <h3 className="font-semibold text-gray-700 border-b pb-2">
+              Hình ảnh
+            </h3>
+
             {/* Image Grid */}
             <div className="grid grid-cols-3 gap-4">
               {allImages.map((img) => (
@@ -310,7 +434,7 @@ const MenuForm = ({ menuItem, categories = [], modifierGroups = [], onSubmit, on
                     alt="Preview"
                     className="w-full h-full object-cover"
                   />
-                  
+
                   {/* Primary badge */}
                   {img.isPrimary && (
                     <div className="absolute top-1 left-1">
@@ -363,39 +487,41 @@ const MenuForm = ({ menuItem, categories = [], modifierGroups = [], onSubmit, on
           </div>
 
           {/* Modifier Groups Section */}
-          {modifierGroups.length > 0 && (
+          {modifierGroups.filter((g) => g.isActive).length > 0 && (
             <div className="space-y-4">
-              <h3 className="font-semibold text-gray-700 border-b pb-2">Modifier Groups</h3>
-              
+              <h3 className="font-semibold text-gray-700 border-b pb-2">
+                Modifier Groups
+              </h3>
               <div className="grid grid-cols-2 gap-3">
-                {modifierGroups.map((group) => (
-                  <label
-                    key={group.id}
-                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                      formData.selectedModifierGroups.includes(group.id)
-                        ? "bg-blue-50 border-blue-300"
-                        : "bg-white border-gray-200 hover:bg-gray-50"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={formData.selectedModifierGroups.includes(group.id)}
-                      onChange={() => handleModifierGroupToggle(group.id)}
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                    />
-                    <div className="flex-1">
-                      <span className="font-medium text-gray-800">{group.name}</span>
-                      <p className="text-xs text-gray-500">
-                        {group.modifiers?.length || 0} options
-                      </p>
-                    </div>
-                    {!group.isActive && (
-                      <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-xs rounded">
-                        Inactive
-                      </span>
-                    )}
-                  </label>
-                ))}
+                {modifierGroups
+                  .filter((group) => group.isActive)
+                  .map((group) => (
+                    <label
+                      key={group.id}
+                      className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                        formData.selectedModifierGroups.includes(group.id)
+                          ? "bg-blue-50 border-blue-300"
+                          : "bg-white border-gray-200 hover:bg-gray-50"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formData.selectedModifierGroups.includes(
+                          group.id
+                        )}
+                        onChange={() => handleModifierGroupToggle(group.id)}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <div className="flex-1">
+                        <span className="font-medium text-gray-800">
+                          {group.name}
+                        </span>
+                        <p className="text-xs text-gray-500">
+                          {group.modifiers?.length || 0} options
+                        </p>
+                      </div>
+                    </label>
+                  ))}
               </div>
             </div>
           )}
@@ -418,6 +544,16 @@ const MenuForm = ({ menuItem, categories = [], modifierGroups = [], onSubmit, on
             </button>
           </div>
         </form>
+      </div>
+
+        {/* Resize handle */}
+        <div
+          onMouseDown={onResizeStart}
+          className="absolute right-0 bottom-0 w-6 h-6 cursor-nwse-resize z-20 flex items-end justify-end"
+          style={{ userSelect: "none" }}
+        >
+          <div className="w-4 h-4 bg-gray-200 rounded-br-lg border-r-2 border-b-2 border-gray-400" />
+        </div>
       </div>
     </div>
   );
