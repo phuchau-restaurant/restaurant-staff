@@ -114,16 +114,60 @@ const CategoriesScreen = () => {
     }
   };
 
-  const handleToggleStatus = async (categoryId, currentStatus) => {
+  const handleToggleStatus = async (category) => {
     try {
-      const newStatus = !currentStatus;
-      await categoriesService.updateCategoryStatus(categoryId, newStatus);
+      const newStatus = !category.is_active;
+      await categoriesService.updateCategoryStatus(category.category_id, newStatus);
       showSuccess(
         `Đã ${newStatus ? "kích hoạt" : "vô hiệu hóa"} danh mục thành công`
       );
       await fetchCategories();
     } catch (error) {
       showError(error.message || "Không thể cập nhật trạng thái");
+    }
+  };
+
+  const handleRestore = (category) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Xác nhận khôi phục",
+      message: `Bạn có chắc chắn muốn khôi phục danh mục "${category.name}"?`,
+      onConfirm: () => confirmRestore(category.category_id),
+      type: "success",
+    });
+  };
+
+  const confirmRestore = async (categoryId) => {
+    try {
+      await categoriesService.updateCategoryStatus(categoryId, true);
+      showSuccess("Khôi phục danh mục thành công");
+      await fetchCategories();
+    } catch (error) {
+      showError(error.message || "Không thể khôi phục danh mục");
+    } finally {
+      setConfirmDialog({ ...confirmDialog, isOpen: false });
+    }
+  };
+
+  const handleDeletePermanent = (category) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Xác nhận xóa vĩnh viễn",
+      message: `Bạn có chắc chắn muốn xóa vĩnh viễn danh mục "${category.name}"? Hành động này không thể hoàn tác!`,
+      onConfirm: () => confirmDeletePermanent(category.category_id),
+      type: "danger",
+    });
+  };
+
+  const confirmDeletePermanent = async (categoryId) => {
+    try {
+      await categoriesService.deleteCategoryPermanent(categoryId);
+      showSuccess("Đã xóa vĩnh viễn danh mục");
+      await fetchCategories();
+    } catch (error) {
+      showError(error.message || "Không thể xóa vĩnh viễn danh mục");
+    } finally {
+      setConfirmDialog({ ...confirmDialog, isOpen: false });
     }
   };
 
@@ -213,6 +257,8 @@ const CategoriesScreen = () => {
           onEdit={handleEdit}
           onDelete={handleDelete}
           onToggleStatus={handleToggleStatus}
+          onRestore={handleRestore}
+          onDeletePermanent={handleDeletePermanent}
         />
 
         {/* Empty State */}

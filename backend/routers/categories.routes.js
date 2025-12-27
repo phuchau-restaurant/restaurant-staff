@@ -13,20 +13,7 @@ router.use(tenantMiddleware);
 
 // 1. Lấy danh sách (có thể kèm filter ?status=active|inactive)
 // [GET] /api/categories
-router.get("/", async (req, res, next) => {
-  try {
-    const { status } = req.query;
-    if (status === "active" || status === "inactive") {
-      // Gọi controller với filter trạng thái
-      const isActive = status === "active";
-      // Giả định controller.getAll nhận filter qua req.query
-      req.query.isActive = isActive;
-    }
-    await categoriesController.getAll(req, res, next);
-  } catch (err) {
-    next(err);
-  }
-});
+router.get("/", categoriesController.getAll);
 
 // 2. Lấy chi tiết một category theo ID
 // [GET] /api/categories/:id
@@ -40,7 +27,11 @@ router.post("/", categoriesController.create);
 // [PUT] /api/categories/:id
 router.put("/:id", categoriesController.update);
 
-// 5. Xóa (Cần ID để biết xóa cái nào)
+// 5. Xóa vĩnh viễn (phải đặt trước route /:id để tránh conflict)
+// [DELETE] /api/categories/:id/permanent
+router.delete("/:id/permanent", categoriesController.deletePermanent);
+
+// 6. Xóa mềm (Soft delete - set is_active = false)
 // [DELETE] /api/categories/:id
 router.delete("/:id", categoriesController.delete);
 

@@ -8,7 +8,7 @@ import ModifierListView from "../../components/modifiers/ModifierListView";
 import ModifierGroupForm from "../../components/modifiers/ModifierGroupForm";
 import AlertModal from "../../components/Modal/AlertModal";
 import ConfirmModal from "../../components/Modal/ConfirmModal";
-import Pagination from "../../components/common/Pagination";
+import Pagination from "../../components/SpinnerLoad/Pagination";
 
 // Services & Utils
 import * as modifierService from "../../services/modifierService";
@@ -400,7 +400,7 @@ const ModifierManagementContent = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4  gap-4 mb-6">
           <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-100">
             <div className="flex items-center justify-between">
               <div>
@@ -479,7 +479,7 @@ const ModifierManagementContent = () => {
             </button>
           </div>
         ) : viewMode === VIEW_MODES.GRID ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredGroups.map((group) => (
               <ModifierGroupCard
                 key={group.id}
