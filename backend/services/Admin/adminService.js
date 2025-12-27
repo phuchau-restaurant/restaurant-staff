@@ -7,7 +7,7 @@ import archiver from "archiver";
 
 const QR_SECRET = process.env.QR_SECRET || "qr-secret-key"; // TODO: Set in .env
 const QR_EXPIRE_DAYS = parseInt(process.env.QR_EXPIRE_DAYS) || 365; // Mặc định 1 năm
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+const CUSTOMER_URL = process.env.CUSTOMER_URL || "http://localhost:5173";
 
 export default class AdminService {
   constructor(tablesRepository, usersRepository) {
@@ -131,7 +131,8 @@ export default class AdminService {
       });
 
       // 3. Tạo URL cho customer login
-      const customerLoginUrl = `${FRONTEND_URL}/login?token=${jwtToken}`;
+
+      const customerLoginUrl = `${CUSTOMER_URL}/login?token=${jwtToken}`;
 
       // 4. Generate QR image
       const qrCodeDataURL = await QRCode.toDataURL(customerLoginUrl, {
