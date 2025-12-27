@@ -95,11 +95,9 @@ export const validateCategoryData = (categoryData) => {
 
   // Name validation
   if (!categoryData.name || !categoryData.name.trim()) {
-    errors.name = "Tên danh mục là bắt buộc";
-  } else if (categoryData.name.trim().length < 2) {
-    errors.name = "Tên danh mục phải có ít nhất 2 ký tự";
-  } else if (categoryData.name.trim().length > 50) {
-    errors.name = "Tên danh mục không được quá 50 ký tự";
+    errors.name = "Name is required, 2–50 characters";
+  } else if (categoryData.name.trim().length < 2 || categoryData.name.trim().length > 50) {
+    errors.name = "Name is required, 2–50 characters";
   }
 
   // Description validation
@@ -113,8 +111,8 @@ export const validateCategoryData = (categoryData) => {
   // Display order validation
   if (categoryData.displayOrder !== undefined && categoryData.displayOrder !== null) {
     const order = Number(categoryData.displayOrder);
-    if (isNaN(order) || order < 0) {
-      errors.displayOrder = "Thứ tự hiển thị phải là số không âm";
+    if (isNaN(order) || order < 0 || !Number.isInteger(order)) {
+      errors.displayOrder = "Display order must be a non-negative integer";
     }
   }
 

@@ -127,23 +127,32 @@ export const validateMenuItemData = (menuData) => {
 
   // Name validation
   if (!menuData.name || !menuData.name.trim()) {
-    errors.name = "Tên món ăn là bắt buộc";
-  } else if (menuData.name.trim().length < 2) {
-    errors.name = "Tên món ăn phải có ít nhất 2 ký tự";
-  } else if (menuData.name.trim().length > 150) {
-    errors.name = "Tên món ăn không được vượt quá 150 ký tự";
+    errors.name = "Name is required, 2–80 characters";
+  } else if (menuData.name.trim().length < 2 || menuData.name.trim().length > 80) {
+    errors.name = "Name is required, 2–80 characters";
   }
 
   // Price validation
   if (menuData.price === undefined || menuData.price === null || menuData.price === "") {
-    errors.price = "Giá là bắt buộc";
-  } else if (isNaN(Number(menuData.price)) || Number(menuData.price) < 0) {
-    errors.price = "Giá phải là số dương";
+    errors.price = "Price must be a positive number (e.g., 0.01 to 999999)";
+  } else {
+    const price = Number(menuData.price);
+    if (isNaN(price) || price <= 0 || price > 999999) {
+      errors.price = "Price must be a positive number (e.g., 0.01 to 999999)";
+    }
   }
 
   // Category validation
   if (!menuData.categoryId) {
-    errors.categoryId = "Danh mục là bắt buộc";
+    errors.categoryId = "Category must exist and belong to the same restaurant";
+  }
+
+  // Preparation time validation
+  if (menuData.preparationTime !== undefined && menuData.preparationTime !== null && menuData.preparationTime !== "") {
+    const time = Number(menuData.preparationTime);
+    if (isNaN(time) || time < 0 || !Number.isInteger(time) || time > 240) {
+      errors.preparationTime = "Preparation time must be a non-negative integer (0–240 suggested)";
+    }
   }
 
   // Description validation (optional but max length)

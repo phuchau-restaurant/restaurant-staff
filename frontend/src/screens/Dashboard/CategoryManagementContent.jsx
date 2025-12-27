@@ -145,6 +145,8 @@ const CategoryManagementContent = () => {
         error.message || "Không thể thêm danh mục. Vui lòng thử lại!",
         "error"
       );
+      // Re-throw error để form có thể bắt và hiển thị
+      throw error;
     }
   };
 
@@ -165,6 +167,8 @@ const CategoryManagementContent = () => {
         error.message || "Không thể cập nhật danh mục. Vui lòng thử lại!",
         "error"
       );
+      // Re-throw error để form có thể bắt và hiển thị
+      throw error;
     }
   };
 
