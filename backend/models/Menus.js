@@ -10,6 +10,7 @@ export class Menus {
     this.price = data.price;
     this.imgUrl = data.image_url || data.imageUrl;
     this.createdAt = data.created_at || data.createdAt;
+    this.prepTimeMinutes = (data.prep_time_minutes ?? data.prepTimeMinutes) ?? undefined; 
 
     // Đảm bảo isAvailable luôn là boolean hoặc undefined
     if (data.is_available !== undefined) this.isAvailable = data.is_available;
@@ -31,6 +32,7 @@ export class Menus {
       price: this.price,
       image_url : this.imgUrl, 
       is_available: this.isAvailable,
+      prep_time_minutes: this.prepTimeMinutes,
     };
   }
 }

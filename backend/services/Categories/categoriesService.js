@@ -47,7 +47,12 @@ class CategoriesService {
     if (!name || name.trim() === "")
       throw new Error("Category name is required");
     // Optional: Validate description, imageUrl nếu cần
-
+    if (name.length > 50 || name.length < 2) {
+      throw new Error("Category name must be between 2 and 50 characters");
+    }
+    if (displayOrder < 0) {
+      throw new Error("Display order must be a non-negative integer");
+    }
     // 2. Business Logic: Kiểm tra trùng tên trong cùng tenant
     const existing = await this.categoryRepo.findByName(tenantId, name.trim());
     if (existing && existing.length > 0) {
@@ -102,7 +107,13 @@ class CategoriesService {
   async updateCategory(id, tenantId, updates) {
     // 1. Kiểm tra tồn tại và quyền sở hữu
     await this.getCategoryById(id, tenantId);
-
+    //kiểm tra nghiệp vụ
+    if (updates.name < 2 || updates.name > 50) {
+      throw new Error("Category name must be between 2 and 50 characters");
+    }
+    if (updates.displayOrder < 0) {
+      throw new Error("Display order must be a non-negative integer");
+    }
     // 2. Nếu cập nhật tên, cần check trùng lặp (Optional - tuỳ độ kỹ tính)
     if (updates.name) {
       const existing = await this.categoryRepo.findByName(
@@ -118,6 +129,7 @@ class CategoriesService {
         throw new Error(`Category name '${updates.name}' already exists`);
       }
     }
+    updates.updatedAt = new Date(); // Cập nhật thời gian sửa đổi
 
     // 3. Thực hiện update
     // <updates> là object từ Controller (VD: { name: "New Name", displayOrder: 5 })

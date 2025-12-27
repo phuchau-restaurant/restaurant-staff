@@ -1,7 +1,8 @@
 // backend/services/Menus/menusService.js
 class MenusService {
-  constructor(menusRepository) {
+  constructor(menusRepository, categoryRepository) {
     this.menusRepo = menusRepository;
+    this.categoryRepo = categoryRepository;
   }
 
   /**
@@ -43,18 +44,33 @@ class MenusService {
   }
 
   async createMenu(menuData) {
-    const { tenantId, name, price, categoryId, imgUrl } = menuData;
+    const { tenantId, name, price, categoryId,
+             imgUrl, prepTimeMinutes, isAvailable } = menuData;
 
     // 1. Validation cơ bản
     if (!tenantId) throw new Error("Tenant ID is required");
     if (!categoryId) throw new Error("Category ID is required"); // Món ăn phải thuộc danh mục
     if (!name || name.trim() === "") throw new Error("Menu name is required");
     if (price === undefined || price < 0) throw new Error("Price must be a positive number");
-
+    if (isAvailable !== undefined && typeof isAvailable !== 'boolean') {
+        throw new Error("isAvailable must be a boolean");
+    }
     if (imgUrl && typeof imgUrl !== 'string') {
         throw new Error("Image URL must be a string");
     }
-      
+    // business logic
+    if (name.length > 80  || name.length < 2) {
+      throw new Error("Menu name must be between 2 and 80 characters");
+    }
+    if (price < 0.01 || price > 999999) {
+      throw new Error("Price must be between 0.01 and 999999");
+    }
+    if (prepTimeMinutes !== undefined && (prepTimeMinutes < 0 || prepTimeMinutes > 240)) {
+      throw new Error("Preparation time must be between 0 and 240 minutes");
+    }
+    //Kiểm tra category tồn tại ?
+     await this.categoryRepo.getById(categoryId);
+
     // 2. Check trùng tên (Optional - tùy logic nhà hàng có cho phép trùng tên ko)
     const existing = await this.menusRepo.findByName(tenantId, name.trim());
     if (existing && existing.length > 0) {
