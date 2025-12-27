@@ -13,21 +13,76 @@ class MenusService {
    * @param {boolean} onlyAvailable - Chỉ lấy món đang bán
    * @param {object|null} pagination - { pageNumber, pageSize } (optional)
    */
+  // async getMenusByTenant(tenantId, categoryId = null, onlyAvailable = false, pagination = null) {
+  //   if (!tenantId) throw new Error("Missing tenantId");
+
+  //   const filters = { tenant_id: tenantId };
+    
+  //   // Nếu có lọc theo category
+  //   if (categoryId) {
+  //     filters.category_id = categoryId;
+  //   }
+  //   // Nếu chỉ lấy món đang bán
+  //   if (onlyAvailable) {
+  //     filters.is_available = true;
+  //   }
+
+  //   return await this.menusRepo.getAll(filters, pagination);
+  // }
+
+
+  /**
+   * Lấy danh sách Menu theo Tenant
+   * Logic mới: Chỉ lấy món thuộc Category có is_active = true -- TODO: CẦN PHẢI SỬA API NÀY ĐỂ ?categoryActive = true
+   */
   async getMenusByTenant(tenantId, categoryId = null, onlyAvailable = false, pagination = null) {
     if (!tenantId) throw new Error("Missing tenantId");
 
+    // BƯỚC 1: Lấy tất cả Category đang Active của Tenant này trước
+    // Giả sử categoryRepo.getAll hỗ trợ filter đơn giản
+    const activeCategories = await this.categoryRepo.getAll({
+      tenant_id: tenantId,
+      is_active: true
+    });
+
+    // Tạo một Set chứa các ID của Category đang active để tra cứu cho nhanh (O(1))
+    // Lưu ý: Cần đảm bảo kiểu dữ liệu (Int/String) đồng nhất. Ở đây giả sử là Int hoặc String giống nhau.
+    const activeCategoryIds = new Set(activeCategories.map(cat => cat.id));
+
+    // Nếu người dùng muốn lọc theo 1 categoryId cụ thể
+    if (categoryId) {
+      // Kiểm tra xem categoryId đó có nằm trong danh sách Active không
+      // Nếu không active -> Trả về rỗng luôn, không cần query menu làm gì
+      // Lưu ý: ép kiểu về string hoặc number nếu cần thiết để so sánh
+      const isTargetActive = activeCategories.some(cat => cat.id == categoryId);
+      
+      if (!isTargetActive) {
+        return []; 
+      }
+    }
+
+    // BƯỚC 2: Thiết lập filter cho MenuRepo
     const filters = { tenant_id: tenantId };
     
-    // Nếu có lọc theo category
     if (categoryId) {
       filters.category_id = categoryId;
     }
-    // Nếu chỉ lấy món đang bán
     if (onlyAvailable) {
       filters.is_available = true;
     }
 
-    return await this.menusRepo.getAll(filters, pagination);
+    // BƯỚC 3: Lấy danh sách món ăn từ DB
+    const listMenuItems = await this.menusRepo.getAll(filters, pagination);
+
+    // BƯỚC 4: Lọc kết quả trong Memory
+    // Chỉ giữ lại các món mà category_id của nó nằm trong danh sách activeCategoryIds
+    const filteredMenuItems = listMenuItems.filter(item => {
+        // Xử lý trường hợp item.category_id (snake_case) hoặc item.categoryId (camelCase) tùy vào model trả về
+        const itemCatId = item.category_id || item.categoryId;
+        return activeCategoryIds.has(itemCatId);
+    });
+
+    return filteredMenuItems;
   }
 
   async getMenuById(id, tenantId) {
