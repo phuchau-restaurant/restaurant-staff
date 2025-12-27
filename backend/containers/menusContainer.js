@@ -9,7 +9,7 @@ import MenusController from "../controllers/Menus/menusController.js";
 const menusRepo = new MenusRepository();
 const categoriesRepo = new CategoryRepository();
 // 2. Tiêm Repo vào Service
-const menusService = new MenusService(menusRepo);
+const menusService = new MenusService(menusRepo, categoriesRepo);
 const categoriesService = new CategoriesService(categoriesRepo);
 
 // 3. Tiêm Service vào Controller
