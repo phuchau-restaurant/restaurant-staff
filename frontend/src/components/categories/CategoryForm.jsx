@@ -20,7 +20,6 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
     name: "",
     description: "",
     displayOrder: 0,
-    image: "",
     isActive: true,
     icon: "",
     modifiers: [],
@@ -80,7 +79,6 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
         name: category.name || "",
         description: category.description || "",
         displayOrder: category.displayOrder || 0,
-        image: category.image || "",
         isActive: category.isActive !== undefined ? category.isActive : true,
         icon: category.icon || categoryIcons[0]?.icon || "",
         modifiers: category.modifiers || [],
@@ -132,19 +130,6 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
     }
   };
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData((prev) => ({
-          ...prev,
-          image: reader.result,
-        }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
