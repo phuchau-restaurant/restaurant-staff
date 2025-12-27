@@ -1,18 +1,30 @@
 // backend/models/Categories.js
+import { v7 as uuidv7 } from "uuid";
+
 export class Categories {
   constructor(data) {
-    // Xử lý linh hoạt: data có thể đến từ DB (snake) hoặc từ Service (camel)
-    this.id = data.id;
-    this.tenantId = data.tenant_id || data.tenantId; 
+    this.id = data.id || data.category_id || null;
+    this.tenantId = data.tenant_id || data.tenantId;
     this.name = data.name;
-    this.displayOrder = data.display_order || data.displayOrder;
-    this.isActive = data.is_active !== undefined ? data.is_active : data.isActive;
-    this.urlIcon = data.url_icon || data.urlIcon;
+    
+    // Chỉ set các giá trị nếu chúng thực sự tồn tại trong data
+    if (data.display_order !== undefined || data.displayOrder !== undefined) {
+      this.displayOrder = data.display_order || data.displayOrder;
+    }
+    
+    if (data.url_icon !== undefined || data.urlIcon !== undefined) {
+      this.urlIcon = data.url_icon || data.urlIcon;
+    }
+    
+    if (data.description !== undefined || data.desc !== undefined) {
+      this.description = data.description || data.desc;
+    }
 
+    this.createdAt = (data.created_at ?? data.createdAt) ?? undefined;
+    this.updatedAt = (data.updated_at ?? data.updatedAt) ?? undefined;
     // Đảm bảo isActive luôn là boolean hoặc undefined
     if (data.is_active !== undefined) this.isActive = data.is_active;
     else if (data.isActive !== undefined) this.isActive = data.isActive;
-    else this.isActive = undefined;
   }
 
   /**
@@ -20,13 +32,44 @@ export class Categories {
    * Hàm này tạo ra object thuần để Supabase có thể insert/update
    */
   toPersistence() {
-    return {
-      // id thường do DB tự sinh nên có thể không cần map khi create
+    const payload = {
       tenant_id: this.tenantId,
       name: this.name,
-      display_order: this.displayOrder,
-      is_active: this.isActive,
-      id: this.id,
     };
+    // Thêm id nếu có (dùng cho update)
+    if (this.id !== undefined && this.id !== null) {
+      payload.id = this.id;
+    }
+
+    // Chỉ thêm display_order nếu có giá trị
+    if (this.displayOrder !== undefined && this.displayOrder !== null) {
+      payload.display_order = this.displayOrder;
+    }
+
+    // Chỉ thêm is_active nếu có giá trị
+    if (this.isActive !== undefined && this.isActive !== null) {
+      payload.is_active = this.isActive;
+    }
+
+    // Thêm description nếu có
+    if (this.description !== undefined && this.description !== null) {
+      payload.description = this.description;
+    }
+
+    // Thêm url_icon nếu có
+    if (this.urlIcon !== undefined && this.urlIcon !== null) {
+      payload.url_icon = this.urlIcon;
+    }
+
+    // Thêm created_at nếu có
+    if (this.createdAt !== undefined && this.createdAt !== null) {
+      payload.created_at = this.createdAt;
+    }
+    //Thêm updated_at nếu có
+    if (this.updatedAt !== undefined && this.updatedAt !== null){
+      payload.updated_at = this.updatedAt;
+    }
+
+    return payload;
   }
 }

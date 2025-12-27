@@ -6,26 +6,50 @@ class MenusController {
     this.categoriesService = categoriesService;
   }
 
-  // [GET] /api/menus/?categoryId=<id>&available=true
+  // [GET] /api/menus/?categoryId=<id>&available=true&pageNumber=1&pageSize=10
   getAll = async (req, res, next) => {
     try {
       const tenantId = req.tenantId;
-      const { categoryId, available } = req.query; // Lấy query params
+      const { categoryId, available, pageNumber, pageSize } = req.query; // Lấy query params
       const onlyAvailable = available === "true";
 
-      const data = await this.menusService.getMenusByTenant(
+      // Xử lý phân trang nếu có
+      let pagination = null;
+      if (pageNumber && pageSize) {
+        pagination = {
+          pageNumber: parseInt(pageNumber, 10),
+          pageSize: parseInt(pageSize, 10)
+        };
+        // Validate pagination params
+        if (pagination.pageNumber < 1) pagination.pageNumber = 1;
+        if (pagination.pageSize < 1) pagination.pageSize = 10;
+        if (pagination.pageSize > 100) pagination.pageSize = 100; // Limit max page size
+      }
+
+      const result = await this.menusService.getMenusByTenant(
         tenantId,
         categoryId,
-        onlyAvailable
+        onlyAvailable,
+        pagination
       );
 
-      // Lọc bỏ id và tenantId từ danh sách
-      const returnData = data.map((item) => {
-        const { id, tenantId, ...rest } = item;
+      // Xử lý response dựa trên có phân trang hay không
+      let menuData, paginationInfo;
+      if (pagination) {
+        menuData = result.data;
+        paginationInfo = result.pagination;
+      } else {
+        menuData = result;
+        paginationInfo = null;
+      }
+
+      // Lọc bỏ tenantId từ danh sách
+      const returnData = menuData.map((item) => {
+        const { tenantId, ...rest } = item;
         return rest;
       });
+
       //Nếu có categoryId được truyền vào thì lấy nó và search, nếu không thì null
-      //const categoryName = categoryId ? this.categoriesService.getCategoryById(categoryId)?.name + ' category' : '';
       let categoryName = "";
       if (categoryId) {
         const category = await this.categoriesService.getCategoryById(
@@ -35,12 +59,20 @@ class MenusController {
         categoryName = category.name + " category";
       }
 
-      return res.status(200).json({
+      // Build response
+      const response = {
         success: true,
         message: `Menus fetched ${categoryName} successfully`,
-        total: returnData.length,
+        total: paginationInfo ? paginationInfo.totalItems : returnData.length,
         data: returnData,
-      });
+      };
+
+      // Thêm thông tin phân trang nếu có
+      if (paginationInfo) {
+        response.pagination = paginationInfo;
+      }
+
+      return res.status(200).json(response);
     } catch (error) {
       next(error);
     }
@@ -78,7 +110,7 @@ class MenusController {
       });
 
       // Lọc bỏ id và tenantId
-      const { id: _id, tenantId: _tid, ...returnData } = newMenu;
+      const {tenantId: _tid, ...returnData } = newMenu;
 
       return res.status(201).json({
         success: true,

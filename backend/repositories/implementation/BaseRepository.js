@@ -72,21 +72,43 @@ export class BaseRepository extends IBaseRepository {
   }
 
   // Logic tốt để xử lý tenant_id và is_active
-  async getAll(filters = {}) {
-    let query = supabase.from(this.tableName).select("*");
+  async getAll(filters = {}, pagination = null) {
+    // Sử dụng count để lấy tổng số bản ghi
+    let query = supabase.from(this.tableName).select("*", { count: "exact" });
 
     for (const [key, value] of Object.entries(filters)) {
       query = query.eq(key, value);
     }
 
-    // Thêm order để dữ liệu nhất quán (Optional)
-    // Nếu bảng có display_order thì nên sort, còn không thì sort theo id
-    // query = query.order('id', { ascending: true }); 
+    // Thêm order để dữ liệu nhất quán
+    query = query.order('id', { ascending: true }); 
 
-    const { data, error } = await query;
+    // Áp dụng phân trang nếu có
+    if (pagination && pagination.pageNumber && pagination.pageSize) {
+      const { pageNumber, pageSize } = pagination;
+      const from = (pageNumber - 1) * pageSize;
+      const to = from + pageSize - 1;
+      query = query.range(from, to);
+    }
+
+    const { data, error, count } = await query;
     if (error) {
       throw new Error(`[${this.tableName}] GetAll failed: ${error.message}`);
     }
+
+    // Trả về object chứa data và thông tin phân trang
+    if (pagination && pagination.pageNumber && pagination.pageSize) {
+      return {
+        data: data || [],
+        pagination: {
+          pageNumber: pagination.pageNumber,
+          pageSize: pagination.pageSize,
+          totalItems: count || 0,
+          totalPages: Math.ceil((count || 0) / pagination.pageSize)
+        }
+      };
+    }
+
     return data || [];
   }
 }

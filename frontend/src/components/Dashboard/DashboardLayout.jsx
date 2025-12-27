@@ -1,32 +1,35 @@
-import React, { useState } from 'react';
-import Sidebar from './Sidebar';
-import DashboardContent from '../../screens/Dashboard/DashboardContent';
-import OrdersContent from '../../screens/Dashboard/OrdersContent';
-import InventoryContent from '../../screens/Dashboard/InventoryContent';
-import SalesContent from '../../screens/Dashboard/SalesContent';
-import FeedbackContent from '../../screens/Dashboard/FeedbackContent';
-import CustomersContent from '../../screens/Dashboard/CustomersContent';
-import TablesScreen from '../../screens/TablesScreen';
+import React, { useState } from "react";
+import Sidebar from "./Sidebar";
+import DashboardContent from "../../screens/Dashboard/DashboardContent";
+import OrdersContent from "../../screens/Dashboard/OrdersContent";
+import CategoryManagementContent from "../../screens/Dashboard/CategoryManagementContent";
+import MenuManagementContent from "../../screens/Dashboard/MenuManagementContent";
+import ModifierManagementContent from "../../screens/Dashboard/ModifierManagementContent";
+import SalesContent from "../../screens/Dashboard/SalesContent";
+import FeedbackContent from "../../screens/Dashboard/FeedbackContent";
+import TablesScreen from "../../screens/TablesScreen";
 
 const DashboardLayout = () => {
-  const [activeMenu, setActiveMenu] = useState('dashboard');
+  const [activeMenu, setActiveMenu] = useState("dashboard");
 
   const renderContent = () => {
     switch (activeMenu) {
-      case 'dashboard':
+      case "dashboard":
         return <DashboardContent />;
-      case 'orders':
+      case "orders":
         return <OrdersContent />;
-      case 'tables':
+      case "tables":
         return <TablesScreen />;
-      case 'inventory':
-        return <InventoryContent />;
-      case 'sales':
+      case "inventory":
+        return <CategoryManagementContent />;
+      case "menus":
+        return <MenuManagementContent />;
+      case "modifiers":
+        return <ModifierManagementContent />;
+      case "sales":
         return <SalesContent />;
-      case 'feedback':
+      case "feedback":
         return <FeedbackContent />;
-      case 'customers':
-        return <CustomersContent />;
       default:
         return <DashboardContent />;
     }
@@ -38,9 +41,7 @@ const DashboardLayout = () => {
       <Sidebar activeMenu={activeMenu} onNavigate={setActiveMenu} />
 
       {/* Main Content - Changes based on active menu */}
-      <div className="flex-1 overflow-auto">
-        {renderContent()}
-      </div>
+      <div className="flex-1 overflow-auto">{renderContent()}</div>
     </div>
   );
 };

@@ -1,7 +1,7 @@
 // backend/services/Categories/categoriesService.js
 
 //Ko cần import nữa mà nhận Repository thông qua constructor
-  //ko cần: import CategoriesRepository from "../repositories/implementation/CategoriesRepository.js";
+//ko cần: import CategoriesRepository from "../repositories/implementation/CategoriesRepository.js";
 
 class CategoriesService {
   // Constructor Injection: Nhận vào một cái gì đó tuân thủ ICategoryRepository
@@ -13,18 +13,19 @@ class CategoriesService {
    * Lấy danh sách danh mục của một nhà hàng (Tenant)
    * @param {string} tenantId - ID của nhà hàng (Bắt buộc)
    * @param {boolean} onlyActive - Nếu true, chỉ lấy danh mục đang hoạt động
+   * @param {object|null} pagination - { pageNumber, pageSize } (optional)
    */
-  async getCategoriesByTenant(tenantId, onlyActive = false) {
+  async getCategoriesByTenant(tenantId, onlyActive = false, pagination = null) {
     if (!tenantId) throw new Error("Missing tenantId");
 
-    const filters = { tenant_id: tenantId }; 
-    
+    const filters = { tenant_id: tenantId };
+
     if (onlyActive) {
       filters.is_active = true;
     }
-   
+
     // Gọi xuống Repository để lấy dữ liệu
-    return await this.categoryRepo.getAll(filters);
+    return await this.categoryRepo.getAll(filters, pagination);
   }
 
   /**
@@ -32,32 +33,44 @@ class CategoriesService {
    * - Rule 1: Tên không được để trống
    * - Rule 2: Tên không được trùng trong cùng 1 Tenant
    */
-  async createCategory({ tenantId, name, displayOrder = 0, isActive = true }) {
+  async createCategory({
+    tenantId,
+    name,
+    description = "",
+    urlIcon = "",
+    displayOrder = 0,
+    isActive = true,
+  }) {
     // 1. Validate dữ liệu đầu vào
     if (!tenantId) throw new Error("Tenant ID is required");
-    if (!name || name.trim() === "") throw new Error("Category name is required");
-
+    if (!name || name.trim() === "")
+      throw new Error("Category name is required");
+    // Optional: Validate description nếu cần
+    if (name.length > 50 || name.length < 2) {
+      throw new Error("Category name must be between 2 and 50 characters");
+    }
+    if (displayOrder < 0) {
+      throw new Error("Display order must be a non-negative integer");
+    }
     // 2. Business Logic: Kiểm tra trùng tên trong cùng tenant
-    // Lưu ý: Hàm findByName trả về mảng các Model
-
-    // Gọi repo được inject vào -> cleaner
     const existing = await this.categoryRepo.findByName(tenantId, name.trim());
-    //const existing = await CategoriesRepository.findByName(tenant_id, name.trim()); - 3 lớp
     if (existing && existing.length > 0) {
-      // Kiểm tra kỹ hơn: Nếu có bản ghi trùng tên chính xác (findByName dùng ilike)
-      const isExactMatch = existing
-            .some(cat => cat.name.toLowerCase() === name.trim().toLowerCase());
+      const isExactMatch = existing.some(
+        (cat) => cat.name.toLowerCase() === name.trim().toLowerCase()
+      );
       if (isExactMatch) {
         throw new Error(`Category '${name}' already exists in this tenant`);
-      } 
+      }
     }
 
-    // chuẩn bị dữ liệu 
+    // chuẩn bị dữ liệu
     const newCategoryData = {
-      tenantId: tenantId,         
+      tenantId: tenantId,
       name: name.trim(),
-      displayOrder: displayOrder, 
-      isActive: isActive          
+      description: description,
+      urlIcon: urlIcon,
+      displayOrder: displayOrder,
+      isActive: isActive,
     };
 
     // Gọi Repository -> Lưu xuống DB
@@ -78,7 +91,8 @@ class CategoriesService {
     }
 
     // Security Check: Đảm bảo user của tenant này không xem trộm data của tenant kia
-    if (tenantId && category.tenantId !== tenantId) { //category bây giờ là Model nên thuộc tính là tenantId thay vì tenant_id
+    if (tenantId && category.tenantId !== tenantId) {
+      //category bây giờ là Model nên thuộc tính là tenantId thay vì tenant_id
       throw new Error("Access denied: Category belongs to another tenant");
     }
 
@@ -91,15 +105,29 @@ class CategoriesService {
   async updateCategory(id, tenantId, updates) {
     // 1. Kiểm tra tồn tại và quyền sở hữu
     await this.getCategoryById(id, tenantId);
-
+    //kiểm tra nghiệp vụ
+    if (updates.name < 2 || updates.name > 50) {
+      throw new Error("Category name must be between 2 and 50 characters");
+    }
+    if (updates.displayOrder < 0) {
+      throw new Error("Display order must be a non-negative integer");
+    }
     // 2. Nếu cập nhật tên, cần check trùng lặp (Optional - tuỳ độ kỹ tính)
     if (updates.name) {
-       const existing = await this.categoryRepo.findByName(tenantId, updates.name.trim());
-       const isDuplicate = existing.some(cat => cat.id !== id && cat.name.toLowerCase() === updates.name.trim().toLowerCase());
-       if (isDuplicate) {
-         throw new Error(`Category name '${updates.name}' already exists`);
-       }
+      const existing = await this.categoryRepo.findByName(
+        tenantId,
+        updates.name.trim()
+      );
+      const isDuplicate = existing.some(
+        (cat) =>
+          cat.id !== id &&
+          cat.name.toLowerCase() === updates.name.trim().toLowerCase()
+      );
+      if (isDuplicate) {
+        throw new Error(`Category name '${updates.name}' already exists`);
+      }
     }
+    updates.updatedAt = new Date(); // Cập nhật thời gian sửa đổi
 
     // 3. Thực hiện update
     // <updates> là object từ Controller (VD: { name: "New Name", displayOrder: 5 })
@@ -108,17 +136,24 @@ class CategoriesService {
   }
 
   /**
-   * Xóa danh mục
-   * (Lưu ý: Cân nhắc dùng Soft Delete (is_active=false) thay vì xóa hẳn nếu dữ liệu quan trọng)
+   * Xóa danh mục (Soft Delete)
+   * Cập nhật is_active = false thay vì xóa hẳn khỏi database
    */
   async deleteCategory(id, tenantId) {
-    //ktra tồn tại không ?
+    // Kiểm tra tồn tại và quyền sở hữu
     await this.getCategoryById(id, tenantId);
-    //TODO: cân nhắc dùng soft delete
-    //update is_active = false thay vì xóa hẳn
-    //return await CategoriesRepository.update(id, { is_active: false });
+    // Soft delete: cập nhật is_active = false
+    return await this.categoryRepo.update(id, { isActive: false });
+  }
 
-
+  /**
+   * Xóa vĩnh viễn danh mục (Hard Delete)
+   * Xóa hẳn record khỏi database
+   */
+  async deletePermanent(id, tenantId) {
+    // Kiểm tra tồn tại và quyền sở hữu
+    await this.getCategoryById(id, tenantId);
+    // Hard delete: xóa khỏi database
     return await this.categoryRepo.delete(id);
   }
 }

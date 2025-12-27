@@ -1,14 +1,19 @@
 // backend/services/Menus/menusService.js
 class MenusService {
-  constructor(menusRepository) {
+  constructor(menusRepository, categoryRepository) {
     this.menusRepo = menusRepository;
+    this.categoryRepo = categoryRepository;
   }
 
   /**
    * Lấy danh sách Menu theo Tenant
    * Có thể lọc theo CategoryId nếu cần
+   * @param {string} tenantId - ID của tenant
+   * @param {string|null} categoryId - ID của category (optional)
+   * @param {boolean} onlyAvailable - Chỉ lấy món đang bán
+   * @param {object|null} pagination - { pageNumber, pageSize } (optional)
    */
-  async getMenusByTenant(tenantId, categoryId = null, onlyAvailable = false) {
+  async getMenusByTenant(tenantId, categoryId = null, onlyAvailable = false, pagination = null) {
     if (!tenantId) throw new Error("Missing tenantId");
 
     const filters = { tenant_id: tenantId };
@@ -22,7 +27,7 @@ class MenusService {
       filters.is_available = true;
     }
 
-    return await this.menusRepo.getAll(filters);
+    return await this.menusRepo.getAll(filters, pagination);
   }
 
   async getMenuById(id, tenantId) {
@@ -39,13 +44,32 @@ class MenusService {
   }
 
   async createMenu(menuData) {
-    const { tenantId, name, price, categoryId } = menuData;
+    const { tenantId, name, price, categoryId,
+             imgUrl, prepTimeMinutes, isAvailable } = menuData;
 
     // 1. Validation cơ bản
     if (!tenantId) throw new Error("Tenant ID is required");
     if (!categoryId) throw new Error("Category ID is required"); // Món ăn phải thuộc danh mục
     if (!name || name.trim() === "") throw new Error("Menu name is required");
     if (price === undefined || price < 0) throw new Error("Price must be a positive number");
+    if (isAvailable !== undefined && typeof isAvailable !== 'boolean') {
+        throw new Error("isAvailable must be a boolean");
+    }
+    if (imgUrl && typeof imgUrl !== 'string') {
+        throw new Error("Image URL must be a string");
+    }
+    // business logic
+    if (name.length > 80  || name.length < 2) {
+      throw new Error("Menu name must be between 2 and 80 characters");
+    }
+    if (price < 0.01 || price > 999999) {
+      throw new Error("Price must be between 0.01 and 999999");
+    }
+    if (prepTimeMinutes !== undefined && (prepTimeMinutes < 0 || prepTimeMinutes > 240)) {
+      throw new Error("Preparation time must be between 0 and 240 minutes");
+    }
+    //Kiểm tra category tồn tại ?
+     await this.categoryRepo.getById(categoryId);
 
     // 2. Check trùng tên (Optional - tùy logic nhà hàng có cho phép trùng tên ko)
     const existing = await this.menusRepo.findByName(tenantId, name.trim());
@@ -60,11 +84,17 @@ class MenusService {
 
   async updateMenu(id, tenantId, updates) {
     await this.getMenuById(id, tenantId); // Check quyền sở hữu
-
-    // Validate logic giá nếu có update giá
-    if (updates.price !== undefined && updates.price < 0) {
-      throw new Error("Price must be a positive number");
+    // business logic
+    if (updates.name && (updates.name.length > 80 || updates.name.length < 2)) {
+      throw new Error("Menu name must be between 2 and 80 characters");
     }
+    if (updates.price !== undefined && (updates.price < 0.01 || updates.price > 999999)) {
+      throw new Error("Price must be between 0.01 and 999999");
+    }
+    if (updates.prepTimeMinutes !== undefined && (updates.prepTimeMinutes < 0 || updates.prepTimeMinutes > 240)) {
+      throw new Error("Preparation time must be between 0 and 240 minutes");
+    }
+    updates.updatedAt = new Date(); // Cập nhật thời gian sửa đổi
 
     return await this.menusRepo.update(id, updates);
   }
