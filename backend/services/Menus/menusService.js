@@ -84,11 +84,17 @@ class MenusService {
 
   async updateMenu(id, tenantId, updates) {
     await this.getMenuById(id, tenantId); // Check quyền sở hữu
-
-    // Validate logic giá nếu có update giá
-    if (updates.price !== undefined && updates.price < 0) {
-      throw new Error("Price must be a positive number");
+    // business logic
+    if (updates.name && (updates.name.length > 80 || updates.name.length < 2)) {
+      throw new Error("Menu name must be between 2 and 80 characters");
     }
+    if (updates.price !== undefined && (updates.price < 0.01 || updates.price > 999999)) {
+      throw new Error("Price must be between 0.01 and 999999");
+    }
+    if (updates.prepTimeMinutes !== undefined && (updates.prepTimeMinutes < 0 || updates.prepTimeMinutes > 240)) {
+      throw new Error("Preparation time must be between 0 and 240 minutes");
+    }
+    updates.updatedAt = new Date(); // Cập nhật thời gian sửa đổi
 
     return await this.menusRepo.update(id, updates);
   }
