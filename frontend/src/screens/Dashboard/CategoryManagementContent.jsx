@@ -194,7 +194,7 @@ const CategoryManagementContent = () => {
           // Cập nhật local state
           setCategories(
             categories.map((cat) =>
-              cat.category_id === categoryId
+              cat.id === categoryId
                 ? { ...cat, is_active: newStatus }
                 : cat
             )
@@ -340,8 +340,15 @@ const CategoryManagementContent = () => {
       }
 
       // Chỉ gửi changedData đi thay vì toàn bộ categoryData
-      // Lưu ý: Đảm bảo dùng đúng key ID (id hoặc category_id tùy theo backend của bạn)
-      const idToUpdate = editingCategory.id || editingCategory.category_id;
+      // Backend trả về id (camelCase)
+      const idToUpdate = editingCategory.id;
+      
+      if (!idToUpdate) {
+        console.error("Category ID is missing:", editingCategory);
+        showAlert("Lỗi", "Không tìm thấy ID danh mục. Vui lòng thử lại!", "error");
+        return;
+      }
+      
       await handleUpdateCategory(idToUpdate, changedData);
     } else {
       // Tạo mới thì gửi toàn bộ
@@ -552,7 +559,7 @@ const CategoryManagementContent = () => {
             onEdit={handleEditClick}
             onDelete={handleDeleteClick}
             onToggleStatus={(category) =>
-              handleToggleStatus(category.category_id, category.is_active)
+              handleToggleStatus(category.id, category.is_active)
             }
             onRestore={handleRestoreCategory}
             onDeletePermanent={handleDeletePermanent}

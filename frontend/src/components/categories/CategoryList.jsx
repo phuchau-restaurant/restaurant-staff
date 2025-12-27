@@ -39,7 +39,7 @@ const CategoryList = ({ categories, onEdit, onDelete, onToggleStatus, onRestore,
             const isInactive = category.is_active === false;
             return (
               <tr
-                key={category.category_id}
+                key={category.id}
                 className={`hover:bg-gray-50 ${
                   isInactive ? "opacity-50 bg-gray-50" : ""
                 }`}

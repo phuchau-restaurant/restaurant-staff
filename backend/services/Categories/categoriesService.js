@@ -37,7 +37,6 @@ class CategoriesService {
     tenantId,
     name,
     description = "",
-    imageUrl = "",
     urlIcon = "",
     displayOrder = 0,
     isActive = true,
@@ -46,7 +45,7 @@ class CategoriesService {
     if (!tenantId) throw new Error("Tenant ID is required");
     if (!name || name.trim() === "")
       throw new Error("Category name is required");
-    // Optional: Validate description, imageUrl nếu cần
+    // Optional: Validate description nếu cần
     if (name.length > 50 || name.length < 2) {
       throw new Error("Category name must be between 2 and 50 characters");
     }
@@ -69,7 +68,6 @@ class CategoriesService {
       tenantId: tenantId,
       name: name.trim(),
       description: description,
-      imageUrl: imageUrl,
       urlIcon: urlIcon,
       displayOrder: displayOrder,
       isActive: isActive,
