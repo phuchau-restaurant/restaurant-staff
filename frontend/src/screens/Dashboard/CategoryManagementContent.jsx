@@ -8,7 +8,7 @@ import CategoryList from "../../components/categories/CategoryList";
 import CategoryForm from "../../components/categories/CategoryForm";
 import AlertModal from "../../components/Modal/AlertModal";
 import ConfirmModal from "../../components/Modal/ConfirmModal";
-import Pagination from "../../components/common/Pagination";
+import Pagination from "../../components/SpinnerLoad/Pagination";
 
 // Services & Utils
 import * as categoryService from "../../services/categoryService";
@@ -181,6 +181,14 @@ const CategoryManagementContent = () => {
       title: `Xác nhận ${actionText}`,
       message: `Bạn có chắc chắn muốn ${actionText} danh mục này?`,
       onConfirm: async () => {
+        // Đóng confirm dialog trước
+        setConfirmDialog({
+          isOpen: false,
+          title: "",
+          message: "",
+          onConfirm: null,
+        });
+
         try {
           await categoryService.updateCategoryStatus(categoryId, newStatus);
           // Cập nhật local state
@@ -203,13 +211,6 @@ const CategoryManagementContent = () => {
             `Không thể ${actionText} danh mục. Vui lòng thử lại!`,
             "error"
           );
-        } finally {
-          setConfirmDialog({
-            isOpen: false,
-            title: "",
-            message: "",
-            onConfirm: null,
-          });
         }
       },
     });

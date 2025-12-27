@@ -5,13 +5,13 @@ const HEADERS = {
 };
 
 /**
- * Xóa vĩnh viễn danh mục
+ * Xóa vĩnh viễn danh mục (Hard Delete)
  * @param {string} categoryId - ID danh mục
  * @returns {Promise<void>}
  */
 export const deleteCategoryPermanent = async (categoryId) => {
   try {
-    const response = await fetch(`${BASE_URL}/${categoryId}`, {
+    const response = await fetch(`${BASE_URL}/${categoryId}/permanent`, {
       method: "DELETE",
       headers: HEADERS,
     });
@@ -36,12 +36,14 @@ export const deleteCategoryPermanent = async (categoryId) => {
  * Fetch danh sách danh mục từ API
  * @param {string} searchTerm - Tìm kiếm theo tên (optional)
  * @param {Object} pagination - { pageNumber, pageSize } (optional)
+ * @param {string} status - Lọc theo trạng thái: 'active', 'inactive' (optional)
  * @returns {Promise<Object|Array>} Danh sách danh mục hoặc object có pagination
  */
-export const fetchCategories = async (searchTerm = "", pagination = null) => {
+export const fetchCategories = async (searchTerm = "", pagination = null, status = null) => {
   try {
     const queryParams = new URLSearchParams();
     if (searchTerm) queryParams.append("search", searchTerm);
+    if (status) queryParams.append("status", status);
     
     // Thêm pagination params nếu có
     if (pagination && pagination.pageNumber && pagination.pageSize) {
@@ -133,39 +135,17 @@ export const updateCategory = async (categoryId, categoryData) => {
  * @param {string} categoryId - ID danh mục
  * @returns {Promise<void>}
  */
-// Soft delete: cập nhật is_active = false
-// Soft delete: Lấy dữ liệu cũ -> cập nhật is_active = false -> Gửi PUT toàn bộ
+/**
+ * Xóa danh mục (Soft Delete)
+ * API backend sẽ tự động cập nhật is_active = false
+ * @param {string} categoryId - ID danh mục
+ * @returns {Promise<Object>}
+ */
 export const deleteCategory = async (categoryId) => {
   try {
-    // BƯỚC 1: Lấy thông tin hiện tại của danh mục
-    const getResponse = await fetch(`${BASE_URL}/${categoryId}`, {
-      method: "GET",
-      headers: HEADERS,
-    });
-
-    const getResult = await getResponse.json();
-
-    // Kiểm tra xem có lấy được dữ liệu không (tùy cấu trúc API của bạn mà có thể là getResult.data hoặc getResult)
-    if (!getResponse.ok || !getResult.data) {
-      throw new Error("Không thể lấy thông tin danh mục gốc");
-    }
-
-    const currentCategory = getResult.data;
-
-    // BƯỚC 2: Tạo payload đầy đủ
-    // Sử dụng Spread operator (...) để sao chép toàn bộ trường cũ, sau đó ghi đè is_active
-    const { name, ...otherFields } = currentCategory;
-
-    const updatedPayload = {
-      ...otherFields, // Spread các trường còn lại (đã không chứa name)
-      is_active: false,
-    };
-
-    // BƯỚC 3: Gửi PUT với đầy đủ dữ liệu
     const response = await fetch(`${BASE_URL}/${categoryId}`, {
-      method: "PUT",
+      method: "DELETE",
       headers: HEADERS,
-      body: JSON.stringify(updatedPayload),
     });
 
     const result = await response.json();

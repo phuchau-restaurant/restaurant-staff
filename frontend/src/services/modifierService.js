@@ -407,7 +407,7 @@ export const deleteModifier = async (groupId, optionId) => {
  */
 export const deleteModifierGroupPermanent = async (groupId) => {
   try {
-    const response = await fetch(`${BASE_URL}/modifier-groups/${groupId}/permanent`, {
+    const response = await fetch(`${BASE_URL}/modifier-groups/${groupId}`, {
       method: "DELETE", 
       headers: HEADERS,
     });

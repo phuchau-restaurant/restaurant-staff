@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Edit2, Trash2, ToggleLeft, ToggleRight, ChevronDown, ChevronUp } from "lucide-react";
+import { Edit2, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { formatPrice, formatDate, countActiveModifiers } from "../../utils/modifierUtils";
 import { useState } from "react";
 
@@ -7,7 +7,7 @@ import { useState } from "react";
  * ModifierGroupCard Component
  * Hiển thị nhóm modifier dạng card cho grid view
  */
-const ModifierGroupCard = memo(({ group, onEdit, onDelete, onToggleStatus, onRestore, onDeletePermanent }) => {
+const ModifierGroupCard = memo(({ group, onEdit, onDelete, onRestore, onDeletePermanent }) => {
   const [expanded, setExpanded] = useState(false);
   const activeCount = countActiveModifiers(group);
   const isInactive = group.isActive === false;
@@ -18,38 +18,24 @@ const ModifierGroupCard = memo(({ group, onEdit, onDelete, onToggleStatus, onRes
   return (
     <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all h-full flex flex-col">
       {/* Header */}
-      <div className={`relative p-4 bg-gradient-to-br from-blue-500 to-blue-700 ${inactiveStyle}`}>
-        <div className="flex items-start justify-between">
-          <div>
-            <h3 className="text-lg font-bold text-white">{group.name}</h3>
-            <p className="text-purple-100 text-sm mt-1">
-              {group.modifiers?.length || 0} options ({activeCount} active)
-            </p>
-          </div>
-          {/* Status toggle */}
-          <button
-            onClick={() => onToggleStatus(group)}
-            className="p-1 rounded hover:bg-white/20 transition-colors"
-            title={group.isActive ? "Đang hoạt động - Click để tắt" : "Không hoạt động - Click để bật"}
-          >
-            {group.isActive ? (
-              <ToggleRight className="w-8 h-8 text-green-300" />
-            ) : (
-              <ToggleLeft className="w-8 h-8 text-gray-300" />
-            )}
-          </button>
+      <div className="relative p-4 bg-gradient-to-br from-blue-500 to-blue-700">
+        <div className={inactiveStyle}>
+          <h3 className="text-lg font-bold text-white">{group.name}</h3>
+          <p className="text-purple-100 text-sm mt-1">
+            {group.modifiers?.length || 0} options ({activeCount} active)
+          </p>
         </div>
         
-        {/* Status badge */}
-        <div className="absolute bottom-2 right-2">
+        {/* Status badge - góc trên bên phải - KHÔNG bị làm mờ */}
+        <div className="absolute top-2 right-2">
           <span
-            className={`px-2 py-0.5 rounded text-xs font-semibold ${
-              group.isActive 
-                ? "bg-green-100 text-green-700" 
-                : "bg-gray-100 text-gray-600"
+            className={`px-2 py-1 rounded text-xs font-semibold ${
+              group.isActive
+                ? "bg-green-100 text-green-700"
+                : "bg-red-100 text-red-700"
             }`}
           >
-            {group.isActive ? "Active" : "Inactive"}
+            {group.isActive ? "Hoạt động" : "Không hoạt động"}
           </span>
         </div>
       </div>
