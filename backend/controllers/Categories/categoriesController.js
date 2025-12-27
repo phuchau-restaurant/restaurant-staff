@@ -81,8 +81,8 @@ class CategoriesController {
 
       const data = await this.categoriesService.getCategoryById(id, tenantId);
 
-      // Lọc bỏ id và tenantId (Object destructuring)
-      const { id: _id, tenantId: _tid, ...returnData } = data;
+      // Lọc bỏ tenantId, giữ lại id
+      const { tenantId: _tid, ...returnData } = data;
 
       return res.status(200).json({
         success: true,
@@ -107,8 +107,8 @@ class CategoriesController {
         tenantId: tenantId, // Force tenantId từ header/token, không tin tưởng body
       });
 
-      // Lọc bỏ id và tenantId
-      const { id: _id, tenantId: _tid, ...returnData } = newCategory;
+      // Lọc bỏ tenantId, giữ lại id
+      const { tenantId: _tid, ...returnData } = newCategory;
 
       return res.status(201).json({
         success: true,
@@ -134,8 +134,8 @@ class CategoriesController {
         req.body
       );
 
-      // Lọc bỏ id và tenantId
-      const { id: _id, tenantId: _tid, ...returnData } = updatedCategory;
+      // Lọc bỏ tenantId, giữ lại id
+      const { tenantId: _tid, ...returnData } = updatedCategory;
 
       return res.status(200).json({
         success: true,

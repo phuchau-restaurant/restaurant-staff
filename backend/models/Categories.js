@@ -20,7 +20,6 @@ export class Categories {
       this.description = data.description || data.desc;
     }
 
-    this.imageUrl = data.image_url || data.imageUrl || "";
     this.createdAt = (data.created_at ?? data.createdAt) ?? undefined;
     this.updatedAt = (data.updated_at ?? data.updatedAt) ?? undefined;
     // Đảm bảo isActive luôn là boolean hoặc undefined
@@ -55,11 +54,6 @@ export class Categories {
     // Thêm description nếu có
     if (this.description !== undefined && this.description !== null) {
       payload.description = this.description;
-    }
-
-    // Thêm image_url nếu có
-    if (this.imageUrl !== undefined && this.imageUrl !== null) {
-      payload.image_url = this.imageUrl;
     }
 
     // Thêm url_icon nếu có

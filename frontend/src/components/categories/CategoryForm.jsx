@@ -20,7 +20,6 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
     name: "",
     description: "",
     displayOrder: 0,
-    image: "",
     isActive: true,
     icon: "",
     modifiers: [],
@@ -80,7 +79,6 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
         name: category.name || "",
         description: category.description || "",
         displayOrder: category.displayOrder || 0,
-        image: category.image || "",
         isActive: category.isActive !== undefined ? category.isActive : true,
         icon: category.icon || categoryIcons[0]?.icon || "",
         modifiers: category.modifiers || [],
@@ -132,19 +130,6 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
     }
   };
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData((prev) => ({
-          ...prev,
-          image: reader.result,
-        }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -162,6 +147,20 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
       await onSubmit(formData);
     } catch (error) {
       console.error("Form submission error:", error);
+      // Hiển thị lỗi từ backend trong form
+      const errorMessage = error.message || "Có lỗi xảy ra. Vui lòng thử lại!";
+      
+      // Nếu là lỗi trùng tên, hiển thị ở field name
+      if (errorMessage.includes("already exists")) {
+        setErrors({
+          name: errorMessage
+        });
+      } else {
+        // Lỗi khác hiển thị chung
+        setErrors({
+          general: errorMessage
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -292,6 +291,13 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
         {/* Form Content */}
         <div className="flex-1 overflow-y-auto">
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            {/* General Error Message */}
+            {errors.general && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                <p className="text-sm">{errors.general}</p>
+              </div>
+            )}
+
             {/* Name */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -311,6 +317,11 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
               />
               {errors.name && (
                 <p className="text-red-600 text-sm mt-1">{errors.name}</p>
+              )}
+              {!errors.name && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Name is required, 2–50 characters. Unique per restaurant
+                </p>
               )}
             </div>
 
@@ -349,6 +360,7 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
                 value={formData.displayOrder}
                 onChange={handleInputChange}
                 min="0"
+                step="1"
                 placeholder="0"
                 className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
                   errors.displayOrder
@@ -361,9 +373,11 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
                   {errors.displayOrder}
                 </p>
               )}
-              <p className="text-xs text-gray-500 mt-1">
-                Số thứ tự để sắp xếp danh mục (0 = đầu tiên)
-              </p>
+              {!errors.displayOrder && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Display order must be a non-negative integer (0 = đầu tiên)
+                </p>
+              )}
             </div>
 
             {/* Active status */}

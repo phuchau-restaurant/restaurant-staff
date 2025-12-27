@@ -18,6 +18,7 @@ const MenuForm = ({
     description: "",
     price: "",
     categoryId: "",
+    preparationTime: "",
     isAvailable: true,
     images: [],
     selectedModifierGroups: [],
@@ -36,6 +37,7 @@ const MenuForm = ({
         description: menuItem.description || "",
         price: menuItem.price || "",
         categoryId: menuItem.categoryId || "",
+        preparationTime: menuItem.preparationTime || "",
         isAvailable:
           menuItem.isAvailable !== undefined ? menuItem.isAvailable : true,
         images: menuItem.images || [],
@@ -325,6 +327,11 @@ const MenuForm = ({
               {errors.name && (
                 <p className="text-red-600 text-sm mt-1">{errors.name}</p>
               )}
+              {!errors.name && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Name is required, 2–80 characters
+                </p>
+              )}
             </div>
 
             {/* Category & Price */}
@@ -355,6 +362,11 @@ const MenuForm = ({
                     {errors.categoryId}
                   </p>
                 )}
+                {!errors.categoryId && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Category must exist and belong to the same restaurant
+                  </p>
+                )}
               </div>
 
               <div>
@@ -367,7 +379,8 @@ const MenuForm = ({
                   value={formData.price}
                   onChange={handleInputChange}
                   placeholder="0"
-                  min="0"
+                  min="0.01"
+                  step="0.01"
                   className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
                     errors.price
                       ? "border-red-500 focus:ring-red-500"
@@ -376,6 +389,11 @@ const MenuForm = ({
                 />
                 {errors.price && (
                   <p className="text-red-600 text-sm mt-1">{errors.price}</p>
+                )}
+                {!errors.price && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Price must be a positive number (e.g., 0.01 to 999999)
+                  </p>
                 )}
               </div>
             </div>
@@ -393,6 +411,38 @@ const MenuForm = ({
                 rows={3}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+            </div>
+
+            {/* Preparation Time */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Thời gian chuẩn bị (phút)
+              </label>
+              <input
+                type="number"
+                name="preparationTime"
+                value={formData.preparationTime}
+                onChange={handleInputChange}
+                placeholder="0"
+                min="0"
+                max="240"
+                step="1"
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                  errors.preparationTime
+                    ? "border-red-500 focus:ring-red-500"
+                    : "border-gray-300 focus:ring-blue-500"
+                }`}
+              />
+              {errors.preparationTime && (
+                <p className="text-red-600 text-sm mt-1">
+                  {errors.preparationTime}
+                </p>
+              )}
+              {!errors.preparationTime && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Preparation time must be a non-negative integer (0–240 suggested)
+                </p>
+              )}
             </div>
 
             {/* Is Available */}
