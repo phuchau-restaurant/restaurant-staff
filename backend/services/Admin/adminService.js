@@ -131,6 +131,7 @@ export default class AdminService {
       });
 
       // 3. Tạo URL cho customer login
+
       const customerLoginUrl = `${CUSTOMER_URL}/login?token=${jwtToken}`;
 
       // 4. Generate QR image
@@ -246,7 +247,7 @@ export default class AdminService {
         expiresIn: `${QR_EXPIRE_DAYS}d`,
       });
 
-      const customerLoginUrl = `${FRONTEND_URL}/login?token=${jwtToken}`;
+      const customerLoginUrl = `${CUSTOMER_URL}/login?token=${jwtToken}`;
 
       // 4. Generate QR code theo format
       if (format === "pdf") {
