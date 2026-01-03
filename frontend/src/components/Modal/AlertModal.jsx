@@ -1,12 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  X,
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
-  Info,
-} from "lucide-react";
+import { X, CheckCircle, XCircle, AlertTriangle, Info } from "lucide-react";
 
 const AlertModal = ({ isOpen, onClose, title, message, type = "info" }) => {
   const getIcon = () => {
@@ -53,7 +47,7 @@ const AlertModal = ({ isOpen, onClose, title, message, type = "info" }) => {
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm bg-black/50"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm bg-white/30"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -83,7 +77,11 @@ const AlertModal = ({ isOpen, onClose, title, message, type = "info" }) => {
                 {getIcon()}
               </motion.div>
 
-              {title && <h3 className="mt-4 text-2xl font-bold text-gray-800 text-center">{title}</h3>}
+              {title && (
+                <h3 className="mt-4 text-2xl font-bold text-gray-800 text-center">
+                  {title}
+                </h3>
+              )}
             </div>
 
             {/* Body */}
@@ -100,14 +98,13 @@ const AlertModal = ({ isOpen, onClose, title, message, type = "info" }) => {
 
             {/* Footer */}
             <div className="p-6 pt-0">
-                <button
-                    onClick={onClose}
-                    className={`w-full ${colors.button} text-white py-3 rounded-xl font-semibold text-lg shadow-lg transition-all`}
-                >
-                    OK
-                </button>
+              <button
+                onClick={onClose}
+                className={`w-full ${colors.button} text-white py-3 rounded-xl font-semibold text-lg shadow-lg transition-all`}
+              >
+                OK
+              </button>
             </div>
-
           </motion.div>
         </motion.div>
       )}

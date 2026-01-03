@@ -8,6 +8,7 @@ import ModifierManagementContent from "../../screens/Dashboard/ModifierManagemen
 import SalesContent from "../../screens/Dashboard/SalesContent";
 import FeedbackContent from "../../screens/Dashboard/FeedbackContent";
 import TablesScreen from "../../screens/TablesScreen";
+import StaffScreen from "../../screens/StaffScreen";
 
 const DashboardLayout = () => {
   const [activeMenu, setActiveMenu] = useState("dashboard");
@@ -26,6 +27,8 @@ const DashboardLayout = () => {
         return <MenuManagementContent />;
       case "modifiers":
         return <ModifierManagementContent />;
+      case "staff":
+        return <StaffScreen />;
       case "sales":
         return <SalesContent />;
       case "feedback":
