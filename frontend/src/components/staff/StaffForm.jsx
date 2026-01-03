@@ -90,8 +90,15 @@ const StaffForm = ({ staff, onSubmit, onClose }) => {
     try {
       setIsSubmitting(true);
 
-      // Prepare data - không gửi password nếu đang edit và password rỗng
+      // Prepare data
       const submitData = { ...formData };
+
+      // Khi edit: không gửi email (backend kiểm tra trùng email)
+      if (staff && submitData.email !== undefined) {
+        delete submitData.email;
+      }
+
+      // Không gửi password nếu đang edit và password rỗng
       if (staff && !formData.password) {
         delete submitData.password;
       }
@@ -168,9 +175,10 @@ const StaffForm = ({ staff, onSubmit, onClose }) => {
                 value={formData.email}
                 onChange={handleInputChange}
                 placeholder="email@example.com"
+                disabled={!!staff}
                 className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.email ? "border-red-500" : "border-gray-300"
-                }`}
+                } ${staff ? "bg-gray-50 cursor-not-allowed" : ""}`}
               />
             </div>
             {errors.email && (
