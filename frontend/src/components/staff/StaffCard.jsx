@@ -5,7 +5,6 @@ import {
   ToggleRight,
   RotateCcw,
   Trash,
-  Key,
   Mail,
   User,
   Briefcase,
@@ -57,14 +56,14 @@ const StaffCard = ({
 
   return (
     <div
-      className={`bg-white rounded-lg border-2 ${
-        roleConfig.borderColor
-      } shadow-sm hover:shadow-md transition-all ${
-        isInactive ? "opacity-50" : ""
-      }`}
+      className={`bg-white rounded-lg border-2 ${roleConfig.borderColor} shadow-sm hover:shadow-md transition-all`}
     >
       {/* Header với avatar và role badge */}
-      <div className={`${roleConfig.color} p-4 rounded-t-lg`}>
+      <div
+        className={`${roleConfig.color} p-4 rounded-t-lg ${
+          isInactive ? "opacity-50" : ""
+        }`}
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex-shrink-0 h-12 w-12 rounded-full bg-white flex items-center justify-center shadow-sm">
@@ -84,7 +83,7 @@ const StaffCard = ({
       </div>
 
       {/* Body */}
-      <div className="p-4 space-y-3">
+      <div className={`p-4 space-y-3 ${isInactive ? "opacity-50" : ""}`}>
         {/* Email */}
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <Mail className="w-4 h-4 flex-shrink-0" />
@@ -150,18 +149,12 @@ const StaffCard = ({
                 Sửa
               </button>
               <button
-                onClick={() => onChangePassword && onChangePassword(member)}
-                className="flex items-center justify-center px-3 py-2 bg-green-50 hover:bg-green-100 text-green-700 rounded-lg transition-all"
-                title="Đổi mật khẩu"
-              >
-                <Key size={16} />
-              </button>
-              <button
                 onClick={() => onDelete(member)}
-                className="flex items-center justify-center px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg transition-all"
+                className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg font-medium transition-all text-sm"
                 title="Vô hiệu hóa"
               >
                 <Trash2 size={16} />
+                Xóa
               </button>
             </>
           )}

@@ -5,7 +5,6 @@ import {
   ToggleRight,
   RotateCcw,
   Trash,
-  Key,
   Mail,
   User,
   Briefcase,
@@ -87,13 +86,12 @@ const StaffList = ({
             const isInactive =
               member.isActive === false || member.is_active === false;
             return (
-              <tr
-                key={member.id}
-                className={`hover:bg-gray-50 ${
-                  isInactive ? "opacity-50 bg-gray-50" : ""
-                }`}
-              >
-                <td className="px-6 py-4 whitespace-nowrap">
+              <tr key={member.id} className={`hover:bg-gray-50`}>
+                <td
+                  className={`px-6 py-4 whitespace-nowrap ${
+                    isInactive ? "opacity-50 bg-gray-50" : ""
+                  }`}
+                >
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
                       <User className="w-5 h-5 text-blue-600" />
@@ -105,16 +103,28 @@ const StaffList = ({
                     </div>
                   </div>
                 </td>
-                <td className="px-6 py-4">
+                <td
+                  className={`px-6 py-4 ${
+                    isInactive ? "opacity-50 bg-gray-50" : ""
+                  }`}
+                >
                   <div className="flex items-center text-sm text-gray-500">
                     <Mail className="w-4 h-4 mr-2" />
                     {member.email}
                   </div>
                 </td>
-                <td className="px-6 py-4 text-center whitespace-nowrap">
+                <td
+                  className={`px-6 py-4 text-center whitespace-nowrap ${
+                    isInactive ? "opacity-50 bg-gray-50" : ""
+                  }`}
+                >
                   {getRoleBadge(member.role)}
                 </td>
-                <td className="px-6 py-4 text-center whitespace-nowrap">
+                <td
+                  className={`px-6 py-4 text-center whitespace-nowrap ${
+                    isInactive ? "opacity-50 bg-gray-50" : ""
+                  }`}
+                >
                   <button
                     onClick={() => onToggleStatus(member)}
                     className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
@@ -163,23 +173,14 @@ const StaffList = ({
                       <>
                         <button
                           onClick={() => onEdit(member)}
-                          className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-50 rounded"
+                          className="w-10 h-10 flex items-center justify-center text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded"
                           title="Chỉnh sửa"
                         >
                           <Edit2 size={18} />
                         </button>
                         <button
-                          onClick={() =>
-                            onChangePassword && onChangePassword(member)
-                          }
-                          className="text-green-600 hover:text-green-900 p-1 hover:bg-green-50 rounded"
-                          title="Đổi mật khẩu"
-                        >
-                          <Key size={18} />
-                        </button>
-                        <button
                           onClick={() => onDelete(member)}
-                          className="text-red-600 hover:text-red-900 p-1 hover:bg-red-50 rounded"
+                          className="w-10 h-10 flex items-center justify-center text-red-600 hover:text-red-900 hover:bg-red-50 rounded"
                           title="Vô hiệu hóa"
                         >
                           <Trash2 size={18} />

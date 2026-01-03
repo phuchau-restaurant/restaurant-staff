@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { X, Mail, User, Lock, Briefcase } from "lucide-react";
 
 /**
@@ -16,6 +16,23 @@ const StaffForm = ({ staff, onSubmit, onClose }) => {
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Drag & resize state (consistent with other forms)
+  const modalRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [modalPos, setModalPos] = useState({
+    x: window.innerWidth / 2 - 400,
+    y: window.innerHeight / 2 - 300,
+  });
+  const [modalSize, setModalSize] = useState({ width: 800, height: 600 });
+  const [isResizing, setIsResizing] = useState(false);
+  const [resizeStart, setResizeStart] = useState({
+    x: 0,
+    y: 0,
+    width: 800,
+    height: 600,
+  });
 
   // Initialize form with staff data if editing
   useEffect(() => {
@@ -114,11 +131,94 @@ const StaffForm = ({ staff, onSubmit, onClose }) => {
     }
   };
 
+  // Drag handlers
+  const onDragStart = (e) => {
+    setIsDragging(true);
+    setDragOffset({ x: e.clientX - modalPos.x, y: e.clientY - modalPos.y });
+  };
+  const onDrag = (e) => {
+    if (!isDragging) return;
+    setModalPos({ x: e.clientX - dragOffset.x, y: e.clientY - dragOffset.y });
+  };
+  const onDragEnd = () => setIsDragging(false);
+
+  // Resize handlers
+  const onResizeStart = (e) => {
+    setIsResizing(true);
+    setResizeStart({
+      x: e.clientX,
+      y: e.clientY,
+      width: modalSize.width,
+      height: modalSize.height,
+    });
+    e.stopPropagation();
+  };
+  const onResize = (e) => {
+    if (!isResizing) return;
+    setModalSize({
+      width: Math.max(400, resizeStart.width + (e.clientX - resizeStart.x)),
+      height: Math.max(300, resizeStart.height + (e.clientY - resizeStart.y)),
+    });
+  };
+  const onResizeEnd = () => setIsResizing(false);
+
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener("mousemove", onDrag);
+      window.addEventListener("mouseup", onDragEnd);
+    } else {
+      window.removeEventListener("mousemove", onDrag);
+      window.removeEventListener("mouseup", onDragEnd);
+    }
+    return () => {
+      window.removeEventListener("mousemove", onDrag);
+      window.removeEventListener("mouseup", onDragEnd);
+    };
+  }, [isDragging, dragOffset, modalPos]);
+
+  useEffect(() => {
+    if (isResizing) {
+      window.addEventListener("mousemove", onResize);
+      window.addEventListener("mouseup", onResizeEnd);
+    } else {
+      window.removeEventListener("mousemove", onResize);
+      window.removeEventListener("mouseup", onResizeEnd);
+    }
+    return () => {
+      window.removeEventListener("mousemove", onResize);
+      window.removeEventListener("mouseup", onResizeEnd);
+    };
+  }, [isResizing, resizeStart, modalSize]);
+
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 p-4 backdrop-blur-sm bg-white/10">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
+    <div className="fixed inset-0 bg-black/10 backdrop-blur-sm z-50 p-4 select-none">
+      <div
+        ref={modalRef}
+        style={{
+          position: "absolute",
+          left: modalPos.x,
+          top: modalPos.y,
+          width: modalSize.width,
+          height: modalSize.height,
+          minWidth: 400,
+          minHeight: 300,
+          maxWidth: "100vw",
+          maxHeight: "100vh",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
+          background: "white",
+          borderRadius: 12,
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+        }}
+        className="shadow-2xl border border-gray-200"
+      >
+        {/* Drag bar / Header */}
+        <div
+          className="cursor-move bg-gray-100 px-6 py-3 flex items-center justify-between border-b border-gray-200"
+          onMouseDown={onDragStart}
+          style={{ userSelect: "none" }}
+        >
           <h2 className="text-xl font-semibold text-gray-900">
             {staff ? "Chỉnh sửa nhân viên" : "Thêm nhân viên mới"}
           </h2>
@@ -131,7 +231,10 @@ const StaffForm = ({ staff, onSubmit, onClose }) => {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form
+          onSubmit={handleSubmit}
+          className="p-6 space-y-4 flex-1 overflow-y-auto"
+        >
           {/* Error tổng quát */}
           {errors.submit && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
@@ -276,6 +379,15 @@ const StaffForm = ({ staff, onSubmit, onClose }) => {
             </button>
           </div>
         </form>
+
+        {/* Resize handle */}
+        <div
+          onMouseDown={onResizeStart}
+          className="absolute right-0 bottom-0 w-6 h-6 cursor-nwse-resize z-20 flex items-end justify-end"
+          style={{ userSelect: "none" }}
+        >
+          <div className="w-4 h-4 bg-gray-200 rounded-br-lg border-r-2 border-b-2 border-gray-400" />
+        </div>
       </div>
     </div>
   );

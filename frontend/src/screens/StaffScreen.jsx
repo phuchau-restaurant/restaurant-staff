@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Users, Key } from "lucide-react";
+import { Users, Key, Plus } from "lucide-react";
 
 // Components
 import StaffFilterBar from "../components/staff/StaffFilterBar";
@@ -44,7 +44,7 @@ const StaffScreen = () => {
   // State quản lý UI
   const [showForm, setShowForm] = useState(false);
   const [editingStaff, setEditingStaff] = useState(null);
-  const [viewMode, setViewMode] = useState("list"); // 'grid' or 'list'
+  const [viewMode, setViewMode] = useState("grid"); // 'grid' or 'list'
 
   // State quản lý filters
   const [searchTerm, setSearchTerm] = useState("");
@@ -346,6 +346,7 @@ const StaffScreen = () => {
               onClick={handleCreate}
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors font-semibold"
             >
+              <Plus className="w-4 h-4" />
               Thêm nhân viên
             </button>
           </div>
@@ -486,6 +487,7 @@ const StaffScreen = () => {
       {/* Alert Modal */}
       {alert.isOpen && (
         <AlertModal
+          isOpen={alert.isOpen}
           type={alert.type}
           message={alert.message}
           onClose={closeAlert}
@@ -495,10 +497,11 @@ const StaffScreen = () => {
       {/* Confirm Modal */}
       {confirmDialog.isOpen && (
         <ConfirmModal
+          isOpen={confirmDialog.isOpen}
           title={confirmDialog.title}
           message={confirmDialog.message}
           onConfirm={confirmDialog.onConfirm}
-          onCancel={closeConfirmDialog}
+          onClose={closeConfirmDialog}
           type={confirmDialog.type}
         />
       )}
