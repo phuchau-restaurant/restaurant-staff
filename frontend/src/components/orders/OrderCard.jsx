@@ -6,6 +6,8 @@ import {
   UtensilsCrossed,
   AlertTriangle,
   DollarSign,
+  RotateCcw,
+  Trash,
 } from "lucide-react";
 import {
   formatPrice,
@@ -23,7 +25,15 @@ import { DEFAULT_PREP_TIME } from "../../constants/orderConstants";
  * Hiển thị đơn hàng dạng card cho grid view
  */
 const OrderCard = memo(
-  ({ order, onEdit, onDelete, prepTime = DEFAULT_PREP_TIME }) => {
+  ({
+    order,
+    onEdit,
+    onDelete,
+    onRestore,
+    onDeletePermanent,
+    prepTime = DEFAULT_PREP_TIME,
+  }) => {
+    const isCancelled = order.status === "Cancelled";
     const isOverdue = isOrderOverdue(order.createdAt, prepTime, order.status);
     const itemsCount = getTotalItemsCount(order.items);
     const statusColor = getOrderStatusColor(order.status);
@@ -41,7 +51,7 @@ const OrderCard = memo(
             isOverdue
               ? "bg-red-50"
               : "bg-gradient-to-r from-blue-50 to-indigo-50"
-          }`}
+          } ${isCancelled ? "bg-gray-100 opacity-50" : ""}`}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -66,7 +76,11 @@ const OrderCard = memo(
         </div>
 
         {/* Body */}
-        <div className="p-4 flex-1 flex flex-col gap-3">
+        <div
+          className={`p-4 flex-1 flex flex-col gap-3 ${
+            isCancelled ? "opacity-50" : ""
+          }`}
+        >
           {/* Overdue Warning */}
           {isOverdue && (
             <div className="flex items-center gap-2 p-2 bg-red-100 border border-red-300 rounded-lg">
@@ -141,7 +155,11 @@ const OrderCard = memo(
           )}
 
           {/* Timestamps */}
-          <div className="mt-auto pt-3 border-t border-gray-200 text-xs text-gray-500">
+          <div
+            className={`mt-auto pt-3 border-t border-gray-200 text-xs text-gray-500 ${
+              isCancelled ? "opacity-50" : ""
+            }`}
+          >
             <div className="flex justify-between">
               <span>Tạo lúc:</span>
               <span>{formatDateShort(order.createdAt)}</span>
@@ -158,21 +176,44 @@ const OrderCard = memo(
         {/* Footer - Actions */}
         <div className="p-4 pt-0">
           <div className="flex gap-2">
-            <button
-              onClick={() => onEdit(order)}
-              className="flex-1 flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold py-2 px-3 rounded-lg transition-colors"
-            >
-              <Edit2 className="w-4 h-4" />
-              Chỉnh sửa
-            </button>
-            {onDelete && (
-              <button
-                onClick={() => onDelete(order)}
-                className="flex-1 flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-2 px-3 rounded-lg transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-                Xóa
-              </button>
+            {isCancelled ? (
+              <>
+                <button
+                  onClick={() => onRestore && onRestore(order)}
+                  className="flex-1 flex items-center justify-center gap-2 bg-green-50 hover:bg-green-100 text-green-700 font-semibold py-2 px-3 rounded-lg transition-colors"
+                  title="Khôi phục"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  Khôi phục
+                </button>
+                <button
+                  onClick={() => onDeletePermanent && onDeletePermanent(order)}
+                  className="flex-1 flex items-center justify-center gap-2 bg-red-100 hover:bg-red-200 text-red-700 font-semibold py-2 px-3 rounded-lg transition-colors"
+                  title="Xóa vĩnh viễn"
+                >
+                  <Trash className="w-4 h-4" />
+                  Xóa vĩnh viễn
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => onEdit(order)}
+                  className="flex-1 flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold py-2 px-3 rounded-lg transition-colors"
+                >
+                  <Edit2 className="w-4 h-4" />
+                  Chỉnh sửa
+                </button>
+                {onDelete && (
+                  <button
+                    onClick={() => onDelete(order)}
+                    className="flex-1 flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-2 px-3 rounded-lg transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Xóa
+                  </button>
+                )}
+              </>
             )}
           </div>
         </div>

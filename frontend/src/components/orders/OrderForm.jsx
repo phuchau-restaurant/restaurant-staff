@@ -1,11 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { X, Plus, Trash2, Minus, ShoppingCart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  formatPrice,
-  validateOrderData,
-  calculateOrderTotal,
-} from "../../utils/orderUtils";
+import { formatPrice, validateOrderData } from "../../utils/orderUtils";
 
 /**
  * OrderForm Component
@@ -49,6 +45,23 @@ const OrderForm = ({
     }
   }, [order]);
 
+  // Drag & resize state (like StaffForm)
+  const modalRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [modalPos, setModalPos] = useState({
+    x: window.innerWidth / 2 - 500,
+    y: window.innerHeight / 2 - 350,
+  });
+  const [modalSize, setModalSize] = useState({ width: 1000, height: 700 });
+  const [isResizing, setIsResizing] = useState(false);
+  const [resizeStart, setResizeStart] = useState({
+    x: 0,
+    y: 0,
+    width: 1000,
+    height: 700,
+  });
+
   // Handle chọn món ăn
   const handleSelectDish = (dish) => {
     setSelectedDish(dish);
@@ -56,6 +69,67 @@ const OrderForm = ({
     setQuantity(1);
     setNote("");
   };
+
+  // Drag handlers
+  const onDragStart = (e) => {
+    setIsDragging(true);
+    setDragOffset({ x: e.clientX - modalPos.x, y: e.clientY - modalPos.y });
+  };
+  const onDrag = (e) => {
+    if (!isDragging) return;
+    setModalPos({ x: e.clientX - dragOffset.x, y: e.clientY - dragOffset.y });
+  };
+  const onDragEnd = () => setIsDragging(false);
+
+  // Resize handlers
+  const onResizeStart = (e) => {
+    setIsResizing(true);
+    setResizeStart({
+      x: e.clientX,
+      y: e.clientY,
+      width: modalSize.width,
+      height: modalSize.height,
+    });
+    e.stopPropagation();
+  };
+  const onResize = (e) => {
+    if (!isResizing) return;
+    setModalSize({
+      width: Math.max(600, resizeStart.width + (e.clientX - resizeStart.x)),
+      height: Math.max(400, resizeStart.height + (e.clientY - resizeStart.y)),
+    });
+  };
+  const onResizeEnd = () => setIsResizing(false);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener("mousemove", onDrag);
+      window.addEventListener("mouseup", onDragEnd);
+    } else {
+      window.removeEventListener("mousemove", onDrag);
+      window.removeEventListener("mouseup", onDragEnd);
+    }
+    return () => {
+      window.removeEventListener("mousemove", onDrag);
+      window.removeEventListener("mouseup", onDragEnd);
+    };
+  }, [isDragging]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (isResizing) {
+      window.addEventListener("mousemove", onResize);
+      window.addEventListener("mouseup", onResizeEnd);
+    } else {
+      window.removeEventListener("mousemove", onResize);
+      window.removeEventListener("mouseup", onResizeEnd);
+    }
+    return () => {
+      window.removeEventListener("mousemove", onResize);
+      window.removeEventListener("mouseup", onResizeEnd);
+    };
+  }, [isResizing]);
 
   // Handle chọn/bỏ chọn modifier
   const handleToggleModifier = (optionId, groupId, optionName, price) => {
@@ -193,26 +267,42 @@ const OrderForm = ({
         exit={{ opacity: 0 }}
       >
         <motion.div
-          className="relative bg-white rounded-3xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden"
-          initial={{ scale: 0.8, opacity: 0, y: 50 }}
+          className="relative bg-white rounded-3xl shadow-2xl overflow-hidden"
+          initial={{ scale: 0.9, opacity: 0, y: 30 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.8, opacity: 0, y: 50 }}
+          exit={{ scale: 0.9, opacity: 0, y: 30 }}
           transition={{ type: "spring", stiffness: 300, damping: 25 }}
           onClick={(e) => e.stopPropagation()}
+          ref={modalRef}
+          style={{
+            position: "absolute",
+            left: modalPos.x,
+            top: modalPos.y,
+            width: modalSize.width,
+            height: modalSize.height,
+            minWidth: 600,
+            minHeight: 400,
+            maxWidth: "100vw",
+            maxHeight: "100vh",
+            display: "flex",
+            flexDirection: "column",
+          }}
         >
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold">
-                {order ? "Chỉnh Sửa Đơn Hàng" : "Thêm Đơn Hàng Mới"}
-              </h2>
-              <button
-                onClick={onClose}
-                className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
+          <div
+            className="cursor-move bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 flex items-center justify-between"
+            onMouseDown={onDragStart}
+            style={{ userSelect: "none" }}
+          >
+            <h2 className="text-2xl font-bold">
+              {order ? "Chỉnh Sửa Đơn Hàng" : "Thêm Đơn Hàng Mới"}
+            </h2>
+            <button
+              onClick={onClose}
+              className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
           </div>
 
           {/* Body */}
@@ -535,6 +625,11 @@ const OrderForm = ({
               {isSubmitting ? "Đang lưu..." : order ? "Cập Nhật" : "Tạo Đơn"}
             </button>
           </div>
+          <div
+            onMouseDown={onResizeStart}
+            className="absolute right-3 bottom-3 w-4 h-4 cursor-se-resize rounded bg-gray-200"
+            title="Kéo để thay đổi kích thước"
+          />
         </motion.div>
       </motion.div>
     </AnimatePresence>

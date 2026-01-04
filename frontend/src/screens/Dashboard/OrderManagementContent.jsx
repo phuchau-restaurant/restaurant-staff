@@ -193,16 +193,73 @@ const OrderManagementContent = () => {
   };
 
   /**
-   * Xóa đơn hàng
+   * Vô hiệu hóa (soft-delete) đơn hàng bằng cách cập nhật trạng thái thành CANCELLED
    */
   const handleDeleteOrder = async (orderId) => {
     try {
-      await orderService.deleteOrder(orderId);
-      setOrders((prev) => prev.filter((order) => order.id !== orderId));
-      showAlert("Thành công", MESSAGES.DELETE_SUCCESS, "success");
+      await orderService.updateOrderStatus(orderId, ORDER_STATUS.CANCELLED);
+
+      // Update local state: mark order as cancelled
+      setOrders((prev) =>
+        prev.map((order) =>
+          order.id === orderId
+            ? { ...order, status: ORDER_STATUS.CANCELLED }
+            : order
+        )
+      );
+
+      showAlert("Thành công", "Đã hủy đơn hàng", "success");
     } catch (error) {
-      console.error("Delete order error:", error);
+      console.error("Delete(order -> cancel) error:", error);
       showAlert("Lỗi", error.message || MESSAGES.DELETE_ERROR, "error");
+    }
+  };
+
+  /**
+   * Khôi phục đơn hàng (từ CANCELLED về PENDING)
+   */
+  const handleRestoreOrder = async (orderId) => {
+    try {
+      await orderService.restoreOrder(orderId, ORDER_STATUS.PENDING);
+
+      // Update local state: restore order to PENDING
+      setOrders((prev) =>
+        prev.map((order) =>
+          order.id === orderId
+            ? { ...order, status: ORDER_STATUS.PENDING }
+            : order
+        )
+      );
+
+      showAlert("Thành công", "Đã khôi phục đơn hàng", "success");
+    } catch (error) {
+      console.error("Restore order error:", error);
+      showAlert(
+        "Lỗi",
+        error.message || "Không thể khôi phục đơn hàng",
+        "error"
+      );
+    }
+  };
+
+  /**
+   * Xóa vĩnh viễn đơn hàng
+   */
+  const handleDeleteOrderPermanent = async (orderId) => {
+    try {
+      await orderService.deleteOrderPermanent(orderId);
+
+      // Remove from local state
+      setOrders((prev) => prev.filter((order) => order.id !== orderId));
+
+      showAlert("Thành công", "Đã xóa vĩnh viễn đơn hàng", "success");
+    } catch (error) {
+      console.error("Delete order permanently error:", error);
+      showAlert(
+        "Lỗi",
+        error.message || "Không thể xóa vĩnh viễn đơn hàng",
+        "error"
+      );
     }
   };
 
@@ -256,10 +313,50 @@ const OrderManagementContent = () => {
   const handleDeleteClick = (order) => {
     setConfirmDialog({
       isOpen: true,
-      title: "Xác nhận xóa",
-      message: `Bạn có chắc chắn muốn xóa đơn hàng #${order.id}?`,
+      title: "Xác nhận hủy đơn hàng",
+      message: `Bạn có chắc chắn muốn hủy (vô hiệu hóa) đơn hàng #${order.id}?`,
       onConfirm: () => {
         handleDeleteOrder(order.id);
+        setConfirmDialog({
+          isOpen: false,
+          title: "",
+          message: "",
+          onConfirm: null,
+        });
+      },
+    });
+  };
+
+  /**
+   * Xử lý click restore
+   */
+  const handleRestoreClick = (order) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Xác nhận khôi phục",
+      message: `Bạn có chắc chắn muốn khôi phục đơn hàng #${order.id}?`,
+      onConfirm: () => {
+        handleRestoreOrder(order.id);
+        setConfirmDialog({
+          isOpen: false,
+          title: "",
+          message: "",
+          onConfirm: null,
+        });
+      },
+    });
+  };
+
+  /**
+   * Xử lý click permanent delete
+   */
+  const handleDeletePermanentClick = (order) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Xác nhận xóa vĩnh viễn",
+      message: `Bạn có chắc chắn muốn xóa vĩnh viễn đơn hàng #${order.id}? Hành động này không thể hoàn tác!`,
+      onConfirm: () => {
+        handleDeleteOrderPermanent(order.id);
         setConfirmDialog({
           isOpen: false,
           title: "",
@@ -435,6 +532,8 @@ const OrderManagementContent = () => {
                 order={order}
                 onEdit={handleEditClick}
                 onDelete={handleDeleteClick}
+                onRestore={handleRestoreClick}
+                onDeletePermanent={handleDeletePermanentClick}
                 prepTime={prepTime}
               />
             ))}
@@ -444,6 +543,8 @@ const OrderManagementContent = () => {
             orders={filteredOrders}
             onEdit={handleEditClick}
             onDelete={handleDeleteClick}
+            onRestore={handleRestoreClick}
+            onDeletePermanent={handleDeletePermanentClick}
             prepTime={prepTime}
           />
         )}

@@ -231,3 +231,52 @@ export const updateOrderDetailStatus = async (
     throw error;
   }
 };
+
+/**
+ * Khôi phục đơn hàng (restore từ CANCELLED về PENDING)
+ * @param {string} orderId - ID đơn hàng
+ * @param {string} newStatus - Trạng thái mới (mặc định: Pending)
+ * @returns {Promise<Object>}
+ */
+export const restoreOrder = async (orderId, newStatus = "Pending") => {
+  try {
+    const response = await fetch(`${BASE_URL}/${orderId}`, {
+      method: "PUT",
+      headers: HEADERS,
+      body: JSON.stringify({ status: newStatus }),
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      return result.data;
+    }
+    throw new Error(result.message || "Failed to restore order");
+  } catch (error) {
+    console.error("Restore order error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Xóa vĩnh viễn đơn hàng (hard delete)
+ * @param {string} orderId - ID đơn hàng
+ * @returns {Promise<void>}
+ */
+export const deleteOrderPermanent = async (orderId) => {
+  try {
+    const response = await fetch(`${BASE_URL}/${orderId}`, {
+      method: "DELETE",
+      headers: HEADERS,
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.message || "Failed to delete order permanently");
+    }
+  } catch (error) {
+    console.error("Delete order permanently error:", error);
+    throw error;
+  }
+};
