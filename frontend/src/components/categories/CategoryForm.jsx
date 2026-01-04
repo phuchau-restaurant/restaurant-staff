@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { X, Upload } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { validateCategoryData } from "../../utils/categoryUtils";
 import { fetchCategoryIcons } from "../../services/appSettingsService";
 
@@ -130,7 +132,6 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
     }
   };
 
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -149,16 +150,16 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
       console.error("Form submission error:", error);
       // Hiển thị lỗi từ backend trong form
       const errorMessage = error.message || "Có lỗi xảy ra. Vui lòng thử lại!";
-      
+
       // Nếu là lỗi trùng tên, hiển thị ở field name
       if (errorMessage.includes("already exists")) {
         setErrors({
-          name: errorMessage
+          name: errorMessage,
         });
       } else {
         // Lỗi khác hiển thị chung
         setErrors({
-          general: errorMessage
+          general: errorMessage,
         });
       }
     } finally {
@@ -248,248 +249,263 @@ const CategoryForm = ({ category, onSubmit, onClose }) => {
     };
   }, [isResizing, resizeStart, modalSize]);
 
-  return (
-    <div className="fixed inset-0 bg-black/10 backdrop-blur-sm z-50 p-4 select-none">
-      <div
-        ref={modalRef}
-        style={{
-          position: "absolute",
-          left: modalPos.x,
-          top: modalPos.y,
-          width: modalSize.width,
-          height: modalSize.height,
-          minWidth: 400,
-          minHeight: 300,
-          maxWidth: "100vw",
-          maxHeight: "100vh",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
-          background: "white",
-          borderRadius: 12,
-          overflow: "hidden",
-          display: "flex",
-          flexDirection: "column",
-        }}
-        className="shadow-2xl border border-gray-200"
-      >
-        {/* Drag bar */}
-        <div
-          className="cursor-move bg-gray-100 px-6 py-3 flex items-center justify-between border-b border-gray-200"
-          onMouseDown={onDragStart}
-          style={{ userSelect: "none" }}
+  const modalContent = (
+    <>
+      <AnimatePresence>
+        <motion.div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm bg-black/30"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
         >
-          <h2 className="text-xl font-bold text-gray-800">
-            {category ? "Chỉnh sửa danh mục" : "Thêm danh mục mới"}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+          <motion.div
+            className="relative bg-white rounded-3xl shadow-2xl overflow-hidden"
+            initial={{ scale: 0.9, opacity: 0, y: 30 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.9, opacity: 0, y: 30 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            onClick={(e) => e.stopPropagation()}
+            ref={modalRef}
+            style={{
+              position: "absolute",
+              left: modalPos.x,
+              top: modalPos.y,
+              width: modalSize.width,
+              height: modalSize.height,
+              minWidth: 400,
+              minHeight: 300,
+              maxWidth: "100vw",
+              maxHeight: "100vh",
+              display: "flex",
+              flexDirection: "column",
+            }}
           >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-
-        {/* Form Content */}
-        <div className="flex-1 overflow-y-auto">
-          <form onSubmit={handleSubmit} className="p-6 space-y-4">
-            {/* General Error Message */}
-            {errors.general && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                <p className="text-sm">{errors.general}</p>
-              </div>
-            )}
-
-            {/* Name */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Tên danh mục <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                placeholder="Nhập tên danh mục"
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus: ring-2 ${
-                  errors.name
-                    ? "border-red-500 focus:ring-red-500"
-                    : "border-gray-300 focus:ring-blue-500"
-                }`}
-              />
-              {errors.name && (
-                <p className="text-red-600 text-sm mt-1">{errors.name}</p>
-              )}
-              {!errors.name && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Name is required, 2–50 characters. Unique per restaurant
-                </p>
-              )}
-            </div>
-
-            {/* Description */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Mô tả
-              </label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                placeholder="Nhập mô tả danh mục"
-                rows={3}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
-                  errors.description
-                    ? "border-red-500 focus:ring-red-500"
-                    : "border-gray-300 focus:ring-blue-500"
-                }`}
-              />
-              {errors.description && (
-                <p className="text-red-600 text-sm mt-1">
-                  {errors.description}
-                </p>
-              )}
-            </div>
-
-            {/* Display Order */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Thứ tự hiển thị
-              </label>
-              <input
-                type="number"
-                name="displayOrder"
-                value={formData.displayOrder}
-                onChange={handleInputChange}
-                min="0"
-                step="1"
-                placeholder="0"
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
-                  errors.displayOrder
-                    ? "border-red-500 focus:ring-red-500"
-                    : "border-gray-300 focus: ring-blue-500"
-                }`}
-              />
-              {errors.displayOrder && (
-                <p className="text-red-600 text-sm mt-1">
-                  {errors.displayOrder}
-                </p>
-              )}
-              {!errors.displayOrder && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Display order must be a non-negative integer (0 = đầu tiên)
-                </p>
-              )}
-            </div>
-
-            {/* Active status */}
-            <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                name="isActive"
-                id="isActive"
-                checked={formData.isActive}
-                onChange={handleInputChange}
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <label
-                htmlFor="isActive"
-                className="text-sm font-semibold text-gray-700"
+            {/* Header (drag handle) */}
+            <div
+              className="cursor-move bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 flex items-center justify-between"
+              onMouseDown={onDragStart}
+              style={{ userSelect: "none" }}
+            >
+              <h2 className="text-xl font-bold">
+                {category ? "Chỉnh sửa danh mục" : "Thêm danh mục mới"}
+              </h2>
+              <button
+                onClick={onClose}
+                className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
               >
-                Danh mục đang hoạt động
-              </label>
+                <X className="w-6 h-6" />
+              </button>
             </div>
 
-            {/* Icon Picker only */}
-            <div className="pt-2 border-t border-gray-100 mt-2">
-              <div className="mb-4">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Icon đại diện
-                </label>
-                {isLoadingIcons ? (
-                  <div className="text-sm text-gray-500">Đang tải icons...</div>
-                ) : (
-                  <>
-                    <div className="flex items-center gap-2">
-                      {formData.icon ? (
-                        <img
-                          src={formData.icon}
-                          alt="icon preview"
-                          className="w-8 h-8 object-contain rounded border border-gray-200 bg-white"
-                        />
-                      ) : (
-                        <span className="text-gray-400 text-sm">
-                          Chưa chọn icon
-                        </span>
-                      )}
-                      <button
-                        type="button"
-                        className="px-3 py-1 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
-                        onClick={() => setShowIconPicker((v) => !v)}
-                      >
-                        {showIconPicker ? "Ẩn icon" : "Chọn icon"}
-                      </button>
-                    </div>
-                    {showIconPicker && (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {categoryIcons.map((item) => (
+            {/* Form Content */}
+            <div className="flex-1 overflow-y-auto">
+              <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                {/* General Error Message */}
+                {errors.general && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                    <p className="text-sm">{errors.general}</p>
+                  </div>
+                )}
+
+                {/* Name */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Tên danh mục <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    placeholder="Nhập tên danh mục"
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                      errors.name
+                        ? "border-red-500 focus:ring-red-500"
+                        : "border-gray-300 focus:ring-blue-500"
+                    }`}
+                  />
+                  {errors.name && (
+                    <p className="text-red-600 text-sm mt-1">{errors.name}</p>
+                  )}
+                  {!errors.name && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Name is required, 2–50 characters. Unique per restaurant
+                    </p>
+                  )}
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Mô tả
+                  </label>
+                  <textarea
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    placeholder="Nhập mô tả danh mục"
+                    rows={3}
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                      errors.description
+                        ? "border-red-500 focus:ring-red-500"
+                        : "border-gray-300 focus:ring-blue-500"
+                    }`}
+                  />
+                  {errors.description && (
+                    <p className="text-red-600 text-sm mt-1">
+                      {errors.description}
+                    </p>
+                  )}
+                </div>
+
+                {/* Display Order */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Thứ tự hiển thị
+                  </label>
+                  <input
+                    type="number"
+                    name="displayOrder"
+                    value={formData.displayOrder}
+                    onChange={handleInputChange}
+                    min="0"
+                    step="1"
+                    placeholder="0"
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                      errors.displayOrder
+                        ? "border-red-500 focus:ring-red-500"
+                        : "border-gray-300 focus:ring-blue-500"
+                    }`}
+                  />
+                  {errors.displayOrder && (
+                    <p className="text-red-600 text-sm mt-1">
+                      {errors.displayOrder}
+                    </p>
+                  )}
+                  {!errors.displayOrder && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Display order must be a non-negative integer (0 = đầu
+                      tiên)
+                    </p>
+                  )}
+                </div>
+
+                {/* Active status */}
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    name="isActive"
+                    id="isActive"
+                    checked={formData.isActive}
+                    onChange={handleInputChange}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <label
+                    htmlFor="isActive"
+                    className="text-sm font-semibold text-gray-700"
+                  >
+                    Danh mục đang hoạt động
+                  </label>
+                </div>
+
+                {/* Icon Picker only */}
+                <div className="pt-2 border-t border-gray-100 mt-2">
+                  <div className="mb-4">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Icon đại diện
+                    </label>
+                    {isLoadingIcons ? (
+                      <div className="text-sm text-gray-500">
+                        Đang tải icons...
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-2">
+                          {formData.icon ? (
+                            <img
+                              src={formData.icon}
+                              alt="icon preview"
+                              className="w-8 h-8 object-contain rounded border border-gray-200 bg-white"
+                            />
+                          ) : (
+                            <span className="text-gray-400 text-sm">
+                              Chưa chọn icon
+                            </span>
+                          )}
                           <button
                             type="button"
-                            key={item.icon}
-                            className={`p-2 rounded border transition-colors ${
-                              formData.icon === item.icon
-                                ? "border-blue-500 bg-blue-50"
-                                : "border-gray-200 bg-white hover:border-blue-300"
-                            }`}
-                            onClick={() => handleIconSelect(item.icon)}
-                            aria-label={item.name}
+                            className="px-3 py-1 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
+                            onClick={() => setShowIconPicker((v) => !v)}
                           >
-                            <img
-                              src={item.icon}
-                              alt={item.name}
-                              className="w-8 h-8 object-contain"
-                            />
+                            {showIconPicker ? "Ẩn icon" : "Chọn icon"}
                           </button>
-                        ))}
-                      </div>
+                        </div>
+                        {showIconPicker && (
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {categoryIcons.map((item) => (
+                              <button
+                                type="button"
+                                key={item.icon}
+                                className={`p-2 rounded border transition-colors ${
+                                  formData.icon === item.icon
+                                    ? "border-blue-500 bg-blue-50"
+                                    : "border-gray-200 bg-white hover:border-blue-300"
+                                }`}
+                                onClick={() => handleIconSelect(item.icon)}
+                                aria-label={item.name}
+                              >
+                                <img
+                                  src={item.icon}
+                                  alt={item.name}
+                                  className="w-8 h-8 object-contain"
+                                />
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </>
                     )}
-                  </>
-                )}
-                <p className="text-xs text-gray-500 mt-1">
-                  Icon sẽ hiển thị cùng tên danh mục.
-                </p>
-              </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Icon sẽ hiển thị cùng tên danh mục.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3 pt-4 border-t border-gray-200">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmitting ? "Đang lưu..." : "Lưu"}
+                  </button>
+                </div>
+              </form>
             </div>
 
-            {/* Actions */}
-            <div className="flex gap-3 pt-4 border-t border-gray-200">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Hủy
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSubmitting ? "Đang lưu..." : "Lưu"}
-              </button>
+            {/* Resize handle */}
+            <div
+              onMouseDown={onResizeStart}
+              className="absolute right-0 bottom-0 w-6 h-6 cursor-nwse-resize z-20 flex items-end justify-end"
+              style={{ userSelect: "none" }}
+            >
+              <div className="w-4 h-4 bg-gray-200 rounded-br-lg border-r-2 border-b-2 border-gray-400" />
             </div>
-          </form>
-        </div>
-
-        {/* Resize handle */}
-        <div
-          onMouseDown={onResizeStart}
-          className="absolute right-0 bottom-0 w-6 h-6 cursor-nwse-resize z-20 flex items-end justify-end"
-          style={{ userSelect: "none" }}
-        >
-          <div className="w-4 h-4 bg-gray-200 rounded-br-lg border-r-2 border-b-2 border-gray-400" />
-        </div>
-      </div>
-    </div>
+          </motion.div>
+        </motion.div>
+      </AnimatePresence>
+    </>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default CategoryForm;

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Sidebar from "./Sidebar";
 import DashboardContent from "../../screens/Dashboard/DashboardContent";
-import OrdersContent from "../../screens/Dashboard/OrdersContent";
+import OrderManagementContent from "../../screens/Dashboard/OrderManagementContent";
 import CategoryManagementContent from "../../screens/Dashboard/CategoryManagementContent";
 import MenuManagementContent from "../../screens/Dashboard/MenuManagementContent";
 import ModifierManagementContent from "../../screens/Dashboard/ModifierManagementContent";
@@ -18,7 +18,7 @@ const DashboardLayout = () => {
       case "dashboard":
         return <DashboardContent />;
       case "orders":
-        return <OrdersContent />;
+        return <OrderManagementContent />;
       case "tables":
         return <TablesScreen />;
       case "inventory":

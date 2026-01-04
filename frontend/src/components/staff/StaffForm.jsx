@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { X, Mail, User, Lock, Briefcase } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 /**
  * StaffForm Component
@@ -191,205 +192,213 @@ const StaffForm = ({ staff, onSubmit, onClose }) => {
   }, [isResizing, resizeStart, modalSize]);
 
   return (
-    <div className="fixed inset-0 bg-black/10 backdrop-blur-sm z-50 p-4 select-none">
-      <div
-        ref={modalRef}
-        style={{
-          position: "absolute",
-          left: modalPos.x,
-          top: modalPos.y,
-          width: modalSize.width,
-          height: modalSize.height,
-          minWidth: 400,
-          minHeight: 300,
-          maxWidth: "100vw",
-          maxHeight: "100vh",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
-          background: "white",
-          borderRadius: 12,
-          overflow: "hidden",
-          display: "flex",
-          flexDirection: "column",
-        }}
-        className="shadow-2xl border border-gray-200"
+    <AnimatePresence>
+      <motion.div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm bg-black/30"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
       >
-        {/* Drag bar / Header */}
-        <div
-          className="cursor-move bg-gray-100 px-6 py-3 flex items-center justify-between border-b border-gray-200"
-          onMouseDown={onDragStart}
-          style={{ userSelect: "none" }}
+        <motion.div
+          className="relative bg-white rounded-3xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden"
+          initial={{ scale: 0.9, opacity: 0, y: 30 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.9, opacity: 0, y: 30 }}
+          transition={{ type: "spring", stiffness: 300, damping: 25 }}
+          onClick={(e) => e.stopPropagation()}
+          ref={modalRef}
+          style={{
+            position: "absolute",
+            left: modalPos.x,
+            top: modalPos.y,
+            width: modalSize.width,
+            height: modalSize.height,
+            minWidth: 400,
+            minHeight: 300,
+            maxWidth: "100vw",
+            maxHeight: "100vh",
+            display: "flex",
+            flexDirection: "column",
+          }}
         >
-          <h2 className="text-xl font-semibold text-gray-900">
-            {staff ? "Chỉnh sửa nhân viên" : "Thêm nhân viên mới"}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+          {/* Header (drag handle) */}
+          <div
+            className="cursor-move bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 flex items-center justify-between"
+            onMouseDown={onDragStart}
+            style={{ userSelect: "none" }}
           >
-            <X size={24} />
-          </button>
-        </div>
-
-        {/* Form */}
-        <form
-          onSubmit={handleSubmit}
-          className="p-6 space-y-4 flex-1 overflow-y-auto"
-        >
-          {/* Error tổng quát */}
-          {errors.submit && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {errors.submit}
-            </div>
-          )}
-
-          {/* Họ tên */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Họ tên <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                name="fullName"
-                value={formData.fullName}
-                onChange={handleInputChange}
-                placeholder="Nhập họ tên nhân viên"
-                className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.fullName ? "border-red-500" : "border-gray-300"
-                }`}
-              />
-            </div>
-            {errors.fullName && (
-              <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>
-            )}
-          </div>
-
-          {/* Email */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                placeholder="email@example.com"
-                disabled={!!staff}
-                className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.email ? "border-red-500" : "border-gray-300"
-                } ${staff ? "bg-gray-50 cursor-not-allowed" : ""}`}
-              />
-            </div>
-            {errors.email && (
-              <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-            )}
-          </div>
-
-          {/* Vai trò */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Vai trò <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <select
-                name="role"
-                value={formData.role}
-                onChange={handleInputChange}
-                className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.role ? "border-red-500" : "border-gray-300"
-                }`}
-              >
-                <option value="waiter">Nhân viên phục vụ</option>
-                <option value="kitchen">Nhân viên bếp</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
-            {errors.role && (
-              <p className="mt-1 text-sm text-red-600">{errors.role}</p>
-            )}
-          </div>
-
-          {/* Mật khẩu */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Mật khẩu {!staff && <span className="text-red-500">*</span>}
-              {staff && (
-                <span className="text-gray-500 text-xs">
-                  {" "}
-                  (để trống nếu không đổi)
-                </span>
-              )}
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                placeholder={
-                  staff ? "••••••••" : "Nhập mật khẩu (tối thiểu 6 ký tự)"
-                }
-                className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.password ? "border-red-500" : "border-gray-300"
-                }`}
-              />
-            </div>
-            {errors.password && (
-              <p className="mt-1 text-sm text-red-600">{errors.password}</p>
-            )}
-          </div>
-
-          {/* Trạng thái */}
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="isActive"
-              name="isActive"
-              checked={formData.isActive}
-              onChange={handleInputChange}
-              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            />
-            <label htmlFor="isActive" className="text-sm text-gray-700">
-              Tài khoản hoạt động
-            </label>
-          </div>
-
-          {/* Actions */}
-          <div className="flex gap-3 pt-4 border-t">
+            <h2 className="text-xl font-semibold">
+              {staff ? "Chỉnh sửa nhân viên" : "Thêm nhân viên mới"}
+            </h2>
             <button
-              type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-              disabled={isSubmitting}
+              className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
             >
-              Hủy
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-400"
-            >
-              {isSubmitting ? "Đang lưu..." : staff ? "Cập nhật" : "Tạo mới"}
+              <X size={20} />
             </button>
           </div>
-        </form>
 
-        {/* Resize handle */}
-        <div
-          onMouseDown={onResizeStart}
-          className="absolute right-0 bottom-0 w-6 h-6 cursor-nwse-resize z-20 flex items-end justify-end"
-          style={{ userSelect: "none" }}
-        >
-          <div className="w-4 h-4 bg-gray-200 rounded-br-lg border-r-2 border-b-2 border-gray-400" />
-        </div>
-      </div>
-    </div>
+          {/* Form */}
+          <form
+            onSubmit={handleSubmit}
+            className="p-6 space-y-4 flex-1 overflow-y-auto"
+          >
+            {/* Error tổng quát */}
+            {errors.submit && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                {errors.submit}
+              </div>
+            )}
+
+            {/* Họ tên */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Họ tên <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  name="fullName"
+                  value={formData.fullName}
+                  onChange={handleInputChange}
+                  placeholder="Nhập họ tên nhân viên"
+                  className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors.fullName ? "border-red-500" : "border-gray-300"
+                  }`}
+                />
+              </div>
+              {errors.fullName && (
+                <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>
+              )}
+            </div>
+
+            {/* Email */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  placeholder="email@example.com"
+                  disabled={!!staff}
+                  className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors.email ? "border-red-500" : "border-gray-300"
+                  } ${staff ? "bg-gray-50 cursor-not-allowed" : ""}`}
+                />
+              </div>
+              {errors.email && (
+                <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+              )}
+            </div>
+
+            {/* Vai trò */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Vai trò <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <select
+                  name="role"
+                  value={formData.role}
+                  onChange={handleInputChange}
+                  className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors.role ? "border-red-500" : "border-gray-300"
+                  }`}
+                >
+                  <option value="waiter">Nhân viên phục vụ</option>
+                  <option value="kitchen">Nhân viên bếp</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+              {errors.role && (
+                <p className="mt-1 text-sm text-red-600">{errors.role}</p>
+              )}
+            </div>
+
+            {/* Mật khẩu */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Mật khẩu {!staff && <span className="text-red-500">*</span>}
+                {staff && (
+                  <span className="text-gray-500 text-xs">
+                    {" "}
+                    (để trống nếu không đổi)
+                  </span>
+                )}
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  placeholder={
+                    staff ? "••••••••" : "Nhập mật khẩu (tối thiểu 6 ký tự)"
+                  }
+                  className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors.password ? "border-red-500" : "border-gray-300"
+                  }`}
+                />
+              </div>
+              {errors.password && (
+                <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+              )}
+            </div>
+
+            {/* Trạng thái */}
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="isActive"
+                name="isActive"
+                checked={formData.isActive}
+                onChange={handleInputChange}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <label htmlFor="isActive" className="text-sm text-gray-700">
+                Tài khoản hoạt động
+              </label>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-4 border-t">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                disabled={isSubmitting}
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-400"
+              >
+                {isSubmitting ? "Đang lưu..." : staff ? "Cập nhật" : "Tạo mới"}
+              </button>
+            </div>
+          </form>
+
+          {/* Resize handle */}
+          <div
+            onMouseDown={onResizeStart}
+            className="absolute right-0 bottom-0 w-6 h-6 cursor-nwse-resize z-20 flex items-end justify-end"
+            style={{ userSelect: "none" }}
+          >
+            <div className="w-4 h-4 bg-gray-200 rounded-br-lg border-r-2 border-b-2 border-gray-400" />
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   );
 };
 
