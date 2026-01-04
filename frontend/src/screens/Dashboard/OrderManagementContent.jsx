@@ -9,6 +9,7 @@ import OrderForm from "../../components/orders/OrderForm";
 import AlertModal from "../../components/Modal/AlertModal";
 import ConfirmModal from "../../components/Modal/ConfirmModal";
 import LoadingOverlay from "../../components/SpinnerLoad/LoadingOverlay";
+import Pagination from "../../components/SpinnerLoad/Pagination";
 
 // Services & Utils
 import * as orderService from "../../services/orderService";
@@ -58,6 +59,10 @@ const OrderManagementContent = () => {
   const [statusFilter, setStatusFilter] = useState("");
   const [sortBy, setSortBy] = useState("createdAt-desc");
 
+  // State quản lý pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
   // State quản lý modals
   const [alertModal, setAlertModal] = useState({
     isOpen: false,
@@ -92,6 +97,7 @@ const OrderManagementContent = () => {
       sortBy
     );
     setFilteredOrders(filtered);
+    setCurrentPage(1); // Reset to first page when filter changes
   }, [orders, searchTerm, sortBy, statusFilter]);
 
   // ==================== API CALLS ====================
@@ -423,7 +429,8 @@ const OrderManagementContent = () => {
                 Quản Lý Đơn Hàng
               </h1>
               <p className="text-gray-600 mt-1">
-                Tổng số: {filteredOrders.length} đơn hàng
+                Tổng số: {filteredOrders.length} đơn hàng | Trang {currentPage}{" "}
+                / {Math.ceil(filteredOrders.length / itemsPerPage) || 1}
               </p>
             </div>
             <button
@@ -524,30 +531,59 @@ const OrderManagementContent = () => {
               Thêm Đơn Hàng
             </button>
           </div>
-        ) : viewMode === VIEW_MODES.GRID ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredOrders.map((order) => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                onEdit={handleEditClick}
-                onDelete={handleDeleteClick}
-                onRestore={handleRestoreClick}
-                onDeletePermanent={handleDeletePermanentClick}
-                prepTime={prepTime}
-              />
-            ))}
-          </div>
-        ) : (
-          <OrderListView
-            orders={filteredOrders}
-            onEdit={handleEditClick}
-            onDelete={handleDeleteClick}
-            onRestore={handleRestoreClick}
-            onDeletePermanent={handleDeletePermanentClick}
-            prepTime={prepTime}
-          />
-        )}
+        ) : null}
+
+        {/* Pagination logic */}
+        {filteredOrders.length > 0 &&
+          (() => {
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
+            const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+
+            return (
+              <>
+                {viewMode === VIEW_MODES.GRID ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {paginatedOrders.map((order) => (
+                      <OrderCard
+                        key={order.id}
+                        order={order}
+                        onEdit={handleEditClick}
+                        onDelete={handleDeleteClick}
+                        onRestore={handleRestoreClick}
+                        onDeletePermanent={handleDeletePermanentClick}
+                        prepTime={prepTime}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <OrderListView
+                    orders={paginatedOrders}
+                    onEdit={handleEditClick}
+                    onDelete={handleDeleteClick}
+                    onRestore={handleRestoreClick}
+                    onDeletePermanent={handleDeletePermanentClick}
+                    prepTime={prepTime}
+                  />
+                )}
+
+                {/* Pagination */}
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={filteredOrders.length}
+                  pageSize={itemsPerPage}
+                  onPageChange={(page) => setCurrentPage(page)}
+                  onPageSizeChange={(size) => {
+                    setItemsPerPage(size);
+                    setCurrentPage(1);
+                  }}
+                  pageSizeOptions={[5, 10, 20, 50]}
+                />
+              </>
+            );
+          })()}
 
         {/* Loading Overlay */}
         {isLoadingForm && (
