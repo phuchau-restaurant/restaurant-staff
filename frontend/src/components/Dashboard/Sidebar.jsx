@@ -4,6 +4,7 @@ import {
   ShoppingBag,
   Table,
   Package,
+  Users,
   BarChart3,
   MessageSquare,
   UtensilsCrossed,
@@ -14,6 +15,7 @@ const Sidebar = ({ activeMenu = "dashboard", onNavigate }) => {
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: Home },
     { id: "orders", label: "Order Management", icon: ShoppingBag },
+    { id: "staff", label: "Staff Management", icon: Users },
     { id: "tables", label: "Table Management", icon: Table },
     { id: "inventory", label: "Category Management", icon: Package },
     { id: "menus", label: "Menu Management", icon: UtensilsCrossed },
