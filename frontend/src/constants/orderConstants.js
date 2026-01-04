@@ -1,0 +1,128 @@
+/**
+ * Order Constants
+ * Định nghĩa constants cho quản lý đơn hàng
+ */
+
+// Trạng thái đơn hàng
+export const ORDER_STATUS = {
+  UNSUBMIT: "Unsubmit",
+  APPROVED: "Approved",
+  PENDING: "Pending",
+  COMPLETED: "Completed",
+  SERVED: "Served",
+  PAID: "Paid",
+  CANCELLED: "Cancelled",
+};
+
+// Trạng thái chi tiết đơn hàng (order detail/item)
+export const ORDER_DETAIL_STATUS = {
+  PENDING: "Pending",
+  PREPARING: "Preparing",
+  READY: "Ready",
+  SERVED: "Served",
+  CANCELLED: "Cancelled",
+};
+
+// Mapping trạng thái đơn hàng sang label tiếng Việt
+export const ORDER_STATUS_LABELS = {
+  [ORDER_STATUS.UNSUBMIT]: "Chưa xác nhận",
+  [ORDER_STATUS.APPROVED]: "Đã xác nhận",
+  [ORDER_STATUS.PENDING]: "Đang chờ",
+  [ORDER_STATUS.COMPLETED]: "Hoàn thành",
+  [ORDER_STATUS.SERVED]: "Đã phục vụ",
+  [ORDER_STATUS.PAID]: "Đã thanh toán",
+  [ORDER_STATUS.CANCELLED]: "Đã hủy",
+};
+
+// Mapping trạng thái chi tiết đơn hàng sang label tiếng Việt
+export const ORDER_DETAIL_STATUS_LABELS = {
+  [ORDER_DETAIL_STATUS.PENDING]: "Chờ xử lý",
+  [ORDER_DETAIL_STATUS.PREPARING]: "Đang chuẩn bị",
+  [ORDER_DETAIL_STATUS.READY]: "Sẵn sàng",
+  [ORDER_DETAIL_STATUS.SERVED]: "Đã phục vụ",
+  [ORDER_DETAIL_STATUS.CANCELLED]: "Đã hủy",
+};
+
+// Màu sắc cho các trạng thái đơn hàng
+export const ORDER_STATUS_COLORS = {
+  [ORDER_STATUS.UNSUBMIT]: "bg-gray-100 text-gray-700 border-gray-300",
+  [ORDER_STATUS.APPROVED]: "bg-blue-100 text-blue-700 border-blue-300",
+  [ORDER_STATUS.PENDING]: "bg-yellow-100 text-yellow-700 border-yellow-300",
+  [ORDER_STATUS.COMPLETED]: "bg-green-100 text-green-700 border-green-300",
+  [ORDER_STATUS.SERVED]: "bg-purple-100 text-purple-700 border-purple-300",
+  [ORDER_STATUS.PAID]: "bg-emerald-100 text-emerald-700 border-emerald-300",
+  [ORDER_STATUS.CANCELLED]: "bg-red-100 text-red-700 border-red-300",
+};
+
+// Màu sắc cho các trạng thái chi tiết đơn hàng
+export const ORDER_DETAIL_STATUS_COLORS = {
+  [ORDER_DETAIL_STATUS.PENDING]: "bg-yellow-100 text-yellow-700",
+  [ORDER_DETAIL_STATUS.PREPARING]: "bg-orange-100 text-orange-700",
+  [ORDER_DETAIL_STATUS.READY]: "bg-green-100 text-green-700",
+  [ORDER_DETAIL_STATUS.SERVED]: "bg-purple-100 text-purple-700",
+  [ORDER_DETAIL_STATUS.CANCELLED]: "bg-red-100 text-red-700",
+};
+
+// Options cho filter trạng thái
+export const STATUS_OPTIONS = [
+  { value: "", label: "Tất cả trạng thái" },
+  {
+    value: ORDER_STATUS.UNSUBMIT,
+    label: ORDER_STATUS_LABELS[ORDER_STATUS.UNSUBMIT],
+  },
+  {
+    value: ORDER_STATUS.APPROVED,
+    label: ORDER_STATUS_LABELS[ORDER_STATUS.APPROVED],
+  },
+  {
+    value: ORDER_STATUS.PENDING,
+    label: ORDER_STATUS_LABELS[ORDER_STATUS.PENDING],
+  },
+  {
+    value: ORDER_STATUS.COMPLETED,
+    label: ORDER_STATUS_LABELS[ORDER_STATUS.COMPLETED],
+  },
+  {
+    value: ORDER_STATUS.SERVED,
+    label: ORDER_STATUS_LABELS[ORDER_STATUS.SERVED],
+  },
+  { value: ORDER_STATUS.PAID, label: ORDER_STATUS_LABELS[ORDER_STATUS.PAID] },
+  {
+    value: ORDER_STATUS.CANCELLED,
+    label: ORDER_STATUS_LABELS[ORDER_STATUS.CANCELLED],
+  },
+];
+
+// View modes
+export const VIEW_MODES = {
+  GRID: "grid",
+  LIST: "list",
+};
+
+// Sort options
+export const SORT_OPTIONS = [
+  { value: "createdAt-desc", label: "Mới nhất" },
+  { value: "createdAt-asc", label: "Cũ nhất" },
+  { value: "totalAmount-desc", label: "Giá cao nhất" },
+  { value: "totalAmount-asc", label: "Giá thấp nhất" },
+  { value: "tableId-asc", label: "Bàn (A-Z)" },
+];
+
+// Messages
+export const MESSAGES = {
+  CREATE_SUCCESS: "Tạo đơn hàng thành công!",
+  UPDATE_SUCCESS: "Cập nhật đơn hàng thành công!",
+  DELETE_SUCCESS: "Xóa đơn hàng thành công!",
+  STATUS_UPDATE_SUCCESS: "Cập nhật trạng thái thành công!",
+  FETCH_ERROR: "Không thể tải dữ liệu đơn hàng!",
+  CREATE_ERROR: "Không thể tạo đơn hàng!",
+  UPDATE_ERROR: "Không thể cập nhật đơn hàng!",
+  DELETE_ERROR: "Không thể xóa đơn hàng!",
+};
+
+// Thời gian chuẩn bị mặc định (phút)
+export const DEFAULT_PREP_TIME = 15;
+
+// Màu cảnh báo cho đơn hàng quá thời gian
+export const OVERDUE_WARNING_COLOR = "bg-red-50 border-red-300";
+export const OVERDUE_TEXT_COLOR = "text-red-700";

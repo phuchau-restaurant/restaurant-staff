@@ -1,0 +1,544 @@
+import { useState, useEffect } from "react";
+import { X, Plus, Trash2, Minus, ShoppingCart } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  formatPrice,
+  validateOrderData,
+  calculateOrderTotal,
+} from "../../utils/orderUtils";
+
+/**
+ * OrderForm Component
+ * Form thêm/sửa đơn hàng với hỗ trợ modifier
+ */
+const OrderForm = ({
+  order,
+  tables,
+  menuItems,
+  modifierGroups,
+  onSubmit,
+  onClose,
+}) => {
+  const [formData, setFormData] = useState({
+    tableId: "",
+    dishes: [],
+  });
+
+  const [selectedDish, setSelectedDish] = useState(null);
+  const [selectedModifiers, setSelectedModifiers] = useState([]);
+  const [quantity, setQuantity] = useState(1);
+  const [note, setNote] = useState("");
+  const [errors, setErrors] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Initialize form với dữ liệu order nếu đang edit
+  useEffect(() => {
+    if (order) {
+      setFormData({
+        tableId: order.tableId || "",
+        dishes:
+          order.items?.map((item) => ({
+            dishId: item.dishId,
+            dishName: item.dishName,
+            unitPrice: item.unitPrice,
+            quantity: item.quantity,
+            note: item.note || "",
+            modifiers: item.modifiers || [],
+          })) || [],
+      });
+    }
+  }, [order]);
+
+  // Handle chọn món ăn
+  const handleSelectDish = (dish) => {
+    setSelectedDish(dish);
+    setSelectedModifiers([]);
+    setQuantity(1);
+    setNote("");
+  };
+
+  // Handle chọn/bỏ chọn modifier
+  const handleToggleModifier = (optionId, groupId, optionName, price) => {
+    setSelectedModifiers((prev) => {
+      const exists = prev.find((m) => m.optionId === optionId);
+      if (exists) {
+        return prev.filter((m) => m.optionId !== optionId);
+      } else {
+        return [...prev, { optionId, groupId, optionName, price }];
+      }
+    });
+  };
+
+  // Kiểm tra modifier đã được chọn chưa
+  const isModifierSelected = (optionId) => {
+    return selectedModifiers.some((m) => m.optionId === optionId);
+  };
+
+  // Thêm món vào giỏ
+  const handleAddDishToOrder = () => {
+    if (!selectedDish) return;
+
+    const newDish = {
+      dishId: selectedDish.id,
+      dishName: selectedDish.name,
+      unitPrice: selectedDish.price,
+      quantity,
+      note,
+      modifiers: selectedModifiers,
+    };
+
+    setFormData((prev) => ({
+      ...prev,
+      dishes: [...prev.dishes, newDish],
+    }));
+
+    // Reset selection
+    setSelectedDish(null);
+    setSelectedModifiers([]);
+    setQuantity(1);
+    setNote("");
+  };
+
+  // Xóa món khỏi giỏ
+  const handleRemoveDish = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      dishes: prev.dishes.filter((_, i) => i !== index),
+    }));
+  };
+
+  // Cập nhật số lượng món trong giỏ
+  const handleUpdateDishQuantity = (index, newQuantity) => {
+    if (newQuantity < 1) return;
+    setFormData((prev) => ({
+      ...prev,
+      dishes: prev.dishes.map((dish, i) =>
+        i === index ? { ...dish, quantity: newQuantity } : dish
+      ),
+    }));
+  };
+
+  // Tính tổng tiền món với modifier
+  const calculateDishPrice = (dish) => {
+    const basePrice = dish.unitPrice * dish.quantity;
+    const modifierPrice = (dish.modifiers || []).reduce(
+      (sum, mod) => sum + (mod.price || 0) * dish.quantity,
+      0
+    );
+    return basePrice + modifierPrice;
+  };
+
+  // Tính tổng tiền đơn hàng
+  const getTotalAmount = () => {
+    return formData.dishes.reduce(
+      (total, dish) => total + calculateDishPrice(dish),
+      0
+    );
+  };
+
+  // Lấy danh sách modifier groups của món được chọn
+  const getDishModifierGroups = () => {
+    if (!selectedDish) return [];
+
+    // Lấy modifier groups của món ăn
+    const dishModifiers = selectedDish.modifierGroups || [];
+
+    // Filter từ danh sách tất cả modifier groups
+    return modifierGroups.filter((group) =>
+      dishModifiers.some((dm) => dm.id === group.id)
+    );
+  };
+
+  // Submit form
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setErrors([]);
+
+    // Prepare data for API
+    const orderData = {
+      tableId: parseInt(formData.tableId),
+      dishes: formData.dishes.map((dish) => ({
+        dishId: dish.dishId,
+        quantity: dish.quantity,
+        description: dish.note || "",
+        // Modifiers có thể cần format khác tùy theo API backend yêu cầu
+        modifiers: dish.modifiers.map((m) => m.optionId),
+      })),
+    };
+
+    // Validate
+    const validation = validateOrderData(orderData);
+    if (!validation.valid) {
+      setErrors(validation.errors);
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await onSubmit(order?.id, orderData);
+      onClose();
+    } catch (error) {
+      setErrors([error.message || "Có lỗi xảy ra khi lưu đơn hàng"]);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm bg-black/30"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
+        <motion.div
+          className="relative bg-white rounded-3xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden"
+          initial={{ scale: 0.8, opacity: 0, y: 50 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.8, opacity: 0, y: 50 }}
+          transition={{ type: "spring", stiffness: 300, damping: 25 }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold">
+                {order ? "Chỉnh Sửa Đơn Hàng" : "Thêm Đơn Hàng Mới"}
+              </h2>
+              <button
+                onClick={onClose}
+                className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+          </div>
+
+          {/* Body */}
+          <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+            <form onSubmit={handleSubmit}>
+              {/* Errors */}
+              {errors.length > 0 && (
+                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                  {errors.map((error, index) => (
+                    <p key={index} className="text-sm text-red-600">
+                      • {error}
+                    </p>
+                  ))}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Left Column - Order Info & Dish Selection */}
+                <div className="space-y-4">
+                  {/* Table Selection */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Chọn bàn <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={formData.tableId}
+                      onChange={(e) =>
+                        setFormData({ ...formData, tableId: e.target.value })
+                      }
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      required
+                    >
+                      <option value="">-- Chọn bàn --</option>
+                      {tables.map((table) => (
+                        <option key={table.id} value={table.id}>
+                          Bàn {table.tableNumber} - {table.location}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Dish Selection */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Chọn món ăn <span className="text-red-500">*</span>
+                    </label>
+                    <div className="border border-gray-300 rounded-lg max-h-64 overflow-y-auto">
+                      {menuItems
+                        .filter((item) => item.isAvailable)
+                        .map((item) => (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => handleSelectDish(item)}
+                            className={`w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 ${
+                              selectedDish?.id === item.id
+                                ? "bg-blue-50 border-l-4 border-l-blue-600"
+                                : ""
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="font-medium text-gray-800">
+                                  {item.name}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  {item.categoryName}
+                                </p>
+                              </div>
+                              <span className="text-sm font-semibold text-orange-600">
+                                {formatPrice(item.price)}
+                              </span>
+                            </div>
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+
+                  {/* Modifier Selection - Show when dish is selected */}
+                  {selectedDish && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-blue-50 border border-blue-200 rounded-lg p-4"
+                    >
+                      <h3 className="font-semibold text-gray-800 mb-3">
+                        Tùy chọn cho: {selectedDish.name}
+                      </h3>
+
+                      {/* Modifiers */}
+                      {getDishModifierGroups().length > 0 ? (
+                        <div className="space-y-3">
+                          {getDishModifierGroups().map((group) => (
+                            <div key={group.id}>
+                              <p className="text-sm font-medium text-gray-700 mb-2">
+                                {group.name}
+                              </p>
+                              <div className="space-y-1">
+                                {group.options?.map((option) => (
+                                  <label
+                                    key={option.id}
+                                    className="flex items-center justify-between p-2 bg-white rounded hover:bg-gray-50 cursor-pointer"
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <input
+                                        type="checkbox"
+                                        checked={isModifierSelected(option.id)}
+                                        onChange={() =>
+                                          handleToggleModifier(
+                                            option.id,
+                                            group.id,
+                                            option.name,
+                                            option.additionalPrice
+                                          )
+                                        }
+                                        className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                                      />
+                                      <span className="text-sm text-gray-700">
+                                        {option.name}
+                                      </span>
+                                    </div>
+                                    {option.additionalPrice > 0 && (
+                                      <span className="text-xs text-orange-600">
+                                        +{formatPrice(option.additionalPrice)}
+                                      </span>
+                                    )}
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500 italic">
+                          Món này không có tùy chọn
+                        </p>
+                      )}
+
+                      {/* Quantity & Note */}
+                      <div className="mt-4 space-y-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Số lượng
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setQuantity(Math.max(1, quantity - 1))
+                              }
+                              className="p-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                            >
+                              <Minus className="w-4 h-4" />
+                            </button>
+                            <input
+                              type="number"
+                              min="1"
+                              value={quantity}
+                              onChange={(e) =>
+                                setQuantity(
+                                  Math.max(1, parseInt(e.target.value) || 1)
+                                )
+                              }
+                              className="w-20 text-center px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setQuantity(quantity + 1)}
+                              className="p-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                            >
+                              <Plus className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Ghi chú (tùy chọn)
+                          </label>
+                          <textarea
+                            value={note}
+                            onChange={(e) => setNote(e.target.value)}
+                            placeholder="Ví dụ: Không hành, ít cay..."
+                            rows="2"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                          />
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={handleAddDishToOrder}
+                          className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition-colors"
+                        >
+                          <Plus className="w-5 h-5" />
+                          Thêm vào giỏ
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+
+                {/* Right Column - Order Cart */}
+                <div className="bg-gray-50 rounded-lg p-4 h-fit sticky top-0">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                      <ShoppingCart className="w-5 h-5" />
+                      Giỏ hàng ({formData.dishes.length})
+                    </h3>
+                  </div>
+
+                  {formData.dishes.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <p className="text-sm">Chưa có món nào trong giỏ</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                      {formData.dishes.map((dish, index) => (
+                        <div
+                          key={index}
+                          className="bg-white rounded-lg p-3 shadow-sm border border-gray-200"
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1">
+                              <p className="font-semibold text-gray-800">
+                                {dish.dishName}
+                              </p>
+                              {dish.modifiers?.length > 0 && (
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Tùy chọn:{" "}
+                                  {dish.modifiers
+                                    .map((m) => m.optionName)
+                                    .join(", ")}
+                                </p>
+                              )}
+                              {dish.note && (
+                                <p className="text-xs text-gray-500 mt-1 italic">
+                                  Ghi chú: {dish.note}
+                                </p>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveDish(index)}
+                              className="text-red-500 hover:text-red-700 ml-2"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleUpdateDishQuantity(
+                                    index,
+                                    dish.quantity - 1
+                                  )
+                                }
+                                className="p-1 bg-gray-100 rounded hover:bg-gray-200"
+                              >
+                                <Minus className="w-3 h-3" />
+                              </button>
+                              <span className="text-sm font-medium w-8 text-center">
+                                {dish.quantity}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleUpdateDishQuantity(
+                                    index,
+                                    dish.quantity + 1
+                                  )
+                                }
+                                className="p-1 bg-gray-100 rounded hover:bg-gray-200"
+                              >
+                                <Plus className="w-3 h-3" />
+                              </button>
+                            </div>
+                            <span className="text-sm font-semibold text-orange-600">
+                              {formatPrice(calculateDishPrice(dish))}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Total */}
+                  <div className="mt-4 pt-4 border-t-2 border-gray-300">
+                    <div className="flex items-center justify-between">
+                      <span className="text-lg font-bold text-gray-800">
+                        Tổng cộng:
+                      </span>
+                      <span className="text-2xl font-bold text-orange-600">
+                        {formatPrice(getTotalAmount())}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          {/* Footer */}
+          <div className="bg-gray-50 px-6 py-4 flex items-center justify-end gap-3 border-t border-gray-200">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-lg transition-colors"
+            >
+              Hủy
+            </button>
+            <button
+              type="submit"
+              onClick={handleSubmit}
+              disabled={isSubmitting || formData.dishes.length === 0}
+              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? "Đang lưu..." : order ? "Cập Nhật" : "Tạo Đơn"}
+            </button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
+export default OrderForm;
