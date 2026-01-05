@@ -8,8 +8,11 @@ export class Users {
     this.fullName = data.full_name || data.fullName;
     this.role = data.role;
     this.passwordHash = data.password_hash || data.passwordHash;
-    this.isActive = data.is_active !== undefined ? data.is_active : data.isActive;
-
+    this.isActive =
+      data.is_active !== undefined ? data.is_active : data.isActive;
+    this.refreshTokenHash = data.refresh_token_hash || data.refreshTokenHash;
+    this.refreshTokenExpires =
+      data.refresh_token_expires || data.refreshTokenExpires;
   }
 
   /**
@@ -25,6 +28,8 @@ export class Users {
       is_active: this.isActive,
       password_hash: this.passwordHash,
       role: this.role,
+      refresh_token_hash: this.refreshTokenHash,
+      refresh_token_expires: this.refreshTokenExpires,
     };
   }
 }

@@ -18,10 +18,21 @@ class AuthController {
       // Gọi Service để xác thực
       const result = await this.authService.login(email, password, tenantId);
 
+      // Lưu refresh token vào httpOnly cookie
+      res.cookie("refreshToken", result.refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production", // Chỉ dùng HTTPS trong production
+        sameSite: "strict",
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày
+      });
+
       return res.status(200).json({
         success: true,
         message: "Login successful",
-        data: result,
+        data: {
+          user: result.user,
+          accessToken: result.accessToken,
+        },
       });
     } catch (error) {
       if (
@@ -79,12 +90,52 @@ class AuthController {
    */
   logout = async (req, res, next) => {
     try {
-      // TODO: Implement logout logic (invalidate token, etc.)
+      const refreshToken = req.cookies?.refreshToken;
+
+      // Thu hồi refresh token
+      await this.authService.logout(refreshToken);
+
+      // Xóa cookie
+      res.clearCookie("refreshToken");
+
       return res.status(200).json({
         success: true,
         message: "Logout successful",
       });
     } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * [POST] /api/auth/refresh
+   * Làm mới access token bằng refresh token
+   */
+  refresh = async (req, res, next) => {
+    try {
+      const refreshToken = req.cookies?.refreshToken;
+
+      if (!refreshToken) {
+        const error = new Error("Refresh token not found");
+        error.statusCode = 401;
+        throw error;
+      }
+
+      // Làm mới access token
+      const result = await this.authService.refreshAccessToken(refreshToken);
+
+      return res.status(200).json({
+        success: true,
+        message: "Token refreshed successfully",
+        data: {
+          user: result.user,
+          accessToken: result.accessToken,
+        },
+      });
+    } catch (error) {
+      // Xóa cookie nếu refresh token không hợp lệ
+      res.clearCookie("refreshToken");
+      error.statusCode = 401;
       next(error);
     }
   };
