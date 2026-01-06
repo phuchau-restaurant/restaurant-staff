@@ -1,11 +1,13 @@
 //Nơi khởi động Express App
 
 import express from "express";
+import { createServer } from "http";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
+import { initializeSocket } from "./configs/socket.js";
 
 // Import các routes
 
@@ -33,6 +35,7 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 const app = express();
+const httpServer = createServer(app);
 const PORT = process.env.PORT || 3000;
 
 // --- MIDDLEWARE ---
@@ -91,8 +94,11 @@ const startServer = async () => {
   // 1. Kiểm tra kết nối DB trước
   await connectDatabase();
 
-  // 2. Chạy server
-  app.listen(PORT, () => {
+  // 2. Initialize Socket.IO
+  initializeSocket(httpServer);
+
+  // 3. Chạy server
+  httpServer.listen(PORT, () => {
     console.log(`\n✅ Server đang chạy tại: http://localhost:${PORT}`);
   });
 };

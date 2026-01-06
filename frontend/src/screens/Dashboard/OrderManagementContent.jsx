@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Plus, ShoppingCart, AlertTriangle } from "lucide-react";
 
 // Components
@@ -25,6 +25,9 @@ import {
   ORDER_STATUS,
   DEFAULT_PREP_TIME,
 } from "../../constants/orderConstants";
+
+// Socket hooks for real-time updates
+import { useOrderSocket } from "../../hooks/useOrderSocket";
 
 /**
  * OrderManagementContent - Màn hình quản lý đơn hàng trong Dashboard
@@ -80,6 +83,72 @@ const OrderManagementContent = () => {
 
   // Prep time configuration (có thể lấy từ API settings sau)
   const [prepTime, setPrepTime] = useState(DEFAULT_PREP_TIME);
+
+  // ==================== SOCKET REAL-TIME UPDATES ====================
+
+  // Handler for new order created (from other tabs/users)
+  const handleSocketOrderCreated = useCallback(async (data) => {
+    console.log("🔔 [Socket] New order created:", data);
+    try {
+      // Fetch full order details
+      const orderDetail = await orderService.fetchOrderById(data.orderId);
+      setOrders((prev) => {
+        // Check if order already exists
+        if (prev.some((o) => o.id === data.orderId)) return prev;
+        return [orderDetail, ...prev];
+      });
+    } catch (error) {
+      console.error("Failed to fetch new order details:", error);
+    }
+  }, []);
+
+  // Handler for order updated (from other tabs/users)
+  const handleSocketOrderUpdated = useCallback(async (data) => {
+    console.log("🔔 [Socket] Order updated:", data);
+    try {
+      // Fetch updated order details
+      const updatedOrder = await orderService.fetchOrderById(data.orderId);
+      setOrders((prev) =>
+        prev.map((order) => (order.id === data.orderId ? updatedOrder : order))
+      );
+    } catch (error) {
+      console.error("Failed to fetch updated order:", error);
+      // Fallback: update with socket data
+      setOrders((prev) =>
+        prev.map((order) =>
+          order.id === data.orderId ? { ...order, ...data } : order
+        )
+      );
+    }
+  }, []);
+
+  // Handler for order detail updated (dish status changed)
+  const handleSocketOrderDetailUpdated = useCallback(async (data) => {
+    console.log("🔔 [Socket] Order detail updated:", data);
+    try {
+      // Fetch updated order to get all items
+      const updatedOrder = await orderService.fetchOrderById(data.orderId);
+      setOrders((prev) =>
+        prev.map((order) => (order.id === data.orderId ? updatedOrder : order))
+      );
+    } catch (error) {
+      console.error("Failed to fetch order after detail update:", error);
+    }
+  }, []);
+
+  // Handler for order deleted
+  const handleSocketOrderDeleted = useCallback((data) => {
+    console.log("🔔 [Socket] Order deleted:", data);
+    setOrders((prev) => prev.filter((order) => order.id !== data.orderId));
+  }, []);
+
+  // Connect socket listeners and get connection status
+  const { isConnected: socketConnected } = useOrderSocket({
+    onOrderCreated: handleSocketOrderCreated,
+    onOrderUpdated: handleSocketOrderUpdated,
+    onOrderDetailUpdated: handleSocketOrderDetailUpdated,
+    onOrderDeleted: handleSocketOrderDeleted,
+  });
 
   // ==================== LIFECYCLE ====================
 
@@ -431,6 +500,21 @@ const OrderManagementContent = () => {
               <p className="text-gray-600 mt-1">
                 Tổng số: {filteredOrders.length} đơn hàng | Trang {currentPage}{" "}
                 / {Math.ceil(filteredOrders.length / itemsPerPage) || 1}
+                {/* Socket connection indicator */}
+                <span
+                  className={`ml-3 inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${
+                    socketConnected
+                      ? "bg-green-100 text-green-700"
+                      : "bg-red-100 text-red-700"
+                  }`}
+                >
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      socketConnected ? "bg-green-500" : "bg-red-500"
+                    }`}
+                  ></span>
+                  {socketConnected ? "Live" : "Offline"}
+                </span>
               </p>
             </div>
             <button

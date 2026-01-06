@@ -1,0 +1,113 @@
+// Socket.IO Configuration
+import { Server } from "socket.io";
+import jwt from "jsonwebtoken";
+
+let io;
+
+/**
+ * Initialize Socket.IO server
+ * @param {import('http').Server} httpServer - HTTP server instance
+ */
+export const initializeSocket = (httpServer) => {
+  io = new Server(httpServer, {
+    cors: {
+      origin: ["http://localhost:5173", "http://localhost:5174"],
+      credentials: true,
+    },
+  });
+
+  // Authentication middleware
+  io.use((socket, next) => {
+    try {
+      const token = socket.handshake.auth.token;
+      console.log("🔑 Socket token received:", token ? "✓" : "✗");
+
+      if (!token) {
+        return next(new Error("Authentication token required"));
+      }
+
+      console.log(
+        "🔐 JWT_ACCESS_SECRET loaded:",
+        process.env.JWT_ACCESS_SECRET ? "✓" : "✗"
+      );
+      const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+      console.log("✅ Token verified. Payload:", {
+        id: decoded.id,
+        tenantId: decoded.tenantId,
+        role: decoded.role,
+      });
+
+      socket.userId = decoded.id;
+      socket.tenantId = decoded.tenantId;
+      socket.role = decoded.role;
+
+      next();
+    } catch (error) {
+      console.error("❌ Socket auth error:", error.message);
+      next(new Error("Invalid token"));
+    }
+  });
+
+  io.on("connection", (socket) => {
+    console.log(
+      `✅ Client connected: ${socket.id} (User: ${socket.userId}, Tenant: ${socket.tenantId})`
+    );
+
+    // Join tenant-specific room
+    const tenantRoom = `tenant:${socket.tenantId}`;
+    socket.join(tenantRoom);
+
+    // Join role-specific rooms
+    if (socket.role === "kitchen_staff") {
+      socket.join(`${tenantRoom}:kitchen`);
+    } else if (socket.role === "admin" || socket.role === "manager") {
+      socket.join(`${tenantRoom}:admin`);
+    }
+
+    socket.on("disconnect", () => {
+      console.log(`❌ Client disconnected: ${socket.id}`);
+    });
+
+    // Handle errors
+    socket.on("error", (error) => {
+      console.error(`Socket error for ${socket.id}:`, error);
+    });
+  });
+
+  console.log("✅ Socket.IO server initialized");
+  return io;
+};
+
+/**
+ * Get Socket.IO instance
+ */
+export const getIO = () => {
+  if (!io) {
+    throw new Error("Socket.IO not initialized. Call initializeSocket first.");
+  }
+  return io;
+};
+
+/**
+ * Emit event to specific tenant
+ */
+export const emitToTenant = (tenantId, event, data) => {
+  const io = getIO();
+  io.to(`tenant:${tenantId}`).emit(event, data);
+};
+
+/**
+ * Emit event to kitchen staff of specific tenant
+ */
+export const emitToKitchen = (tenantId, event, data) => {
+  const io = getIO();
+  io.to(`tenant:${tenantId}:kitchen`).emit(event, data);
+};
+
+/**
+ * Emit event to admins of specific tenant
+ */
+export const emitToAdmin = (tenantId, event, data) => {
+  const io = getIO();
+  io.to(`tenant:${tenantId}:admin`).emit(event, data);
+};

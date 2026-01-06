@@ -3,6 +3,7 @@ import KitchenHeader from "../components/Kitchen/KitchenHeader";
 import OrdersGrid from "../components/Kitchen/OrdersGrid";
 import AlertModal from "../components/Modal/AlertModal";
 import { useAlert } from "../hooks/useAlert";
+import { useKitchenSocket, useOrderSocket } from "../hooks/useOrderSocket";
 
 // Map trạng thái từ tiếng Anh sang tiếng Việt
 const STATUS_MAP = {
@@ -131,6 +132,75 @@ const KitchenScreen = () => {
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Socket listeners for real-time updates
+  useKitchenSocket({
+    onNewOrder: (data) => {
+      console.log("🔔 New order received:", data);
+      showInfo(`Đơn mới #${data.orderId} từ bàn ${data.tableId}`);
+
+      // Add new order to list
+      const newOrder = {
+        id: data.orderId,
+        orderNumber: data.orderId,
+        tableNumber: data.tableId,
+        orderTime: new Date(),
+        status: data.status || "Pending",
+        items: (data.items || []).map((item) => ({
+          id: item.dishId,
+          order_detail_id: item.orderDetailId,
+          dishId: item.dishId,
+          name: item.name || "Món ăn",
+          quantity: item.quantity,
+          note: item.note || "",
+          status: item.status || "Pending",
+          completed: false,
+        })),
+        customerName: "Khách",
+        notes: "",
+      };
+
+      setOrders((prev) => [newOrder, ...prev]);
+    },
+    onDishStatusChanged: (data) => {
+      console.log("🔔 Dish status changed:", data);
+      // Update dish status in orders
+      setOrders((prev) =>
+        prev.map((order) => {
+          if (order.id === data.orderId) {
+            return {
+              ...order,
+              items: order.items.map((item) =>
+                item.order_detail_id === data.orderDetailId
+                  ? {
+                      ...item,
+                      status: data.status,
+                      completed: data.status === "Completed",
+                    }
+                  : item
+              ),
+            };
+          }
+          return order;
+        })
+      );
+    },
+  });
+
+  useOrderSocket({
+    onOrderUpdated: (data) => {
+      console.log("🔔 Order updated:", data);
+      setOrders((prev) =>
+        prev.map((order) =>
+          order.id === data.orderId ? { ...order, status: data.status } : order
+        )
+      );
+    },
+    onOrderDeleted: (data) => {
+      console.log("🔔 Order deleted:", data);
+      setOrders((prev) => prev.filter((order) => order.id !== data.orderId));
+    },
+  });
 
   // Tính thời gian từ khi order
   const getElapsedTime = useCallback(

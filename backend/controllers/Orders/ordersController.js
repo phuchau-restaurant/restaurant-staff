@@ -1,6 +1,12 @@
 // backend/controllers/Orders/ordersController.js
 import OrderStatus from "../../constants/orderStatus.js";
 import OrderDetailStatus from "../../constants/orderdetailStatus.js";
+import {
+  emitOrderCreated,
+  emitOrderUpdated,
+  emitOrderDetailUpdated,
+  emitOrderDeleted,
+} from "../../utils/socketEmitters.js";
 
 class OrdersController {
   constructor(ordersService) {
@@ -26,6 +32,16 @@ class OrdersController {
       const detailsData = result.details.map((d) => {
         const { id, tenantId, orderId, ...rest } = d;
         return rest;
+      });
+
+      // Emit socket event for new order
+      emitOrderCreated(tenantId, {
+        orderId: result.order.id,
+        tableId: result.order.tableId,
+        status: result.order.status,
+        totalAmount: result.order.totalAmount,
+        displayOrder: result.order.displayOrder,
+        items: detailsData,
       });
 
       return res.status(201).json({
@@ -68,6 +84,13 @@ class OrdersController {
       const mess = status
         ? `Order status updated to ${status}`
         : `Order updated successfully`;
+
+      // Emit socket event for order update
+      emitOrderUpdated(tenantId, {
+        orderId: updatedOrder.id,
+        ...returnData,
+      });
+
       return res.status(200).json({
         message: mess,
         success: true,
@@ -109,6 +132,17 @@ class OrdersController {
       );
       // Clean Response
       const cleanedDetail = (({ tenantId, ...rest }) => rest)(updatedDetail);
+
+      // Emit socket event for order detail update
+      emitOrderDetailUpdated(tenantId, {
+        orderId: parseInt(orderId),
+        orderDetailId: updatedDetail.id,
+        dishId: updatedDetail.dishId,
+        status: updatedDetail.status,
+        quantity: updatedDetail.quantity,
+        unitPrice: updatedDetail.unitPrice,
+      });
+
       return res.status(200).json({
         success: true,
         message: `Order detail status ${status} updated successfully`,
@@ -156,6 +190,9 @@ class OrdersController {
       const { id } = req.params;
 
       await this.ordersService.deleteOrder(id, tenantId);
+
+      // Emit socket event for order deletion
+      emitOrderDeleted(tenantId, parseInt(id));
 
       return res.status(200).json({
         success: true,
