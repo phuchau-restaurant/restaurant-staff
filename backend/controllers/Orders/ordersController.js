@@ -27,7 +27,7 @@ class OrdersController {
       });
 
       // 1. Clean Order Info
-      const { id: _oid, tenantId: _tid, ...orderData } = result.order;
+      const { tenantId: _tid, ...orderData } = result.order;
 
       const detailsData = result.details.map((d) => {
         const { id, tenantId, orderId, ...rest } = d;
@@ -72,15 +72,15 @@ class OrdersController {
         });
       }
 
-      // req.body chứa các trường muốn sửa: { status: 'completed', tableId: 5 ... }
+      // req.body chứa các trường muốn sửa: { status: 'completed', tableId: 5, dishes: [...] }
       const updatedOrder = await this.ordersService.updateOrder(
         id,
         tenantId,
         req.body
       );
 
-      // Clean Response (Destructuring)
-      const { id: _oid, tenantId: _tid, ...returnData } = updatedOrder;
+      // Clean Response - giữ lại id để frontend dùng
+      const { tenantId: _tid, ...returnData } = updatedOrder;
       const mess = status
         ? `Order status updated to ${status}`
         : `Order updated successfully`;
@@ -160,12 +160,13 @@ class OrdersController {
       const tenantId = req.tenantId;
       const { id } = req.params;
 
+      // Load đầy đủ với dishName khi xem chi tiết đơn hàng
       const result = await this.ordersService.getOrderById(id, tenantId);
 
-      // Clean Response
-      const { id: _oid, tenantId: _tid, ...orderData } = result.order;
+      // Clean Response - giữ lại id để frontend có thể dùng
+      const { tenantId: _tid, ...orderData } = result.order;
       const detailsData = result.details.map((d) => {
-        const { id, tenantId, orderId, ...rest } = d;
+        const { tenantId, orderId, ...rest } = d;
         return rest;
       });
 

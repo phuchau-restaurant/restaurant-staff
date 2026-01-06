@@ -44,9 +44,10 @@ export const fetchOrders = async (filters = {}) => {
 };
 
 /**
- * Lấy chi tiết đơn hàng theo ID
+ * Lấy chi tiết đơn hàng theo ID (CÓ dishName)
+ * Dùng khi click vào đơn cụ thể để xem/chỉnh sửa chi tiết
  * @param {string} orderId - ID đơn hàng
- * @returns {Promise<Object>} Chi tiết đơn hàng
+ * @returns {Promise<Object>} Chi tiết đơn hàng với đầy đủ thông tin
  */
 export const fetchOrderById = async (orderId) => {
   try {
@@ -63,6 +64,16 @@ export const fetchOrderById = async (orderId) => {
     console.error("Fetch order error:", error);
     throw error;
   }
+};
+
+/**
+ * Lấy chi tiết đơn hàng theo ID (CÓ dishName - alias cho fetchOrderById)
+ * Dùng khi cần load đầy đủ thông tin
+ * @param {string} orderId - ID đơn hàng
+ * @returns {Promise<Object>} Chi tiết đơn hàng với đầy đủ thông tin
+ */
+export const fetchOrderByIdWithDetails = async (orderId) => {
+  return fetchOrderById(orderId);
 };
 
 /**

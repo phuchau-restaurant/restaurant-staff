@@ -90,19 +90,79 @@ class OrdersService {
     // Lấy thêm chi tiết món
     const details = await this.orderDetailsRepo.getByOrderId(id);
 
-    return { order, details };
+    // Resolve dishName từ dishId bằng cách fetch menu items
+    const dishIds = details.map((d) => d.dishId);
+    const dishesInfo = await this.menusRepo.getByIds(dishIds);
+
+    // Map dishName vào details
+    const enrichedDetails = details.map((detail) => {
+      const dishInfo = dishesInfo.find((d) => d.id === detail.dishId);
+      return {
+        ...detail,
+        dishName: dishInfo?.name || "Unknown Dish",
+      };
+    });
+
+    return { order, details: enrichedDetails };
   }
   async updateOrder(id, tenantId, updates) {
     const currentOrder = await this.getOrderById(id, tenantId);
 
-    // Kiểm tra logic nghiệp vụ
+    // Nếu request gửi dishes mới, cần xóa old details và tạo new details
+    if (updates.dishes && Array.isArray(updates.dishes)) {
+      const dishes = updates.dishes;
+
+      // 1. Xóa order details cũ
+      await this.orderDetailsRepo.deleteByOrderId(id);
+
+      // 2. Tính toán totalAmount từ dishes mới
+      let calculatedTotalAmount = 0;
+      const orderDetailsToCreate = [];
+
+      for (const dish of dishes) {
+        const { dishId, quantity, description } = dish;
+
+        if (!dishId || quantity <= 0) continue;
+
+        // Lấy thông tin món từ DB để lấy giá chính xác
+        const menuItem = await this.menusRepo.getById(dishId);
+        if (!menuItem) {
+          throw new Error(`Dish with ID ${dishId} not found`);
+        }
+
+        const unitPrice = menuItem.price;
+        const subTotal = unitPrice * quantity;
+        calculatedTotalAmount += subTotal;
+
+        orderDetailsToCreate.push({
+          tenantId,
+          orderId: id,
+          dishId,
+          quantity,
+          unitPrice,
+          note: description || "",
+          status: OrderDetailStatus.PENDING, // Reset status khi update
+        });
+      }
+
+      // 3. Tạo new order details
+      if (orderDetailsToCreate.length > 0) {
+        await this.orderDetailsRepo.createMany(orderDetailsToCreate);
+      }
+
+      // 4. Update totalAmount
+      updates.totalAmount = calculatedTotalAmount;
+      // Bỏ dishes khỏi updates vì đã xử lý riêng
+      delete updates.dishes;
+    }
+
+    // Kiểm tra logic nghiệp vụ status
 
     // IF OrderStatus == Pending -> All OrderDetail status = Pending
     if (
       updates.status === OrdersStatus.PENDING &&
       currentOrder.order.status !== OrdersStatus.PENDING
     ) {
-      console.log();
       await this.orderDetailsRepo.updateByOrderId(id, {
         status: OrderDetailStatus.PENDING,
       });
@@ -123,7 +183,7 @@ class OrdersService {
           "Cannot complete order: there are still pending dishes"
         );
       }
-      updates.completedAt = new Date(); // TODO: Date hay Date utc ?
+      updates.completedAt = new Date();
     }
 
     // IF OrderStatus == Cancelled -> All OrderDetail = Cancelled
@@ -136,7 +196,7 @@ class OrdersService {
       });
     }
 
-    // 3. Gọi Repo update
+    // 3. Gọi Repo update order header
     return await this.ordersRepo.update(id, updates);
   }
 

@@ -27,6 +27,7 @@ import { DEFAULT_PREP_TIME } from "../../constants/orderConstants";
 const OrderCard = memo(
   ({
     order,
+    tables = [],
     onEdit,
     onDelete,
     onRestore,
@@ -38,6 +39,12 @@ const OrderCard = memo(
     const itemsCount = getTotalItemsCount(order.items);
     const statusColor = getOrderStatusColor(order.status);
     const statusLabel = getOrderStatusLabel(order.status);
+
+    // Lấy tên bàn từ tableId
+    const table = tables.find((t) => t.id === order.tableId);
+    const tableName = table
+      ? `${table.tableNumber}`
+      : `Bàn #${order.tableId}`;
 
     return (
       <div
@@ -59,9 +66,7 @@ const OrderCard = memo(
                 <UtensilsCrossed className="w-5 h-5 text-blue-600" />
               </div>
               <div>
-                <h3 className="font-bold text-gray-900">
-                  Bàn {order.tableId || "-"}
-                </h3>
+                <h3 className="font-bold text-gray-900">{tableName}</h3>
                 <p className="text-xs text-gray-500">#{order.id}</p>
               </div>
             </div>

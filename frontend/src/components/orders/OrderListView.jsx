@@ -24,6 +24,7 @@ import { DEFAULT_PREP_TIME } from "../../constants/orderConstants";
 const OrderListView = memo(
   ({
     orders,
+    tables = [],
     onEdit,
     onDelete,
     onRestore,
@@ -79,6 +80,12 @@ const OrderListView = memo(
                 const statusColor = getOrderStatusColor(order.status);
                 const statusLabel = getOrderStatusLabel(order.status);
 
+                // Lấy tên bàn từ tableId
+                const table = tables.find((t) => t.id === order.tableId);
+                const tableName = table
+                  ? `${table.tableNumber}`
+                  : `Bàn #${order.tableId}`;
+
                 return (
                   <tr
                     key={order.id || index}
@@ -117,7 +124,7 @@ const OrderListView = memo(
                       }`}
                     >
                       <span className="font-medium text-gray-700">
-                        Bàn {order.tableId || "-"}
+                        {tableName}
                       </span>
                     </td>
 

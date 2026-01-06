@@ -185,25 +185,12 @@ const OrderManagementContent = () => {
           modifierService.fetchModifierGroups(),
         ]);
 
-      // Process orders với thông tin bổ sung
-      const ordersWithDetails = await Promise.all(
-        ordersData.map(async (order) => {
-          try {
-            // Fetch chi tiết đơn hàng để có đầy đủ items
-            const orderDetail = await orderService.fetchOrderById(order.id);
-            return {
-              ...order,
-              items: orderDetail.items || [],
-            };
-          } catch (error) {
-            console.warn(
-              `Failed to fetch details for order ${order.id}:`,
-              error
-            );
-            return order;
-          }
-        })
-      );
+      // Process orders - chỉ lấy thông tin cơ bản (không load dishName)
+      // Khi click vào order để edit thì mới load đầy đủ thông tin
+      const ordersWithDetails = ordersData.map((order) => ({
+        ...order,
+        items: order.items || [],
+      }));
 
       setOrders(ordersWithDetails);
       setTables(Array.isArray(tablesData) ? tablesData : tablesData.data || []);
@@ -226,14 +213,7 @@ const OrderManagementContent = () => {
    */
   const handleCreateOrder = async (_, orderData) => {
     try {
-      const newOrder = await orderService.createOrder(orderData);
-
-      // Fetch chi tiết đơn hàng vừa tạo để có đầy đủ thông tin
-      const orderDetail = await orderService.fetchOrderById(
-        newOrder.id || newOrder.tableId
-      );
-
-      setOrders((prev) => [orderDetail, ...prev]);
+      await orderService.createOrder(orderData);
       setShowForm(false);
       showAlert("Thành công", MESSAGES.CREATE_SUCCESS, "success");
     } catch (error) {
@@ -345,7 +325,7 @@ const OrderManagementContent = () => {
    */
   const handleFormSubmit = async (orderId, orderData) => {
     if (editingOrder) {
-      await handleUpdateOrder(orderId || editingOrder.id, orderData);
+      await handleUpdateOrder(orderId, orderData);
     } else {
       await handleCreateOrder(null, orderData);
     }
@@ -365,12 +345,10 @@ const OrderManagementContent = () => {
   const handleEditClick = async (order) => {
     setIsLoadingForm(true);
     try {
-      // Fetch chi tiết đơn hàng nếu chưa có đầy đủ items
-      let orderDetail = order;
-      if (!order.items || order.items.length === 0) {
-        orderDetail = await orderService.fetchOrderById(order.id);
-      }
-
+      // Fetch đầy đủ thông tin (có dishName) khi click edit
+      const orderDetail = await orderService.fetchOrderByIdWithDetails(
+        order.id
+      );
       setEditingOrder(orderDetail);
       setShowForm(true);
     } catch (error) {
@@ -633,6 +611,7 @@ const OrderManagementContent = () => {
                       <OrderCard
                         key={order.id}
                         order={order}
+                        tables={tables}
                         onEdit={handleEditClick}
                         onDelete={handleDeleteClick}
                         onRestore={handleRestoreClick}
@@ -644,6 +623,7 @@ const OrderManagementContent = () => {
                 ) : (
                   <OrderListView
                     orders={paginatedOrders}
+                    tables={tables}
                     onEdit={handleEditClick}
                     onDelete={handleDeleteClick}
                     onRestore={handleRestoreClick}
