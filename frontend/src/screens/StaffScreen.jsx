@@ -11,6 +11,9 @@ import ConfirmModal from "../components/Modal/ConfirmModal";
 import Pagination from "../components/SpinnerLoad/Pagination";
 import { useAlert } from "../hooks/useAlert";
 
+// Context
+import { useSocket } from "../context/SocketContext";
+
 // Services
 import * as staffService from "../services/staffService";
 
@@ -19,6 +22,7 @@ import * as staffService from "../services/staffService";
  */
 const StaffScreen = () => {
   const { alert, showSuccess, showError, closeAlert } = useAlert();
+  const { socket, isConnected, connectSocket, disconnectSocket } = useSocket();
 
   // State quản lý confirm dialog
   const [confirmDialog, setConfirmDialog] = useState({
@@ -62,6 +66,72 @@ const StaffScreen = () => {
   useEffect(() => {
     fetchStaff();
   }, []);
+
+  // Socket listeners for real-time updates
+  useEffect(() => {
+    if (!socket || !isConnected) return;
+
+    console.log("👥 Setting up staff socket listeners");
+
+    // Listen for user created event
+    const handleUserCreated = (data) => {
+      console.log("📡 User created:", data);
+      setStaff((prevStaff) => {
+        // Check if user already exists
+        const exists = prevStaff.some((s) => s.id === data.userId);
+        if (exists) return prevStaff;
+
+        // Add new user to the list
+        return [
+          ...prevStaff,
+          {
+            id: data.userId,
+            email: data.email,
+            fullName: data.fullName,
+            role: data.role,
+            isActive: data.isActive,
+          },
+        ];
+      });
+    };
+
+    // Listen for user updated event
+    const handleUserUpdated = (data) => {
+      console.log("📡 User updated:", data);
+      setStaff((prevStaff) =>
+        prevStaff.map((s) =>
+          s.id === data.userId
+            ? {
+                ...s,
+                email: data.email,
+                fullName: data.fullName,
+                role: data.role,
+                isActive: data.isActive,
+              }
+            : s
+        )
+      );
+    };
+
+    // Listen for user deleted event
+    const handleUserDeleted = (data) => {
+      console.log("📡 User deleted:", data);
+      setStaff((prevStaff) => prevStaff.filter((s) => s.id !== data.userId));
+    };
+
+    // Register event listeners
+    socket.on("user:created", handleUserCreated);
+    socket.on("user:updated", handleUserUpdated);
+    socket.on("user:deleted", handleUserDeleted);
+
+    // Cleanup listeners on unmount
+    return () => {
+      console.log("👥 Cleaning up staff socket listeners");
+      socket.off("user:created", handleUserCreated);
+      socket.off("user:updated", handleUserUpdated);
+      socket.off("user:deleted", handleUserDeleted);
+    };
+  }, [socket, isConnected]);
 
   useEffect(() => {
     handleFilterAndSort();
@@ -338,10 +408,24 @@ const StaffScreen = () => {
               </h1>
               <p className="text-sm text-gray-500 mt-1">
                 Quản lý tài khoản nhân viên nhà hàng (Admin, Bếp, Phục vụ)
+                <span
+                  className={`ml-3 inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${
+                    isConnected
+                      ? "bg-green-100 text-green-700"
+                      : "bg-red-100 text-red-700"
+                  }`}
+                >
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      isConnected ? "bg-green-500" : "bg-red-500"
+                    }`}
+                  ></span>
+                  {isConnected ? "Live" : "Offline"}
+                </span>
               </p>
             </div>
           </div>
-          <div>
+          <div className="flex items-center gap-3">
             <button
               onClick={handleCreate}
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors font-semibold"

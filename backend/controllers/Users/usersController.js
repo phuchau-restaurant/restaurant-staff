@@ -3,6 +3,12 @@
 //Ko cần import - nhận service thông qua constructor:
 //ko cần: import UsersService from "../../services/Users/UsersService.js";
 
+import {
+  emitUserCreated,
+  emitUserUpdated,
+  emitUserDeleted,
+} from "../../utils/userSocketEmitters.js";
+
 // Thêm dòng này để kiểm tra ngay lập tức khi chạy server:
 //console.log('Loaded .env from:', envPath);
 
@@ -62,6 +68,15 @@ class UsersController {
         tenantId: tenantId, // Force tenantId từ header/token, không tin tưởng body
       });
 
+      // Emit socket event for new user
+      emitUserCreated(tenantId, {
+        userId: newUser.id,
+        email: newUser.email,
+        fullName: newUser.fullName,
+        role: newUser.role,
+        isActive: newUser.isActive,
+      });
+
       return res.status(201).json({
         success: true,
         message: "User created successfully",
@@ -86,6 +101,15 @@ class UsersController {
         req.body
       );
 
+      // Emit socket event for updated user
+      emitUserUpdated(tenantId, {
+        userId: updatedUser.id,
+        email: updatedUser.email,
+        fullName: updatedUser.fullName,
+        role: updatedUser.role,
+        isActive: updatedUser.isActive,
+      });
+
       return res.status(200).json({
         success: true,
         message: "User updated successfully",
@@ -104,6 +128,9 @@ class UsersController {
       const { id } = req.params;
 
       await this.usersService.deleteUser(id, tenantId);
+
+      // Emit socket event for deleted user
+      emitUserDeleted(tenantId, parseInt(id));
 
       return res.status(200).json({
         success: true,
