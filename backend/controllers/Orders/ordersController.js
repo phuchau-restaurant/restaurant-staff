@@ -6,7 +6,7 @@ import {
   emitOrderUpdated,
   emitOrderDetailUpdated,
   emitOrderDeleted,
-} from "../../utils/socketEmitters.js";
+} from "../../utils/orderSocketEmitters.js";
 
 class OrdersController {
   constructor(ordersService) {

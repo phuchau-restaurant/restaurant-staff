@@ -39,36 +39,41 @@ export const SocketProvider = ({ children }) => {
       return;
     }
 
-    // Create socket connection
-    console.log("🔌 Connecting to Socket.IO server...");
-    const newSocket = io(
-      import.meta.env.VITE_BACKEND_URL || "http://localhost:3000",
-      {
-        auth: {
-          token: accessToken,
-        },
-        autoConnect: true,
-      }
-    );
+    // Create socket connection (encapsulated so we can reuse for manual connect)
+    const createSocket = () => {
+      console.log("🔌 Connecting to Socket.IO server...");
+      const newSocket = io(
+        import.meta.env.VITE_BACKEND_URL || "http://localhost:3000",
+        {
+          auth: {
+            token: accessToken,
+          },
+          autoConnect: true,
+        }
+      );
 
-    // Connection event handlers
-    newSocket.on("connect", () => {
-      console.log("✅ Socket connected:", newSocket.id);
-      setIsConnected(true);
-    });
+      // Connection event handlers
+      newSocket.on("connect", () => {
+        console.log("✅ Socket connected:", newSocket.id);
+        setIsConnected(true);
+      });
 
-    newSocket.on("disconnect", (reason) => {
-      console.log("❌ Socket disconnected:", reason);
-      setIsConnected(false);
-    });
+      newSocket.on("disconnect", (reason) => {
+        console.log("❌ Socket disconnected:", reason);
+        setIsConnected(false);
+      });
 
-    newSocket.on("connect_error", (error) => {
-      console.error("❌ Socket connection error:", error.message);
-      setIsConnected(false);
-    });
+      newSocket.on("connect_error", (error) => {
+        console.error("❌ Socket connection error:", error.message);
+        setIsConnected(false);
+      });
 
-    socketRef.current = newSocket;
-    setSocket(newSocket);
+      socketRef.current = newSocket;
+      setSocket(newSocket);
+    };
+
+    // initialize
+    createSocket();
 
     // Cleanup on unmount or token change
     return () => {
@@ -79,9 +84,46 @@ export const SocketProvider = ({ children }) => {
     };
   }, [isAuthenticated, accessToken]);
 
+  // Allow manual connect/disconnect from UI
+  const connectSocket = () => {
+    if (socketRef.current) {
+      socketRef.current.connect();
+      return;
+    }
+    if (isAuthenticated && accessToken) {
+      // create a new socket if none exists
+      const newSocket = io(
+        import.meta.env.VITE_BACKEND_URL || "http://localhost:3000",
+        {
+          auth: { token: accessToken },
+          autoConnect: true,
+        }
+      );
+
+      newSocket.on("connect", () => setIsConnected(true));
+      newSocket.on("disconnect", () => setIsConnected(false));
+      newSocket.on("connect_error", () => setIsConnected(false));
+
+      socketRef.current = newSocket;
+      setSocket(newSocket);
+    }
+  };
+
+  const disconnectSocket = () => {
+    if (socketRef.current) {
+      try {
+        socketRef.current.disconnect();
+      } catch (e) {
+        console.error("Error disconnecting socket:", e);
+      }
+    }
+  };
+
   const value = {
     socket,
     isConnected,
+    connectSocket,
+    disconnectSocket,
   };
 
   return (
