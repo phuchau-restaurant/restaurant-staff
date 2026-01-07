@@ -37,18 +37,52 @@ export class UsersRepository extends BaseRepository {
   }
 
   async update(id, updates) {
-    //"Clean Payload"
+    // Chỉ map các field được truyền vào, không dùng full Model để tránh ghi đè null
+    const fieldMapping = {
+      tenantId: 'tenant_id',
+      email: 'email',
+      fullName: 'full_name',
+      isActive: 'is_active',
+      passwordHash: 'password_hash',
+      role: 'role',
+      refreshTokenHash: 'refresh_token_hash',
+      refreshTokenExpires: 'refresh_token_expires',
+      phoneNumber: 'phone_number',
+      dateOfBirth: 'date_of_birth',
+      hometown: 'hometown',
+      avatarUrl: 'avatar_url',
+      avatarType: 'avatar_type',
+      // Snake case keys (từ AuthService logout)
+      tenant_id: 'tenant_id',
+      full_name: 'full_name',
+      is_active: 'is_active',
+      password_hash: 'password_hash',
+      refresh_token_hash: 'refresh_token_hash',
+      refresh_token_expires: 'refresh_token_expires',
+      phone_number: 'phone_number',
+      date_of_birth: 'date_of_birth',
+      avatar_url: 'avatar_url',
+      avatar_type: 'avatar_type',
+    };
 
-    const userEntity = new Users(updates);
-    const dbPayload = userEntity.toPersistence();
+    const dbPayload = {};
 
-    // Loại bỏ các key có giá trị undefined -> Vì default value của is_active có thể không đc truyền vào
-    // lọc sạch object dbPayload.
-    Object.keys(dbPayload).forEach((key) => {
-      if (dbPayload[key] === undefined) {
-        delete dbPayload[key];
+    // Chỉ lấy các field được truyền vào updates
+    Object.keys(updates).forEach((key) => {
+      const dbKey = fieldMapping[key] || key;
+      let value = updates[key];
+
+      // Skip undefined
+      if (value === undefined) return;
+
+      // Convert empty strings to null (đặc biệt quan trọng cho DATE fields)
+      if (value === '') {
+        value = null;
       }
+
+      dbPayload[dbKey] = value;
     });
+
     const { data, error } = await supabase
       .from(this.tableName)
       .update(dbPayload)

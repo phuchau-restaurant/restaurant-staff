@@ -20,7 +20,6 @@ const StaffList = ({
   onToggleStatus,
   onRestore,
   onDeletePermanent,
-  onChangePassword,
 }) => {
   if (!staff || staff.length === 0) {
     return (
@@ -88,9 +87,8 @@ const StaffList = ({
             return (
               <tr key={member.id} className={`hover:bg-gray-50`}>
                 <td
-                  className={`px-6 py-4 whitespace-nowrap ${
-                    isInactive ? "opacity-50 bg-gray-50" : ""
-                  }`}
+                  className={`px-6 py-4 whitespace-nowrap ${isInactive ? "opacity-50 bg-gray-50" : ""
+                    }`}
                 >
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
@@ -104,9 +102,8 @@ const StaffList = ({
                   </div>
                 </td>
                 <td
-                  className={`px-6 py-4 ${
-                    isInactive ? "opacity-50 bg-gray-50" : ""
-                  }`}
+                  className={`px-6 py-4 ${isInactive ? "opacity-50 bg-gray-50" : ""
+                    }`}
                 >
                   <div className="flex items-center text-sm text-gray-500">
                     <Mail className="w-4 h-4 mr-2" />
@@ -114,24 +111,21 @@ const StaffList = ({
                   </div>
                 </td>
                 <td
-                  className={`px-6 py-4 text-center whitespace-nowrap ${
-                    isInactive ? "opacity-50 bg-gray-50" : ""
-                  }`}
+                  className={`px-6 py-4 text-center whitespace-nowrap ${isInactive ? "opacity-50 bg-gray-50" : ""
+                    }`}
                 >
                   {getRoleBadge(member.role)}
                 </td>
                 <td
-                  className={`px-6 py-4 text-center whitespace-nowrap ${
-                    isInactive ? "opacity-50 bg-gray-50" : ""
-                  }`}
+                  className={`px-6 py-4 text-center whitespace-nowrap ${isInactive ? "opacity-50 bg-gray-50" : ""
+                    }`}
                 >
                   <button
                     onClick={() => onToggleStatus(member)}
-                    className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                      !isInactive
+                    className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium transition-colors ${!isInactive
                         ? "bg-green-100 text-green-800 hover:bg-green-200"
                         : "bg-gray-100 text-gray-800 hover:bg-gray-200"
-                    }`}
+                      }`}
                   >
                     {!isInactive ? (
                       <>
