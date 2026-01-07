@@ -73,50 +73,47 @@ const StaffScreen = () => {
 
     console.log("👥 Setting up staff socket listeners");
 
-    // Listen for user created event
-    const handleUserCreated = (data) => {
-      console.log("📡 User created:", data);
-      setStaff((prevStaff) => {
-        // Check if user already exists
-        const exists = prevStaff.some((s) => s.id === data.userId);
-        if (exists) return prevStaff;
+    // Listen for user created event — treat socket as signal, fetch via HTTP
+    const handleUserCreated = async (data) => {
+      try {
+        console.log("📡 User created (signal):", data);
+        if (!data?.userId) return;
 
-        // Add new user to the list
-        return [
-          ...prevStaff,
-          {
-            id: data.userId,
-            email: data.email,
-            fullName: data.fullName,
-            role: data.role,
-            isActive: data.isActive,
-          },
-        ];
-      });
+        // Fetch the created user's full data from API and insert if not exists
+        const newUser = await staffService.getStaffById(data.userId);
+        setStaff((prevStaff) => {
+          if (prevStaff.some((s) => s.id === newUser.id)) return prevStaff;
+          return [newUser, ...prevStaff];
+        });
+      } catch (error) {
+        console.error("Failed to fetch user after socket create:", error);
+      }
     };
 
-    // Listen for user updated event
-    const handleUserUpdated = (data) => {
-      console.log("📡 User updated:", data);
-      setStaff((prevStaff) =>
-        prevStaff.map((s) =>
-          s.id === data.userId
-            ? {
-                ...s,
-                email: data.email,
-                fullName: data.fullName,
-                role: data.role,
-                isActive: data.isActive,
-              }
-            : s
-        )
-      );
+    // Listen for user updated event — fetch updated user via HTTP
+    const handleUserUpdated = async (data) => {
+      try {
+        console.log("📡 User updated (signal):", data);
+        if (!data?.userId) return;
+
+        const updatedUser = await staffService.getStaffById(data.userId);
+        setStaff((prevStaff) =>
+          prevStaff.map((s) => (s.id === updatedUser.id ? updatedUser : s))
+        );
+      } catch (error) {
+        console.error("Failed to fetch user after socket update:", error);
+      }
     };
 
-    // Listen for user deleted event
+    // Listen for user deleted event — remove locally (no fetch needed)
     const handleUserDeleted = (data) => {
-      console.log("📡 User deleted:", data);
-      setStaff((prevStaff) => prevStaff.filter((s) => s.id !== data.userId));
+      try {
+        console.log("📡 User deleted (signal):", data);
+        if (!data?.userId) return;
+        setStaff((prevStaff) => prevStaff.filter((s) => s.id !== data.userId));
+      } catch (error) {
+        console.error("Error handling user deleted signal:", error);
+      }
     };
 
     // Register event listeners
