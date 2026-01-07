@@ -55,7 +55,7 @@ export const AuthProvider = ({ children }) => {
           setIsAuthenticated(false);
           localStorage.removeItem("user");
           localStorage.removeItem("accessToken");
-          localStorage.removeItem("adminToken"); // Legacy token
+          localStorage.removeItem("accessToken"); // Legacy token
         }
       } catch (error) {
         console.error("❌ Auto-login failed:", error);
@@ -64,7 +64,7 @@ export const AuthProvider = ({ children }) => {
         setIsAuthenticated(false);
         localStorage.removeItem("user");
         localStorage.removeItem("accessToken");
-        localStorage.removeItem("adminToken");
+        localStorage.removeItem("accessToken");
       } finally {
         setIsLoading(false);
       }
@@ -135,7 +135,7 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(false);
       localStorage.removeItem("user");
       localStorage.removeItem("accessToken");
-      localStorage.removeItem("adminToken"); // Legacy
+      localStorage.removeItem("accessToken"); // Legacy
     }
   };
 
