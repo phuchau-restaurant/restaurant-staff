@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import Sidebar from "./Sidebar";
 import DashboardContent from "../../screens/Dashboard/DashboardContent";
 import OrderManagementContent from "../../screens/Dashboard/OrderManagementContent";
@@ -12,6 +14,18 @@ import StaffScreen from "../../screens/StaffScreen";
 
 const DashboardLayout = () => {
   const [activeMenu, setActiveMenu] = useState("dashboard");
+  const { user, logout, updateUser } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login", { replace: true });
+  };
+
+  const handleUserUpdate = (updatedUser) => {
+    // Update user data in context and localStorage
+    updateUser(updatedUser);
+  };
 
   const renderContent = () => {
     switch (activeMenu) {
@@ -41,7 +55,13 @@ const DashboardLayout = () => {
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar - Always visible */}
-      <Sidebar activeMenu={activeMenu} onNavigate={setActiveMenu} />
+      <Sidebar
+        activeMenu={activeMenu}
+        onNavigate={setActiveMenu}
+        user={user}
+        onLogout={handleLogout}
+        onUserUpdate={handleUserUpdate}
+      />
 
       {/* Main Content - Changes based on active menu */}
       <div className="flex-1 overflow-auto">{renderContent()}</div>
@@ -50,3 +70,4 @@ const DashboardLayout = () => {
 };
 
 export default DashboardLayout;
+

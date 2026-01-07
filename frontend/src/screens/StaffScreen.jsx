@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Users, Key, Plus } from "lucide-react";
+import { Users, Plus } from "lucide-react";
 
 // Components
 import StaffFilterBar from "../components/staff/StaffFilterBar";
@@ -29,12 +29,7 @@ const StaffScreen = () => {
     type: "danger",
   });
 
-  // State quản lý password change modal
-  const [passwordChangeDialog, setPasswordChangeDialog] = useState({
-    isOpen: false,
-    staff: null,
-    newPassword: "",
-  });
+
 
   // State quản lý dữ liệu
   const [staff, setStaff] = useState([]);
@@ -157,9 +152,8 @@ const StaffScreen = () => {
     setConfirmDialog({
       isOpen: true,
       title: "Xác nhận vô hiệu hóa nhân viên",
-      message: `Bạn có chắc chắn muốn vô hiệu hóa tài khoản "${
-        member.fullName || member.full_name
-      }"?`,
+      message: `Bạn có chắc chắn muốn vô hiệu hóa tài khoản "${member.fullName || member.full_name
+        }"?`,
       onConfirm: () => confirmDelete(member.id),
       type: "danger",
     });
@@ -194,9 +188,8 @@ const StaffScreen = () => {
     setConfirmDialog({
       isOpen: true,
       title: "Xác nhận khôi phục",
-      message: `Bạn có chắc chắn muốn khôi phục tài khoản "${
-        member.fullName || member.full_name
-      }"?`,
+      message: `Bạn có chắc chắn muốn khôi phục tài khoản "${member.fullName || member.full_name
+        }"?`,
       onConfirm: () => confirmRestore(member.id),
       type: "success",
     });
@@ -218,9 +211,8 @@ const StaffScreen = () => {
     setConfirmDialog({
       isOpen: true,
       title: "Xác nhận xóa vĩnh viễn",
-      message: `Bạn có chắc chắn muốn xóa vĩnh viễn tài khoản "${
-        member.fullName || member.full_name
-      }"? Hành động này không thể hoàn tác!`,
+      message: `Bạn có chắc chắn muốn xóa vĩnh viễn tài khoản "${member.fullName || member.full_name
+        }"? Hành động này không thể hoàn tác!`,
       onConfirm: () => confirmDeletePermanent(member.id),
       type: "danger",
     });
@@ -238,30 +230,7 @@ const StaffScreen = () => {
     }
   };
 
-  const handleChangePassword = (member) => {
-    setPasswordChangeDialog({
-      isOpen: true,
-      staff: member,
-      newPassword: "",
-    });
-  };
 
-  const confirmChangePassword = async () => {
-    try {
-      const { staff, newPassword } = passwordChangeDialog;
-
-      if (!newPassword || newPassword.length < 6) {
-        showError("Mật khẩu phải có ít nhất 6 ký tự");
-        return;
-      }
-
-      await staffService.changeStaffPassword(staff.id, newPassword);
-      showSuccess("Đổi mật khẩu thành công");
-      setPasswordChangeDialog({ isOpen: false, staff: null, newPassword: "" });
-    } catch (error) {
-      showError(error.message || "Không thể đổi mật khẩu");
-    }
-  };
 
   const handleFormSubmit = async (formData) => {
     try {
@@ -291,9 +260,7 @@ const StaffScreen = () => {
     setConfirmDialog({ ...confirmDialog, isOpen: false });
   };
 
-  const closePasswordDialog = () => {
-    setPasswordChangeDialog({ isOpen: false, staff: null, newPassword: "" });
-  };
+
 
   // ==================== PAGINATION ====================
 
@@ -382,7 +349,7 @@ const StaffScreen = () => {
                   onToggleStatus={handleToggleStatus}
                   onRestore={handleRestore}
                   onDeletePermanent={handleDeletePermanent}
-                  onChangePassword={handleChangePassword}
+
                 />
               </div>
             ) : (
@@ -396,7 +363,7 @@ const StaffScreen = () => {
                     onToggleStatus={handleToggleStatus}
                     onRestore={handleRestore}
                     onDeletePermanent={handleDeletePermanent}
-                    onChangePassword={handleChangePassword}
+
                   />
                 ))}
               </div>
@@ -439,50 +406,7 @@ const StaffScreen = () => {
         />
       )}
 
-      {/* Password Change Modal */}
-      {passwordChangeDialog.isOpen && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 p-4 backdrop-blur-sm bg-white/10">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <Key className="w-6 h-6 text-blue-600" />
-              <h3 className="text-lg font-semibold">Đổi mật khẩu</h3>
-            </div>
-            <p className="text-sm text-gray-600 mb-4">
-              Nhân viên:{" "}
-              <span className="font-medium">
-                {passwordChangeDialog.staff?.fullName ||
-                  passwordChangeDialog.staff?.full_name}
-              </span>
-            </p>
-            <input
-              type="password"
-              value={passwordChangeDialog.newPassword}
-              onChange={(e) =>
-                setPasswordChangeDialog({
-                  ...passwordChangeDialog,
-                  newPassword: e.target.value,
-                })
-              }
-              placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
-            />
-            <div className="flex gap-3">
-              <button
-                onClick={closePasswordDialog}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={confirmChangePassword}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                Đổi mật khẩu
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* Alert Modal */}
       {alert.isOpen && (

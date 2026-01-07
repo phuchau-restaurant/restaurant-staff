@@ -20,7 +20,6 @@ const StaffCard = ({
   onToggleStatus,
   onRestore,
   onDeletePermanent,
-  onChangePassword,
 }) => {
   const isInactive = member.isActive === false || member.is_active === false;
 
@@ -60,9 +59,8 @@ const StaffCard = ({
     >
       {/* Header với avatar và role badge */}
       <div
-        className={`${roleConfig.color} p-4 rounded-t-lg ${
-          isInactive ? "opacity-50" : ""
-        }`}
+        className={`${roleConfig.color} p-4 rounded-t-lg ${isInactive ? "opacity-50" : ""
+          }`}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -95,11 +93,10 @@ const StaffCard = ({
           <span className="text-xs text-gray-500">Trạng thái:</span>
           <button
             onClick={() => onToggleStatus(member)}
-            className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors ${
-              !isInactive
+            className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors ${!isInactive
                 ? "bg-green-100 text-green-800 hover:bg-green-200"
                 : "bg-gray-100 text-gray-800 hover:bg-gray-200"
-            }`}
+              }`}
           >
             {!isInactive ? (
               <>
