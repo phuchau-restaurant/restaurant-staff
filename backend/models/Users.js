@@ -13,6 +13,13 @@ export class Users {
     this.refreshTokenHash = data.refresh_token_hash || data.refreshTokenHash;
     this.refreshTokenExpires =
       data.refresh_token_expires || data.refreshTokenExpires;
+
+    // Profile fields
+    this.phoneNumber = data.phone_number || data.phoneNumber || null;
+    this.dateOfBirth = data.date_of_birth || data.dateOfBirth || null;
+    this.hometown = data.hometown || null;
+    this.avatarUrl = data.avatar_url || data.avatarUrl || null;
+    this.avatarType = data.avatar_type || data.avatarType || 'default';
   }
 
   /**
@@ -30,6 +37,12 @@ export class Users {
       role: this.role,
       refresh_token_hash: this.refreshTokenHash,
       refresh_token_expires: this.refreshTokenExpires,
+      // Profile fields
+      phone_number: this.phoneNumber,
+      date_of_birth: this.dateOfBirth,
+      hometown: this.hometown,
+      avatar_url: this.avatarUrl,
+      avatar_type: this.avatarType,
     };
   }
 }

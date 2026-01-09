@@ -34,9 +34,8 @@ export const fetchStaff = async (options = {}) => {
       queryParams.append("pageSize", pageSize);
     }
 
-    const url = `${BASE_URL}${
-      queryParams.toString() ? `?${queryParams.toString()}` : ""
-    }`;
+    const url = `${BASE_URL}${queryParams.toString() ? `?${queryParams.toString()}` : ""
+      }`;
 
     const response = await fetch(url, { headers: HEADERS });
     if (!response.ok) {
@@ -180,31 +179,6 @@ export const deleteStaffPermanent = async (staffId) => {
     }
   } catch (error) {
     console.error("Delete staff error:", error);
-    throw error;
-  }
-};
-
-/**
- * Đổi mật khẩu nhân viên
- * @param {string} staffId - ID nhân viên
- * @param {string} newPassword - Mật khẩu mới
- * @returns {Promise<void>}
- */
-export const changeStaffPassword = async (staffId, newPassword) => {
-  try {
-    const response = await fetch(`${BASE_URL}/${staffId}/change-password`, {
-      method: "PUT",
-      headers: HEADERS,
-      body: JSON.stringify({ newPassword }),
-    });
-
-    const result = await response.json();
-
-    if (!result.success) {
-      throw new Error(result.message || "Failed to change password");
-    }
-  } catch (error) {
-    console.error("Change password error:", error);
     throw error;
   }
 };
