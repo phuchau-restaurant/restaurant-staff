@@ -1,7 +1,7 @@
 import { useState, useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Mail, Lock, Home, Eye, EyeOff } from "lucide-react";
-import AuthContext from "../context/AuthContext";
+import AuthContext, { getRoleBasedRoute } from "../context/AuthContext";
 
 // --- COMPONENT: HOMESCREEN ---
 const HomeScreen = () => {
@@ -9,6 +9,7 @@ const HomeScreen = () => {
   const {
     isLoading: authLoading,
     isAuthenticated,
+    user,
     login,
   } = useContext(AuthContext);
   const [email, setEmail] = useState("");
@@ -18,12 +19,13 @@ const HomeScreen = () => {
   const [passwordError, setPasswordError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // Nếu đã đăng nhập, redirect đến dashboard
+  // Nếu đã đăng nhập, redirect đến trang phù hợp với role
   useEffect(() => {
-    if (isAuthenticated && !authLoading) {
-      navigate("/dashboard", { replace: true });
+    if (isAuthenticated && !authLoading && user) {
+      const targetRoute = getRoleBasedRoute(user.role);
+      navigate(targetRoute, { replace: true });
     }
-  }, [isAuthenticated, authLoading, navigate]);
+  }, [isAuthenticated, authLoading, user, navigate]);
 
   // Nếu đang kiểm tra authentication, hiển thị loading
   if (authLoading) {
@@ -69,19 +71,9 @@ const HomeScreen = () => {
       const result = await login(email.trim(), password);
 
       if (result.success && result.user) {
-        const userRole = result.user.role;
-
-        // Phân tách route theo role
-        if (userRole === "admin") {
-          navigate("/dashboard", { replace: true });
-        } else if (userRole === "chef") {
-          navigate("/kitchen", { replace: true });
-        } else if (userRole === "waiter" || userRole === "staff") {
-          navigate("/waiter", { replace: true });
-        } else {
-          // Default route nếu role không xác định
-          navigate("/dashboard", { replace: true });
-        }
+        // Sử dụng helper function để xác định route dựa trên role
+        const targetRoute = getRoleBasedRoute(result.user.role);
+        navigate(targetRoute, { replace: true });
       }
     } catch (err) {
       console.error("Login error:", err);
