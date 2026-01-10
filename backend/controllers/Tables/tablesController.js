@@ -1,4 +1,9 @@
 // backend/controllers/Tables/tablesController.js
+import {
+  emitTableCreated,
+  emitTableUpdated,
+  emitTableStatusChanged,
+} from "../../utils/tableSocketEmitters.js";
 
 class TablesController {
   constructor(tablesService) {
@@ -98,6 +103,9 @@ class TablesController {
 
       const { id: _id, tenantId: _tid, ...returnData } = newTable;
 
+      // Emit socket event for real-time updates
+      emitTableCreated(tenantId, { ...returnData, tableId: newTable.id });
+
       return res.status(201).json({
         success: true,
         message: "Table created successfully",
@@ -118,6 +126,9 @@ class TablesController {
       const updatedTable = await this.tablesService.updateTable(id, tenantId, req.body);
       
       const { id: _id, tenantId: _tid, ...returnData } = updatedTable;
+
+      // Emit socket event for real-time updates
+      emitTableUpdated(tenantId, { ...returnData, tableId: id });
 
       return res.status(200).json({
         success: true,
@@ -142,6 +153,9 @@ class TablesController {
       const updatedTable = await this.tablesService.updateTableStatus(id, tenantId, status);
       
       const { id: _id, tenantId: _tid, ...returnData } = updatedTable;
+
+      // Emit socket event for real-time updates
+      emitTableStatusChanged(tenantId, { ...returnData, tableId: id });
 
       return res.status(200).json({
         success: true,

@@ -27,6 +27,9 @@ import {
   ERROR_MESSAGES,
 } from "../constants/tableConstants";
 
+// Socket hooks for real-time updates
+import { useTableSocket } from "../hooks/useTableSocket";
+
 /**
  * TablesScreen - Màn hình quản lý bàn
  * Hiển thị danh sách bàn với các chức năng:
@@ -73,6 +76,33 @@ const TablesScreen = () => {
 
   // Options cho dropdowns
   const [areaOptions, setAreaOptions] = useState([{ value: "", label: "Tất cả khu vực" }]);
+
+  // ==================== SOCKET REAL-TIME UPDATES ====================
+
+  // Handler for table created (from other tabs/users)
+  const handleSocketTableCreated = useCallback(async (data) => {
+    console.log("🔔 [Socket] New table created:", data);
+    await fetchTables(); // Re-fetch để có dữ liệu mới nhất
+  }, [statusFilter, areaFilter, currentPage, pageSize]);
+
+  // Handler for table updated (from other tabs/users)
+  const handleSocketTableUpdated = useCallback(async (data) => {
+    console.log("🔔 [Socket] Table updated:", data);
+    await fetchTables(); // Re-fetch để có dữ liệu mới nhất
+  }, [statusFilter, areaFilter, currentPage, pageSize]);
+
+  // Handler for table deleted
+  const handleSocketTableDeleted = useCallback((data) => {
+    console.log("🔔 [Socket] Table deleted:", data);
+    setTables((prev) => prev.filter((table) => table.id !== data.tableId));
+  }, []);
+
+  // Connect socket listeners and get connection status
+  const { isConnected: socketConnected } = useTableSocket({
+    onTableCreated: handleSocketTableCreated,
+    onTableUpdated: handleSocketTableUpdated,
+    onTableDeleted: handleSocketTableDeleted,
+  });
 
   // ==================== LIFECYCLE ====================
 
@@ -296,6 +326,7 @@ const TablesScreen = () => {
             totalTables={filteredTables.length}
             onCreateTable={handleCreateTable}
             onManageQR={handleManageQR}
+            socketConnected={socketConnected}
           />
           {/* Filter Bar */}
           <TablesFilterBar
