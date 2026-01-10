@@ -1,4 +1,9 @@
 //backend/controllers/Categories/categoriesControllers.js
+import {
+  emitCategoryCreated,
+  emitCategoryUpdated,
+  emitCategoryDeleted,
+} from "../../utils/categorySocketEmitters.js";
 
 //Ko cần import - nhận service thông qua constructor:
 //ko cần: import CategoriesService from "../../services/Categories/categoriesService.js";
@@ -110,6 +115,9 @@ class CategoriesController {
       // Lọc bỏ tenantId, giữ lại id
       const { tenantId: _tid, ...returnData } = newCategory;
 
+      // Emit socket event for real-time updates
+      emitCategoryCreated(tenantId, returnData);
+
       return res.status(201).json({
         success: true,
         message: "Category created successfully",
@@ -137,6 +145,9 @@ class CategoriesController {
       // Lọc bỏ tenantId, giữ lại id
       const { tenantId: _tid, ...returnData } = updatedCategory;
 
+      // Emit socket event for real-time updates
+      emitCategoryUpdated(tenantId, returnData);
+
       return res.status(200).json({
         success: true,
         message: "Category updated successfully",
@@ -156,6 +167,9 @@ class CategoriesController {
 
       await this.categoriesService.deleteCategory(id, tenantId);
 
+      // Emit socket event for real-time updates
+      emitCategoryDeleted(tenantId, id);
+
       return res.status(200).json({
         success: true,
         message: "Category deleted successfully",
@@ -173,6 +187,9 @@ class CategoriesController {
       const { id } = req.params;
 
       await this.categoriesService.deletePermanent(id, tenantId);
+
+      // Emit socket event for real-time updates
+      emitCategoryDeleted(tenantId, id);
 
       return res.status(200).json({
         success: true,

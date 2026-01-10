@@ -19,6 +19,9 @@ import {
   VIEW_MODES,
 } from "../../constants/categoryConstants";
 
+// Socket hooks for real-time updates
+import { useCategorySocket } from "../../hooks/useCategorySocket";
+
 /**
  * CategoryManagementContent - Màn hình quản lý danh mục trong Dashboard
  * Hiển thị danh sách danh mục với các chức năng:
@@ -64,6 +67,33 @@ const CategoryManagementContent = () => {
     title: "",
     message: "",
     onConfirm: null,
+  });
+
+  // ==================== SOCKET REAL-TIME UPDATES ====================
+
+  // Handler for category created (from other tabs/users)
+  const handleSocketCategoryCreated = useCallback(async (data) => {
+    console.log("🔔 [Socket] Category created:", data);
+    await fetchCategories(); // Re-fetch để có dữ liệu mới nhất
+  }, []);
+
+  // Handler for category updated (from other tabs/users)
+  const handleSocketCategoryUpdated = useCallback(async (data) => {
+    console.log("🔔 [Socket] Category updated:", data);
+    await fetchCategories(); // Re-fetch để có dữ liệu mới nhất
+  }, []);
+
+  // Handler for category deleted (from other tabs/users)
+  const handleSocketCategoryDeleted = useCallback(async (data) => {
+    console.log("🔔 [Socket] Category deleted:", data);
+    await fetchCategories(); // Re-fetch để có dữ liệu mới nhất
+  }, []);
+
+  // Connect socket listeners and get connection status
+  const { isConnected: socketConnected } = useCategorySocket({
+    onCategoryCreated: handleSocketCategoryCreated,
+    onCategoryUpdated: handleSocketCategoryUpdated,
+    onCategoryDeleted: handleSocketCategoryDeleted,
   });
 
   // ==================== LIFECYCLE ====================
@@ -448,6 +478,21 @@ const CategoryManagementContent = () => {
             </h1>
             <p className="text-gray-600 mt-1">
               Tổng số: {filteredCategories.length} danh mục
+              {/* Socket connection indicator */}
+              <span
+                className={`ml-3 inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${
+                  socketConnected
+                    ? "bg-green-100 text-green-700"
+                    : "bg-red-100 text-red-700"
+                }`}
+              >
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    socketConnected ? "bg-green-500" : "bg-red-500"
+                  }`}
+                ></span>
+                {socketConnected ? "Live" : "Offline"}
+              </span>
             </p>
           </div>
           <button
