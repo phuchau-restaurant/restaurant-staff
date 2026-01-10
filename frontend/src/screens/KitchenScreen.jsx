@@ -4,6 +4,7 @@ import OrdersGrid from "../components/Kitchen/OrdersGrid";
 import AlertModal from "../components/Modal/AlertModal";
 import { useAlert } from "../hooks/useAlert";
 import { useKitchenSocket, useOrderSocket } from "../hooks/useOrderSocket";
+import { X, Bell } from "lucide-react";
 
 // Map trạng thái từ tiếng Anh sang tiếng Việt
 const STATUS_MAP = {
@@ -39,91 +40,98 @@ const KitchenScreen = () => {
   const [orders, setOrders] = useState([]);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isLoading, setIsLoading] = useState(true);
-
-  // Fetch orders từ API
+  const [notification, setNotification] = useState(null);
+  
+  // Tạo audio element một lần khi component mount
+  const audioRef = React.useRef(null);
+  
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        setIsLoading(true);
+    // Tạo beep sound bằng data URL
+    const beepSound = 'data:audio/wav;base64,UklGRhIAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU4AAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA';
+    audioRef.current = new Audio(beepSound);
+    audioRef.current.volume = 0.5;
+  }, []);
 
-        // Build query params
-        const params = new URLSearchParams();
+  // Fetch orders từ API - dùng useCallback để có thể gọi lại từ socket
+  const fetchOrders = useCallback(async () => {
+    try {
+      setIsLoading(true);
 
-        // Add status filter (nếu không phải "all")
-        if (filterStatus !== "all") {
-          // filterStatus đã là giá trị tiếng Anh (Pending, Cooking, etc.)
-          params.append("status", filterStatus);
-        }
+      // Build query params
+      const params = new URLSearchParams();
 
-        // Add category filter (nếu không phải "all")
-        if (filterStation !== "all") {
-          // filterStation đã là giá trị tiếng Anh (Appetizers, Beverage, etc.)
-          params.append("categoryId", filterStation);
-        }
-
-        const queryString = params.toString();
-        const url = `${import.meta.env.VITE_BACKEND_URL}/api/kitchen/orders${
-          queryString ? `?${queryString}` : ""
-        }`;
-
-        const res = await fetch(url, {
-          headers: { "x-tenant-id": import.meta.env.VITE_TENANT_ID },
-        });
-
-        const data = await res.json();
-        console.log("Kitchen orders API response:", data); // Debug: xem response từ API
-        if (data.success) {
-          // Map API data to component format
-          const mappedOrders = data.data.map((order) => {
-            // Determine order status based on dishes
-            const allDishes = order.dishes || [];
-            let orderStatus = "Pending";
-            if (allDishes.every((d) => d.status === "Completed")) {
-              orderStatus = "Completed";
-            } else if (allDishes.some((d) => d.status === "Cooking")) {
-              orderStatus = "Cooking";
-            } else if (allDishes.every((d) => d.status === "Cancelled")) {
-              orderStatus = "Cancelled";
-            }
-
-            return {
-              id: order.orderId,
-              orderNumber: order.orderId,
-              tableNumber: order.tableId,
-              orderTime: new Date(order.createdAt),
-              status: orderStatus,
-              items: allDishes.map((dish) => ({
-                id: dish.dishId,
-                order_detail_id: dish.order_detail_id,
-                dishId: dish.dishId,
-                name: dish.name,
-                quantity: dish.quantity,
-                note: dish.note || "",
-                status: dish.status,
-                categoryId: dish.categoryId,
-                image: dish.image,
-                completed: dish.status === "Completed",
-              })),
-              customerName: order.customerName || "Khách",
-              notes: order.note || "",
-            };
-          });
-          console.log("Mapped orders:", mappedOrders); // Debug
-          setOrders(mappedOrders);
-        }
-      } catch (error) {
-        console.error("Error fetching kitchen orders:", error);
-      } finally {
-        setIsLoading(false);
+      // Add status filter (nếu không phải "all")
+      if (filterStatus !== "all") {
+        // filterStatus đã là giá trị tiếng Anh (Pending, Cooking, etc.)
+        params.append("status", filterStatus);
       }
-    };
 
+      // Add category filter (nếu không phải "all")
+      if (filterStation !== "all") {
+        // filterStation đã là giá trị tiếng Anh (Appetizers, Beverage, etc.)
+        params.append("categoryId", filterStation);
+      }
+
+      const queryString = params.toString();
+      const url = `${import.meta.env.VITE_BACKEND_URL}/api/kitchen/orders${
+        queryString ? `?${queryString}` : ""
+      }`;
+
+      const res = await fetch(url, {
+        headers: { "x-tenant-id": import.meta.env.VITE_TENANT_ID },
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        // Map API data to component format
+        const mappedOrders = data.data.map((order) => {
+          // Determine order status based on dishes
+          const allDishes = order.dishes || [];
+          let orderStatus = "Pending";
+          if (allDishes.every((d) => d.status === "Completed")) {
+            orderStatus = "Completed";
+          } else if (allDishes.some((d) => d.status === "Cooking")) {
+            orderStatus = "Cooking";
+          } else if (allDishes.every((d) => d.status === "Cancelled")) {
+            orderStatus = "Cancelled";
+          }
+
+          return {
+            id: order.orderId,
+            orderNumber: order.orderId,
+            tableNumber: order.tableId,
+            orderTime: new Date(order.createdAt),
+            status: orderStatus,
+            items: allDishes.map((dish) => ({
+              id: dish.dishId,
+              order_detail_id: dish.order_detail_id,
+              dishId: dish.dishId,
+              name: dish.name,
+              quantity: dish.quantity,
+              note: dish.note || "",
+              status: dish.status,
+              categoryId: dish.categoryId,
+              image: dish.image,
+              completed: dish.status === "Completed",
+              modifiers: dish.modifiers || [],
+            })),
+            customerName: order.customerName || "Khách",
+            notes: order.note || "",
+          };
+        });
+        setOrders(mappedOrders);
+      }
+    } catch (error) {
+      console.error("Error fetching kitchen orders:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [filterStatus, filterStation]);
+
+  // Fetch orders lần đầu và khi filter thay đổi
+  useEffect(() => {
     fetchOrders();
-
-    // Auto refresh every 30 seconds
-    const interval = setInterval(fetchOrders, 30000);
-    return () => clearInterval(interval);
-  }, [filterStatus, filterStation]); // Re-fetch khi filter thay đổi
+  }, [fetchOrders]);
 
   // Cập nhật thời gian mỗi giây
   useEffect(() => {
@@ -133,73 +141,180 @@ const KitchenScreen = () => {
     return () => clearInterval(timer);
   }, []);
 
+  // Fetch single order by ID từ API và chuyển đổi sang format kitchen
+  const fetchSingleOrder = useCallback(async (orderId) => {
+    try {
+      const url = `${import.meta.env.VITE_BACKEND_URL}/api/orders/${orderId}`;
+      const res = await fetch(url, {
+        headers: { "x-tenant-id": import.meta.env.VITE_TENANT_ID },
+      });
+      const data = await res.json();
+
+      if (data.success && data.data) {
+        const order = data.data;
+        const orderDetails = order.orderDetails || [];
+
+        // Determine order status based on order details
+        let orderStatus = order.status || "Pending";
+
+        console.log(
+          "Fetched order status:",
+          orderStatus,
+          "for order:",
+          order.id
+        );
+
+        return {
+          id: order.id,
+          orderNumber: order.id,
+          tableNumber: order.tableId,
+          orderTime: new Date(order.createdAt),
+          status: orderStatus,
+          items: orderDetails.map((detail) => ({
+            id: detail.dishId,
+            order_detail_id: detail.id,
+            dishId: detail.dishId,
+            name: detail.dishName || detail.menu?.name || "Món ăn",
+            quantity: detail.quantity,
+            note: detail.note || "",
+            status: detail.status,
+            categoryId: detail.menu?.categoryId,
+            image: detail.menu?.image,
+            completed: detail.status === "Completed",
+            modifiers: detail.modifiers || [],
+          })),
+          customerName: order.customerName || "Khách",
+          notes: order.note || "",
+          server: order.server || "Server",
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error("Error fetching single order:", error);
+      return null;
+    }
+  }, []);
+
+  // Phát âm thanh thông báo - đơn giản hơn với HTML Audio
+  const playNotificationSound = useCallback(() => {
+    try {
+      if (audioRef.current) {
+        // Reset về đầu và phát
+        audioRef.current.currentTime = 0;
+        const playPromise = audioRef.current.play();
+        
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              console.log('🔊 Notification sound played');
+              // Phát lần 2 sau 200ms
+              setTimeout(() => {
+                if (audioRef.current) {
+                  audioRef.current.currentTime = 0;
+                  audioRef.current.play().catch(e => console.log('Second beep failed:', e));
+                }
+              }, 200);
+            })
+            .catch(error => {
+              console.error('Audio play failed:', error);
+              console.log('⚠️ Browser may require user interaction before playing audio');
+            });
+        }
+      }
+    } catch (error) {
+      console.error('Error playing notification sound:', error);
+    }
+  }, []);
+
+  // Socket callbacks with useCallback to prevent infinite re-renders
+  // Cập nhật state trực tiếp thay vì fetch lại toàn bộ để tránh reload màn hình
+  const handleNewOrder = useCallback(
+    async (data) => {
+      console.log("🔔 New order received:", data);
+      setNotification({
+        message: `Đơn mới #${data.orderId} từ bàn ${data.tableId}`,
+        orderId: data.orderId,
+        tableId: data.tableId,
+      });
+      playNotificationSound();
+
+      // Fetch thông tin đơn hàng mới và thêm vào đầu danh sách
+      const newOrder = await fetchSingleOrder(data.orderId);
+      if (newOrder) {
+        setOrders((prev) => [newOrder, ...prev]);
+      }
+    },
+    [fetchSingleOrder, playNotificationSound]
+  );
+
+  const handleDishStatusChanged = useCallback(
+    async (data) => {
+      console.log("🔔 Dish status changed:", data);
+
+      // Cập nhật order cụ thể trong state
+      const updatedOrder = await fetchSingleOrder(data.orderId);
+      if (updatedOrder) {
+        setOrders((prev) =>
+          prev.map((order) =>
+            order.id === data.orderId ? updatedOrder : order
+          )
+        );
+      }
+    },
+    [fetchSingleOrder]
+  );
+
+  const handleOrderUpdated = useCallback(
+    async (data) => {
+      console.log("🔔 Order updated:", data);
+
+      // Cập nhật order cụ thể trong state
+      const updatedOrder = await fetchSingleOrder(data.orderId);
+      if (updatedOrder) {
+        setOrders((prev) =>
+          prev.map((order) =>
+            order.id === data.orderId ? updatedOrder : order
+          )
+        );
+      }
+    },
+    [fetchSingleOrder]
+  );
+
+  const handleOrderDeleted = useCallback((data) => {
+    console.log("🔔 Order deleted:", data);
+    // Xóa order khỏi state
+    setOrders((prev) => prev.filter((order) => order.id !== data.orderId));
+  }, []);
+
+  const handleOrderCreated = useCallback(
+    async (data) => {
+      console.log("🔔 Order created:", data);
+      setNotification({
+        message: `Đơn mới #${data.orderId}`,
+        orderId: data.orderId,
+      });
+      playNotificationSound();
+
+      // Fetch thông tin đơn hàng mới và thêm vào đầu danh sách
+      const newOrder = await fetchSingleOrder(data.orderId);
+      if (newOrder) {
+        setOrders((prev) => [newOrder, ...prev]);
+      }
+    },
+    [fetchSingleOrder, playNotificationSound]
+  );
+
   // Socket listeners for real-time updates
   useKitchenSocket({
-    onNewOrder: (data) => {
-      console.log("🔔 New order received:", data);
-      showInfo(`Đơn mới #${data.orderId} từ bàn ${data.tableId}`);
-
-      // Add new order to list
-      const newOrder = {
-        id: data.orderId,
-        orderNumber: data.orderId,
-        tableNumber: data.tableId,
-        orderTime: new Date(),
-        status: data.status || "Pending",
-        items: (data.items || []).map((item) => ({
-          id: item.dishId,
-          order_detail_id: item.orderDetailId,
-          dishId: item.dishId,
-          name: item.name || "Món ăn",
-          quantity: item.quantity,
-          note: item.note || "",
-          status: item.status || "Pending",
-          completed: false,
-        })),
-        customerName: "Khách",
-        notes: "",
-      };
-
-      setOrders((prev) => [newOrder, ...prev]);
-    },
-    onDishStatusChanged: (data) => {
-      console.log("🔔 Dish status changed:", data);
-      // Update dish status in orders
-      setOrders((prev) =>
-        prev.map((order) => {
-          if (order.id === data.orderId) {
-            return {
-              ...order,
-              items: order.items.map((item) =>
-                item.order_detail_id === data.orderDetailId
-                  ? {
-                      ...item,
-                      status: data.status,
-                      completed: data.status === "Completed",
-                    }
-                  : item
-              ),
-            };
-          }
-          return order;
-        })
-      );
-    },
+    onNewOrder: handleNewOrder,
+    onDishStatusChanged: handleDishStatusChanged,
   });
 
   useOrderSocket({
-    onOrderUpdated: (data) => {
-      console.log("🔔 Order updated:", data);
-      setOrders((prev) =>
-        prev.map((order) =>
-          order.id === data.orderId ? { ...order, status: data.status } : order
-        )
-      );
-    },
-    onOrderDeleted: (data) => {
-      console.log("🔔 Order deleted:", data);
-      setOrders((prev) => prev.filter((order) => order.id !== data.orderId));
-    },
+    onOrderCreated: handleOrderCreated,
+    onOrderUpdated: handleOrderUpdated,
+    onOrderDeleted: handleOrderDeleted,
   });
 
   // Tính thời gian từ khi order
@@ -212,14 +327,38 @@ const KitchenScreen = () => {
   );
 
   // Xác định trạng thái dựa trên thời gian
+  // Xác định trạng thái dựa trên thời gian
   const getOrderStatus = useCallback(
     (order) => {
-      if (order.status === "completed" || order.status === "cancelled") {
-        return order.status;
+      const statusLower = (order.status || "").toLowerCase();
+
+      // Map backend status to frontend status
+      if (statusLower === "completed" || statusLower === "served") {
+        return "completed";
       }
+
+      if (statusLower === "cancelled") {
+        return "cancelled";
+      }
+
       const elapsed = getElapsedTime(order.orderTime);
-      if (elapsed >= 10) return "late";
-      return order.status;
+
+      // Pending/Approved/Unsubmit -> new or late based on time
+      if (
+        statusLower === "pending" ||
+        statusLower === "approved" ||
+        statusLower === "unsubmit"
+      ) {
+        return elapsed >= 15 ? "late" : "new";
+      }
+
+      // Cooking status
+      if (statusLower === "cooking") {
+        return elapsed >= 15 ? "late" : "cooking";
+      }
+
+      // Default: treat as new
+      return elapsed >= 15 ? "late" : "new";
     },
     [getElapsedTime]
   );
@@ -241,7 +380,6 @@ const KitchenScreen = () => {
       })
       .sort((a, b) => a.orderTime - b.orderTime);
 
-    console.log("Filtered orders:", filtered); // Debug
     return filtered;
   }, [orders, searchOrderId]);
 
@@ -452,6 +590,37 @@ const KitchenScreen = () => {
         statusOptions={STATUS_OPTIONS}
         categoryOptions={CATEGORY_OPTIONS}
       />
+
+      {/* Notification Banner */}
+      {notification && (
+        <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-4 flex items-center justify-between shadow-lg animate-in slide-in-from-top duration-300">
+          <div className="flex items-center gap-3">
+            <Bell className="w-5 h-5 animate-bounce" />
+            <span className="font-semibold text-lg">
+              {notification.message}
+            </span>
+          </div>
+          <button
+            onClick={() => setNotification(null)}
+            className="p-1.5 hover:bg-white/20 rounded-full transition-colors"
+            aria-label="Đóng thông báo"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+
+      {/* Test Audio Button - Fixed position */}
+      <button
+        onClick={() => {
+          console.log('🔊 Testing notification sound...');
+          playNotificationSound();
+        }}
+        className="fixed bottom-4 right-4 z-50 bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-full shadow-lg transition-all hover:scale-110"
+        title="Test âm thanh thông báo"
+      >
+        <Bell className="w-5 h-5" />
+      </button>
 
       <div className="flex-1 p-6 overflow-y-auto">
         {isLoading ? (

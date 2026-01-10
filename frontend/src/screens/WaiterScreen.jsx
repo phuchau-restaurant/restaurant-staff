@@ -16,55 +16,64 @@ const WaiterScreen = () => {
     return () => clearInterval(timer);
   }, []);
 
+  // Socket callbacks with useCallback to prevent infinite re-renders
+  const handleOrderCreated = useCallback((data) => {
+    console.log("🔔 New order created:", data);
+    const newOrder = {
+      id: data.orderId,
+      orderNumber: data.orderId,
+      tableNumber: data.tableId,
+      orderTime: new Date(),
+      status: data.status || "Pending",
+      items: (data.items || []).map((item) => ({
+        id: item.dishId,
+        name: item.name || "Món ăn",
+        quantity: item.quantity,
+        completed: item.status === "Completed",
+      })),
+    };
+    setOrders((prev) => [newOrder, ...prev]);
+  }, []);
+
+  const handleOrderUpdated = useCallback((data) => {
+    console.log("🔔 Order updated:", data);
+    setOrders((prev) =>
+      prev.map((order) =>
+        order.id === data.orderId ? { ...order, status: data.status } : order
+      )
+    );
+  }, []);
+
+  const handleOrderDetailUpdated = useCallback((data) => {
+    console.log("🔔 Order detail updated:", data);
+    setOrders((prev) =>
+      prev.map((order) => {
+        if (order.id === data.orderId) {
+          return {
+            ...order,
+            items: order.items.map((item) =>
+              item.id === data.dishId
+                ? { ...item, completed: data.status === "Completed" }
+                : item
+            ),
+          };
+        }
+        return order;
+      })
+    );
+  }, []);
+
+  const handleOrderDeleted = useCallback((data) => {
+    console.log("🔔 Order deleted:", data);
+    setOrders((prev) => prev.filter((order) => order.id !== data.orderId));
+  }, []);
+
   // Socket listeners for real-time updates
   useOrderSocket({
-    onOrderCreated: (data) => {
-      console.log("🔔 New order created:", data);
-      const newOrder = {
-        id: data.orderId,
-        orderNumber: data.orderId,
-        tableNumber: data.tableId,
-        orderTime: new Date(),
-        status: data.status || "Pending",
-        items: (data.items || []).map((item) => ({
-          id: item.dishId,
-          name: item.name || "Món ăn",
-          quantity: item.quantity,
-          completed: item.status === "Completed",
-        })),
-      };
-      setOrders((prev) => [newOrder, ...prev]);
-    },
-    onOrderUpdated: (data) => {
-      console.log("🔔 Order updated:", data);
-      setOrders((prev) =>
-        prev.map((order) =>
-          order.id === data.orderId ? { ...order, status: data.status } : order
-        )
-      );
-    },
-    onOrderDetailUpdated: (data) => {
-      console.log("🔔 Order detail updated:", data);
-      setOrders((prev) =>
-        prev.map((order) => {
-          if (order.id === data.orderId) {
-            return {
-              ...order,
-              items: order.items.map((item) =>
-                item.id === data.dishId
-                  ? { ...item, completed: data.status === "Completed" }
-                  : item
-              ),
-            };
-          }
-          return order;
-        })
-      );
-    },
-    onOrderDeleted: (data) => {
-      console.log("🔔 Order deleted:", data);
-      setOrders((prev) => prev.filter((order) => order.id !== data.orderId));
-    },
+    onOrderCreated: handleOrderCreated,
+    onOrderUpdated: handleOrderUpdated,
+    onOrderDetailUpdated: handleOrderDetailUpdated,
+    onOrderDeleted: handleOrderDeleted,
   });
 
   // Tính thời gian từ khi order

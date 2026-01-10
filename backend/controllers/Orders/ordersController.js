@@ -175,7 +175,7 @@ class OrdersController {
         message: "Order fetched successfully",
         data: {
           ...orderData,
-          items: detailsData,
+          orderDetails: detailsData, // Đổi từ 'items' thành 'orderDetails' để consistent
         },
       });
     } catch (error) {

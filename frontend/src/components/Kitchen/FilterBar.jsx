@@ -30,10 +30,10 @@ const FilterBar = ({
   };
 
   const categoryIconMap = {
-    Appetizers: "🥗",
-    Beverage: "🥤",
-    "Main course": "🍽️",
-    all: "📋",
+    "1": "🥗",
+    "2": "🥤",
+    "3": "🍽️",
+    "all": "📋",
   };
 
   return (
@@ -86,7 +86,7 @@ const FilterBar = ({
                   }}
                   className={`w-full px-4 py-2 text-left font-semibold transition-all flex items-center gap-2 ${
                     filterStation === category.value
-                      ? "bg-linear-to-r from-orange-400 to-orange-500 text-white shadow-lg"
+                      ? "bg-gradient-to-r from-orange-400 to-orange-500 text-white shadow-lg"
                       : "bg-white text-gray-800 hover:bg-orange-50"
                   }`}
                 >
@@ -107,7 +107,7 @@ const FilterBar = ({
               setShowStatusDropdown(!showStatusDropdown);
               setShowStationDropdown(false);
             }}
-            className={`w-full px-3 py-2 rounded-lg font-medium text-sm transition-all flex items-center justify-between shadow-sm bg-linear-to-r ${
+            className={`w-full px-3 py-2 rounded-lg font-medium text-sm transition-all flex items-center justify-between shadow-sm bg-gradient-to-r ${
               statusColorMap[selectedStatus.value]
             } text-white border-2 border-gray-400 hover:border-gray-500`}
           >
@@ -136,8 +136,8 @@ const FilterBar = ({
                     }}
                     className={`w-full px-4 py-2 text-left font-semibold transition-all shadow-sm ${
                       filterStatus === status.value
-                        ? `bg-linear-to-r ${gradient} text-white shadow-lg`
-                        : `bg-linear-to-r from-white to-gray-50 text-gray-700 hover:from-${
+                        ? `bg-gradient-to-r ${gradient} text-white shadow-lg`
+                        : `bg-gradient-to-r from-white to-gray-50 text-gray-700 hover:from-${
                             status.value === "all"
                               ? "slate"
                               : status.value === "Pending"

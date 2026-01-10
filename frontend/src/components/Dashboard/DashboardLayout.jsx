@@ -19,7 +19,7 @@ const DashboardLayout = () => {
 
   const handleLogout = async () => {
     await logout();
-    navigate("/login", { replace: true });
+    window.location.href = "/login";
   };
 
   const handleUserUpdate = (updatedUser) => {

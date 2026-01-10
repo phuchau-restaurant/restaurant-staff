@@ -1,144 +1,217 @@
 // src/components/OrderCard/OrderCard.jsx
-import React, { useState } from 'react';
-import { Bell, Clock, User, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { STATUS_CONFIG } from './constants.jsx'; // Giả sử constants cùng thư mục hoặc chỉnh đường dẫn phù hợp
+import React, { useState } from "react";
+import { Bell, Clock, User, AlertCircle, CheckCircle2 } from "lucide-react";
+import { STATUS_CONFIG } from "./constants.jsx";
+import OrderActions from "./OrderActions";
+import OrderDetailModal from "./OrderDetailModal";
 
-// Import components đã tách
-import OrderActions from './OrderActions';
-import OrderDetailModal from './OrderDetailModal';
-
-const OrderCard = ({ 
-  order, 
-  currentTime, 
-  getElapsedTime, 
-  getOrderStatus, 
-  handleStart, 
-  handleComplete, 
-  handleCancel, 
+const OrderCard = ({
+  order,
+  currentTime,
+  getElapsedTime,
+  getOrderStatus,
+  handleStart,
+  handleComplete,
+  handleCancel,
   handleRecall,
   handleCompleteItem,
-  viewMode 
+  viewMode,
 }) => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const status = getOrderStatus(order);
-  const statusConfig = STATUS_CONFIG[status];
+  const statusConfig = STATUS_CONFIG[status] || STATUS_CONFIG["new"];
   const elapsed = getElapsedTime(order.orderTime);
+
+  // Status-based accent colors
+  const getStatusColor = () => {
+    switch (status) {
+      case "new":
+        return "border-blue-500 bg-blue-50";
+      case "cooking":
+        return "border-orange-500 bg-orange-50";
+      case "late":
+        return "border-red-500 bg-red-50";
+      case "ready":
+        return "border-green-500 bg-green-50";
+      case "completed":
+        return "border-gray-500 bg-gray-100 opacity-75";
+      default:
+        return "border-gray-200 bg-white";
+    }
+  };
 
   return (
     <>
-      <div 
+      <div
         onClick={() => setShowDetailModal(true)}
-        className={`group bg-white rounded-xl shadow-md border-l-8 ${statusConfig.borderColor} overflow-hidden hover:shadow-xl transition-all cursor-pointer ${
-        viewMode === 'list' ? 'flex items-stretch' : 'flex flex-col h-full'
-      }`}>
-        {/* Header */}
-        <div className={`bg-gradient-to-br from-gray-50 to-white p-4 border-b-2 border-gray-100 ${viewMode === 'list' ? 'w-64 flex-shrink-0 border-b-0 border-r-2' : ''}`}>
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-blue-400 to-blue-500 p-2 rounded-lg shadow-sm">
-                <Bell size={20} className="text-white" />
-              </div>
-              <div>
-                <span className="font-black text-xl text-gray-800">{order.orderNumber}</span>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-blue-400 to-blue-500 text-white shadow-sm">
-                    Bàn {order.tableNumber}
-                  </span>
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-gray-200 text-gray-700">
-                    {order.items.length} món
-                  </span>
-                </div>
-              </div>
+        className={`group relative bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-2xl transition-all cursor-pointer flex flex-col h-full transform hover:-translate-y-1 ${
+          viewMode === "list" ? "flex-row min-h-[140px]" : ""
+        }`}
+      >
+        {/* Status Indicator Strip */}
+        <div
+          className={`absolute top-0 left-0 w-full h-1.5 ${statusConfig.color} z-10`}
+        />
+
+        {/* Header Section */}
+        <div
+          className={`p-4 border-b border-gray-100 ${
+            viewMode === "list"
+              ? "w-64 border-b-0 border-r bg-gray-50/50 flex flex-col justify-center"
+              : "bg-gray-50/30"
+          }`}
+        >
+          <div className="flex items-start justify-between mb-3">
+            {/* Order Number Badge */}
+            <div
+              className={`flex items-center justify-center w-12 h-12 rounded-xl text-white font-black text-xl shadow-md ${statusConfig.color}`}
+            >
+              #{order.orderNumber.toString().slice(-3)}
+            </div>
+
+            {/* Timer */}
+            <div
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border font-bold text-sm ${
+                elapsed >= 15
+                  ? "bg-red-100 text-red-600 border-red-200 animate-pulse"
+                  : "bg-white text-gray-600 border-gray-200"
+              }`}
+            >
+              <Clock size={15} />
+              <span>{elapsed}'</span>
             </div>
           </div>
-          
-          <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200">
-            <Clock size={16} className={elapsed >= 10 ? 'text-red-500' : 'text-gray-500'} />
-            <span className={`font-bold text-sm ${elapsed >= 10 ? 'text-red-600' : 'text-gray-700'}`}>
-              {elapsed} phút
-            </span>
-            {elapsed >= 10 && <AlertCircle size={16} className="text-red-500 animate-pulse" />}
-          </div>
 
-          <div className="mt-3 flex items-center gap-2 text-xs text-gray-600">
-            <User size={14} />
-            <span className="font-medium">{order.server}</span>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-gray-800 text-lg">
+                Bàn {order.tableNumber}
+              </span>
+              <span className="text-xs font-medium text-gray-500 bg-white px-2 py-0.5 rounded border border-gray-200 shadow-sm">
+                {order.items.length} món
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 text-xs text-gray-500 font-medium">
+              <User size={12} />
+              <span className="truncate max-w-[120px]">
+                {order.server || "Server"}
+              </span>
+              <span>•</span>
+              <span>
+                {new Date(order.orderTime).toLocaleTimeString("vi-VN", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Content - Danh sách món trong thẻ */}
-        <div className={`p-4 flex-1 ${viewMode === 'list' ? 'flex items-center gap-4' : 'flex flex-col'}`}>
-          <div className={`${viewMode === 'list' ? 'flex-1 mb-0' : 'flex-1 max-h-[180px] overflow-y-auto mb-3'}`}>
-            <div className={viewMode === 'list' ? 'space-y-1' : 'space-y-2'}>
-              {order.items.map(item => (
-                <div key={item.id} className={`flex gap-3 bg-gray-50 p-2 rounded-lg relative ${
-                  item.completed ? 'opacity-50 bg-green-50' : ''
-                } ${viewMode === 'list' ? 'items-center p-1.5' : ''}`}>
-                  <img 
-                    src={item.image} 
-                    alt={item.name} 
-                    className={`rounded-lg object-cover flex-shrink-0 ${viewMode === 'list' ? 'w-10 h-10' : 'w-14 h-14'}`}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className={`font-bold text-gray-800 truncate ${
-                        item.completed ? 'line-through' : ''
-                      } ${viewMode === 'list' ? 'text-sm' : 'text-base'}`}>
+        {/* Items List */}
+        <div className="flex-1 p-3 overflow-y-auto min-h-[120px] bg-white custom-scrollbar">
+          <div className="space-y-3">
+            {order.items.map((item, idx) => (
+              <div
+                key={item.id}
+                className={`relative pl-3 ${
+                  idx !== order.items.length - 1
+                    ? "border-b border-gray-100 pb-3"
+                    : ""
+                }`}
+              >
+                {/* Status Line */}
+                <div
+                  className={`absolute left-0 top-1 bottom-1 w-1 rounded-full ${
+                    item.completed ? "bg-green-500" : "bg-gray-200"
+                  }`}
+                />
+
+                <div className="flex justify-between items-start gap-2">
+                  <div className="flex-1">
+                    <div className="flex items-baseline gap-2">
+                      <span
+                        className={`font-bold text-base ${
+                          item.completed
+                            ? "text-gray-400 line-through"
+                            : "text-gray-800"
+                        }`}
+                      >
                         {item.name}
-                      </h3>
-                      <span className="bg-orange-500 text-white px-2 py-0.5 rounded-full text-xs font-bold flex-shrink-0">
+                      </span>
+                      <span className="text-orange-600 font-bold text-lg whitespace-nowrap">
                         x{item.quantity}
                       </span>
                     </div>
-                    {item.notes && (
-                      <p className="text-red-600 text-xs font-semibold mt-0.5 italic truncate">
-                        📝 {item.notes}
+
+                    {/* Modifiers */}
+                    {item.modifiers && item.modifiers.length > 0 && (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {item.modifiers.map((mod, mIdx) => (
+                          <span
+                            key={mIdx}
+                            className="text-xs font-medium text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded"
+                          >
+                            + {mod.optionName}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Notes */}
+                    {item.note && (
+                      <p className="mt-1.5 text-xs font-semibold text-red-600 bg-red-50 px-2 py-1 rounded inline-block border border-red-100">
+                        ⚠️ {item.note}
                       </p>
                     )}
                   </div>
-                  {/* Nút hoàn thành món - chỉ hiện khi đã bắt đầu nấu */}
-                  {(status === 'cooking' || status === 'late') && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (!item.completed) {
+
+                  {/* Quick Complete Action */}
+                  {(status === "cooking" || status === "late") &&
+                    !item.completed && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
                           handleCompleteItem(order.id, item.id);
-                        }
-                      }}
-                      disabled={item.completed}
-                      className={`shrink-0 self-center p-1 rounded-lg border-2 transition-all ${
-                        item.completed
-                          ? 'text-white bg-green-600 cursor-not-allowed'
-                          : 'text-white bg-green-500 hover:shadow-lg hover:scale-110 cursor-pointer'
-                      }`}
-                      title={item.completed ? 'Đã hoàn thành' : 'Đánh dấu hoàn thành'}
-                    >
-                      <CheckCircle2 size={25} />
-                    </button>
+                        }}
+                        className="p-1.5 text-gray-300 hover:text-green-500 hover:bg-green-50 rounded-full transition-colors"
+                      >
+                        <CheckCircle2 size={22} />
+                      </button>
+                    )}
+                  {item.completed && (
+                    <CheckCircle2 size={22} className="text-green-500 mt-1" />
                   )}
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
+        </div>
 
-          {/* Buttons on Card - Luôn ở cuối */}
-          <div onClick={(e) => e.stopPropagation()} className="mt-auto">
-            <OrderActions 
-              status={status}
-              orderId={order.id}
-              handleStart={handleStart}
-              handleComplete={handleComplete}
-              handleCancel={handleCancel}
-              handleRecall={handleRecall}
-              viewMode={viewMode}
-            />
-          </div>
+        {/* Actions Footer */}
+        <div
+          className={`p-3 bg-gray-50 border-t border-gray-100 ${
+            viewMode === "list"
+              ? "w-48 border-t-0 border-l flex flex-col justify-center"
+              : ""
+          }`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <OrderActions
+            status={status}
+            orderId={order.id}
+            handleStart={handleStart}
+            handleComplete={handleComplete}
+            handleCancel={handleCancel}
+            handleRecall={handleRecall}
+            viewMode={viewMode} // Pass viewMode to adjust button layout if needed
+          />
         </div>
       </div>
 
-      {/* Render Modal if open */}
+      {/* Detail Modal */}
       {showDetailModal && (
-        <OrderDetailModal 
+        <OrderDetailModal
           order={order}
           status={status}
           statusConfig={statusConfig}

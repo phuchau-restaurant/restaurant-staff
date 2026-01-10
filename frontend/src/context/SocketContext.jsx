@@ -77,9 +77,9 @@ export const SocketProvider = ({ children }) => {
 
     // Cleanup on unmount or token change
     return () => {
-      if (newSocket) {
+      if (socketRef.current) {
         console.log("🔌 Cleaning up socket connection");
-        newSocket.disconnect();
+        socketRef.current.disconnect();
       }
     };
   }, [isAuthenticated, accessToken]);

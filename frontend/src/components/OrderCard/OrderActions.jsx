@@ -2,21 +2,37 @@
 import React from 'react';
 
 const OrderActions = ({ status, orderId, handleStart, handleComplete, handleCancel, handleRecall, viewMode }) => {
-  const gridClass = viewMode === 'list' ? 'grid-cols-2 gap-1.5' : 'grid-cols-2 gap-2';
+  // Config layout based on viewMode
+  let containerClass = "grid gap-2";
+  let btnBaseClass = "rounded-xl font-bold transition-all transform active:scale-95 flex items-center justify-center shadow-sm";
+  let btnHeightClass = "py-3 text-sm"; // default for card
+
+  if (viewMode === 'list') {
+    containerClass = "grid gap-1.5 grid-cols-2";
+    btnHeightClass = "py-2 text-xs";
+  } else if (viewMode === 'modal') {
+    containerClass = "flex gap-4"; // Modal uses flex row usually with big buttons
+    btnBaseClass = "rounded-xl font-bold transition-all transform hover:-translate-y-1 hover:shadow-lg active:scale-95 flex-1 flex items-center justify-center text-lg";
+    btnHeightClass = "py-4";
+  } else {
+    // Card view defaults
+    containerClass = "grid grid-cols-2 gap-2";
+  }
+
+  // --- RENDERING ---
 
   if (status === 'new') {
     return (
-      <div className={`grid ${gridClass}`}>
+      <div className={containerClass}>
         <button
           onClick={(e) => { e.stopPropagation(); handleStart(orderId); }}
-          className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white py-2.5 px-3 rounded-lg font-bold hover:shadow-lg hover:scale-105 transition-all text-sm"
+          className={`${btnBaseClass} ${btnHeightClass} bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:shadow-orange-200 border border-transparent`}
         >
           Bắt đầu
         </button>
         <button
           onClick={(e) => { e.stopPropagation(); handleCancel(orderId); }}
-          className="bg-red-50 text-red-700 py-2.5 px-3 rounded-lg font-bold hover:bg-red-100 hover:shadow-md hover:scale-105 transition-all text-sm border-2 border-red-200"
-          style={{ backgroundColor: '#FEF2F2', color: '#B91C1C', borderColor: '#FECACA' }}
+          className={`${btnBaseClass} ${btnHeightClass} bg-red-50 text-red-600 border border-red-200 hover:bg-red-100`}
         >
           Hủy đơn
         </button>
@@ -26,24 +42,25 @@ const OrderActions = ({ status, orderId, handleStart, handleComplete, handleCanc
 
   if (status === 'cooking' || status === 'warning' || status === 'late') {
     return (
-      <div className={`grid ${gridClass}`}>
+      <div className={containerClass}>
+         {/* Complete Button - Main Action */}
         <button
           onClick={(e) => { e.stopPropagation(); handleComplete(orderId); }}
-          className="bg-gradient-to-r from-green-500 to-emerald-600 text-white py-2.5 px-3 rounded-lg font-bold hover:shadow-lg hover:scale-105 transition-all col-span-2 text-sm"
+          className={`${btnBaseClass} ${btnHeightClass} ${viewMode === 'list' ? 'col-span-2' : viewMode === 'card' ? 'col-span-2' : ''} bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:shadow-green-200 border border-transparent`}
         >
           Hoàn thành
         </button>
+
+        {/* Secondary Actions */}
         <button
           onClick={(e) => { e.stopPropagation(); handleCancel(orderId); }}
-          className="bg-red-50 text-red-700 py-2.5 px-3 rounded-lg font-bold hover:bg-red-100 hover:shadow-md hover:scale-105 transition-all text-sm border-2 border-red-200"
-          style={{ backgroundColor: '#FEF2F2', color: '#B91C1C', borderColor: '#FECACA' }}
+          className={`${btnBaseClass} ${btnHeightClass} bg-red-50 text-red-600 border border-red-200 hover:bg-red-100`}
         >
-          Hủy đơn
+          Hủy
         </button>
         <button
           onClick={(e) => { e.stopPropagation(); handleRecall(orderId); }}
-          className="bg-blue-100 text-blue-700 py-2.5 px-3 rounded-lg font-bold hover:bg-blue-200 hover:shadow-md hover:scale-105 transition-all text-sm border-2 border-blue-300"
-          style={{ backgroundColor: '#DBEAFE', color: '#1D4ED8' }}
+          className={`${btnBaseClass} ${btnHeightClass} bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100`}
         >
           Gọi PV
         </button>
@@ -53,11 +70,10 @@ const OrderActions = ({ status, orderId, handleStart, handleComplete, handleCanc
 
   if (status === 'completed') {
     return (
-      <div className={`grid ${gridClass}`}>
+      <div className={containerClass}>
         <button
           onClick={(e) => { e.stopPropagation(); handleRecall(orderId); }}
-          className="bg-blue-100 text-blue-700 py-2.5 px-3 rounded-lg font-bold hover:bg-blue-200 hover:shadow-md hover:scale-105 transition-all col-span-2 text-sm border-2 border-blue-300"
-          style={{ backgroundColor: '#DBEAFE', color: '#1D4ED8' }}
+          className={`${btnBaseClass} ${btnHeightClass} ${viewMode === 'list' || viewMode === 'card' ? 'col-span-2' : ''} bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100`}
         >
           Gọi ra lấy
         </button>
