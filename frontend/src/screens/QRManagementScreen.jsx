@@ -446,7 +446,11 @@ const QRManagementScreen = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
       {/* QR Stats */}
       <div className="mb-6">
-        <QRStats tables={tables} onDownloadAll={handleDownloadAll} />
+        <QRStats 
+          tables={tables} 
+          onDownloadAll={handleDownloadAll}
+          socketConnected={socketConnected}
+        />
       </div>
 
       {/* Filter Bar */}
