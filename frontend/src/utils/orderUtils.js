@@ -204,7 +204,7 @@ export const filterAndSortOrders = (
     }
 
     // Handle numeric fields
-    if (field === "totalAmount" || field === "tableId") {
+    if (field === "totalAmount" || field === "tableId" || field === "prepTimeOrder") {
       valueA = valueA || 0;
       valueB = valueB || 0;
     }

@@ -4,11 +4,11 @@
  */
 
 const BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/orders`;
-const HEADERS = {
+const getHeaders = () => ({
   "Content-Type": "application/json",
   "x-tenant-id": import.meta.env.VITE_TENANT_ID,
   Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-};
+});
 
 /**
  * Fetch danh sách tất cả đơn hàng
@@ -23,11 +23,10 @@ export const fetchOrders = async (filters = {}) => {
       queryParams.append("status", filters.status);
     }
 
-    const url = `${BASE_URL}${
-      queryParams.toString() ? `?${queryParams.toString()}` : ""
-    }`;
+    const url = `${BASE_URL}${queryParams.toString() ? `?${queryParams.toString()}` : ""
+      }`;
 
-    const response = await fetch(url, { headers: HEADERS });
+    const response = await fetch(url, { headers: getHeaders() });
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -52,7 +51,7 @@ export const fetchOrders = async (filters = {}) => {
 export const fetchOrderById = async (orderId) => {
   try {
     const response = await fetch(`${BASE_URL}/${orderId}`, {
-      headers: HEADERS,
+      headers: getHeaders(),
     });
     const result = await response.json();
 
@@ -85,7 +84,7 @@ export const createOrder = async (orderData) => {
   try {
     const response = await fetch(BASE_URL, {
       method: "POST",
-      headers: HEADERS,
+      headers: getHeaders(),
       body: JSON.stringify(orderData),
     });
 
@@ -111,7 +110,7 @@ export const updateOrder = async (orderId, orderData) => {
   try {
     const response = await fetch(`${BASE_URL}/${orderId}`, {
       method: "PUT",
-      headers: HEADERS,
+      headers: getHeaders(),
       body: JSON.stringify(orderData),
     });
 
@@ -136,7 +135,7 @@ export const deleteOrder = async (orderId) => {
   try {
     const response = await fetch(`${BASE_URL}/${orderId}`, {
       method: "DELETE",
-      headers: HEADERS,
+      headers: getHeaders(),
     });
 
     const result = await response.json();
@@ -160,7 +159,7 @@ export const updateOrderStatus = async (orderId, status) => {
   try {
     const response = await fetch(`${BASE_URL}/${orderId}`, {
       method: "PUT",
-      headers: HEADERS,
+      headers: getHeaders(),
       body: JSON.stringify({ status }),
     });
 
@@ -191,11 +190,10 @@ export const fetchKitchenOrders = async (filters = {}) => {
     if (filters.itemStatus)
       queryParams.append("itemStatus", filters.itemStatus);
 
-    const url = `${import.meta.env.VITE_BACKEND_URL}/api/kitchen/orders${
-      queryParams.toString() ? `?${queryParams.toString()}` : ""
-    }`;
+    const url = `${import.meta.env.VITE_BACKEND_URL}/api/kitchen/orders${queryParams.toString() ? `?${queryParams.toString()}` : ""
+      }`;
 
-    const response = await fetch(url, { headers: HEADERS });
+    const response = await fetch(url, { headers: getHeaders() });
     const result = await response.json();
 
     if (result.success) {
@@ -221,13 +219,12 @@ export const updateOrderDetailStatus = async (
   status
 ) => {
   try {
-    const url = `${
-      import.meta.env.VITE_BACKEND_URL
-    }/api/kitchen/orders/${orderId}/${orderDetailId}`;
+    const url = `${import.meta.env.VITE_BACKEND_URL
+      }/api/kitchen/orders/${orderId}/${orderDetailId}`;
 
     const response = await fetch(url, {
       method: "PUT",
-      headers: HEADERS,
+      headers: getHeaders(),
       body: JSON.stringify({ status }),
     });
 
@@ -253,7 +250,7 @@ export const restoreOrder = async (orderId, newStatus = "Pending") => {
   try {
     const response = await fetch(`${BASE_URL}/${orderId}`, {
       method: "PUT",
-      headers: HEADERS,
+      headers: getHeaders(),
       body: JSON.stringify({ status: newStatus }),
     });
 
@@ -278,7 +275,7 @@ export const deleteOrderPermanent = async (orderId) => {
   try {
     const response = await fetch(`${BASE_URL}/${orderId}`, {
       method: "DELETE",
-      headers: HEADERS,
+      headers: getHeaders(),
     });
 
     const result = await response.json();

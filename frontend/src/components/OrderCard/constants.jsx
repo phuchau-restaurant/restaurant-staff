@@ -10,34 +10,39 @@ export const STATIONS = [
 ];
 
 export const STATUS_CONFIG = {
-  new: { 
-    label: 'Đơn mới', 
-    color: 'bg-blue-500', 
-    borderColor: 'border-blue-500', 
-    textColor: 'text-blue-600' 
+  new: {
+    label: 'Đơn mới',
+    color: 'bg-blue-600',
+    borderColor: 'border-blue-500',
+    textColor: 'text-blue-700',
+    bgLight: 'bg-blue-50'
   },
-  cooking: { 
-    label: 'Đang chế biến', 
-    color: 'bg-yellow-500', 
-    borderColor: 'border-yellow-500', 
-    textColor: 'text-yellow-600' 
+  cooking: {
+    label: 'Đang chế biến',
+    color: 'bg-orange-500',
+    borderColor: 'border-orange-500',
+    textColor: 'text-orange-700',
+    bgLight: 'bg-orange-50'
   },
-  late: { 
-    label: 'Trễ', 
-    color: 'bg-red-500', 
-    borderColor: 'border-red-500', 
-    textColor: 'text-red-600' 
+  late: {
+    label: 'Quá giờ!',
+    color: 'bg-red-600',
+    borderColor: 'border-red-600',
+    textColor: 'text-red-700',
+    bgLight: 'bg-red-50'
   },
-  completed: { 
-    label: 'Hoàn thành', 
-    color: 'bg-green-500', 
-    borderColor: 'border-green-500', 
-    textColor: 'text-green-600' 
+  completed: {
+    label: 'Hoàn thành',
+    color: 'bg-green-600',
+    borderColor: 'border-green-500',
+    textColor: 'text-green-700',
+    bgLight: 'bg-green-50'
   },
-  cancelled: { 
-    label: 'Đã hủy', 
-    color: 'bg-gray-500', 
-    borderColor: 'border-gray-500', 
-    textColor: 'text-gray-600' 
+  cancelled: {
+    label: 'Đã hủy',
+    color: 'bg-gray-500',
+    borderColor: 'border-gray-400',
+    textColor: 'text-gray-600',
+    bgLight: 'bg-gray-100'
   }
 };
