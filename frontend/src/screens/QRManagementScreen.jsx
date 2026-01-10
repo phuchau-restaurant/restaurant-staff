@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Loader2 } from "lucide-react";
 import QRStats from "./QrManagement/QRStats";
 import QRGridView from "./QrManagement/QRGridView";
@@ -9,6 +9,9 @@ import QRFilterBar from "../components/qr/QRFilterBar";
 import { useAlert } from "../hooks/useAlert";
 import * as tableService from "../services/tableService";
 import { sortByTableNumber } from "../utils/tableUtils";
+
+// Socket hooks for real-time updates
+import { useQRSocket } from "../hooks/useQRSocket";
 
 const QRManagementScreen = () => {
   const [tables, setTables] = useState([]);
@@ -33,6 +36,28 @@ const QRManagementScreen = () => {
   const [areaOptions, setAreaOptions] = useState([
     { value: "", label: "Tất cả khu vực" },
   ]);
+
+  // ==================== SOCKET REAL-TIME UPDATES ====================
+
+  // Handler for QR generated/regenerated (from other tabs/users)
+  const handleSocketQRGenerated = useCallback(async (data) => {
+    console.log("🔔 [Socket] QR generated:", data);
+    await fetchTables(); // Re-fetch để có dữ liệu mới nhất
+  }, []);
+
+  // Handler for QR deleted (from other tabs/users)
+  const handleSocketQRDeleted = useCallback(async (data) => {
+    console.log("🔔 [Socket] QR deleted:", data);
+    await fetchTables(); // Re-fetch để có dữ liệu mới nhất
+  }, []);
+
+  // Connect socket listeners and get connection status
+  const { isConnected: socketConnected } = useQRSocket({
+    onQRGenerated: handleSocketQRGenerated,
+    onQRDeleted: handleSocketQRDeleted,
+  });
+
+  // ==================== LIFECYCLE ====================
 
   useEffect(() => {
     fetchTables();
