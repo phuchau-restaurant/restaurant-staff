@@ -38,16 +38,13 @@ class OrdersService {
       }
 
       const unitPrice = menuItem.price;
-
+      
       // Tính giá modifiers
       let modifierTotal = 0;
       if (modifiers && Array.isArray(modifiers)) {
-        modifierTotal = modifiers.reduce(
-          (sum, mod) => sum + (mod.price || 0),
-          0
-        );
+        modifierTotal = modifiers.reduce((sum, mod) => sum + (mod.price || 0), 0);
       }
-
+      
       const subTotal = (unitPrice + modifierTotal) * quantity;
       calculatedTotalAmount += subTotal;
 
