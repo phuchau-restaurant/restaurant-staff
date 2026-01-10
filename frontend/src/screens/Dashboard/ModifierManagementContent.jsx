@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Plus, Settings2 } from "lucide-react";
 
 // Components
@@ -18,6 +18,9 @@ import {
   MESSAGES,
   VIEW_MODES,
 } from "../../constants/modifierConstants";
+
+// Socket hooks for real-time updates
+import { useModifierSocket } from "../../hooks/useModifierSocket";
 
 /**
  * ModifierManagementContent - Màn hình quản lý modifier trong Dashboard
@@ -65,6 +68,33 @@ const ModifierManagementContent = () => {
     title: "",
     message: "",
     onConfirm: null,
+  });
+
+  // ==================== SOCKET REAL-TIME UPDATES ====================
+
+  // Handler for modifier created (from other tabs/users)
+  const handleSocketModifierCreated = useCallback(async (data) => {
+    console.log("🔔 [Socket] Modifier created:", data);
+    await fetchModifierGroups(); // Re-fetch để có dữ liệu mới nhất
+  }, []);
+
+  // Handler for modifier updated (from other tabs/users)
+  const handleSocketModifierUpdated = useCallback(async (data) => {
+    console.log("🔔 [Socket] Modifier updated:", data);
+    await fetchModifierGroups(); // Re-fetch để có dữ liệu mới nhất
+  }, []);
+
+  // Handler for modifier deleted (from other tabs/users)
+  const handleSocketModifierDeleted = useCallback(async (data) => {
+    console.log("🔔 [Socket] Modifier deleted:", data);
+    await fetchModifierGroups(); // Re-fetch để có dữ liệu mới nhất
+  }, []);
+
+  // Connect socket listeners and get connection status
+  const { isConnected: socketConnected } = useModifierSocket({
+    onModifierCreated: handleSocketModifierCreated,
+    onModifierUpdated: handleSocketModifierUpdated,
+    onModifierDeleted: handleSocketModifierDeleted,
   });
 
   // ==================== LIFECYCLE ====================
@@ -387,6 +417,21 @@ const ModifierManagementContent = () => {
               <h1 className="text-3xl font-bold text-gray-800">Quản Lý Modifier</h1>
               <p className="text-gray-600 mt-1">
                 Tổng số: {filteredGroups.length} nhóm modifier
+                {/* Socket connection indicator */}
+                <span
+                  className={`ml-3 inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${
+                    socketConnected
+                      ? "bg-green-100 text-green-700"
+                      : "bg-red-100 text-red-700"
+                  }`}
+                >
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      socketConnected ? "bg-green-500" : "bg-red-500"
+                    }`}
+                  ></span>
+                  {socketConnected ? "Live" : "Offline"}
+                </span>
               </p>
             </div>
             <button

@@ -8,8 +8,9 @@ import { Plus, QrCode } from "lucide-react";
  * @param {number} totalTables - Tổng số bàn hiện tại
  * @param {function} onCreateTable - Callback khi bấm nút "Thêm Bàn Mới"
  * @param {function} onManageQR - Callback khi bấm nút "Quản Lý QR"
+ * @param {boolean} socketConnected - Trạng thái kết nối socket
  */
-const TablesHeader = memo(({ totalTables, onCreateTable, onManageQR }) => {
+const TablesHeader = memo(({ totalTables, onCreateTable, onManageQR, socketConnected }) => {
   return (
     <div className="mb-6">
       <div className="flex items-center justify-between mb-4">
@@ -18,6 +19,21 @@ const TablesHeader = memo(({ totalTables, onCreateTable, onManageQR }) => {
           <h1 className="text-3xl font-bold text-gray-800">Quản Lý Bàn</h1>
           <p className="text-gray-600 mt-1">
             Tổng số: {totalTables} bàn
+            {/* Socket connection indicator */}
+            <span
+              className={`ml-3 inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${
+                socketConnected
+                  ? "bg-green-100 text-green-700"
+                  : "bg-red-100 text-red-700"
+              }`}
+            >
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  socketConnected ? "bg-green-500" : "bg-red-500"
+                }`}
+              ></span>
+              {socketConnected ? "Live" : "Offline"}
+            </span>
           </p>
         </div>
 

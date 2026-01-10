@@ -117,6 +117,20 @@ class TablesService {
 
     return await this.tablesRepo.update(id, { status });
   }
+
+  // DELETE - Xóa vĩnh viễn bàn
+  async deleteTable(id, tenantId) {
+    // 1. Check tồn tại và quyền truy cập
+    const table = await this.getTableById(id, tenantId);
+
+    // 2. Kiểm tra bàn có đang có đơn hàng Active không
+    if (table.status === TableStatus.OCCUPIED) {
+        throw new Error("Cannot delete a table that has active orders. Please deactivate it first.");
+    }
+
+    // 3. Delete
+    return await this.tablesRepo.delete(id);
+  }
 }
 
 export default TablesService;

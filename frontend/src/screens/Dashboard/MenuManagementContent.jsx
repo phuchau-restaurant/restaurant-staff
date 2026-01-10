@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Plus, UtensilsCrossed } from "lucide-react";
 
 // Components
@@ -21,6 +21,9 @@ import {
   VIEW_MODES,
   PRICE_RANGES,
 } from "../../constants/menuConstants";
+
+// Socket hooks for real-time updates
+import { useMenuSocket } from "../../hooks/useMenuSocket";
 
 /**
  * MenuManagementContent - Màn hình quản lý món ăn trong Dashboard
@@ -74,6 +77,33 @@ const MenuManagementContent = () => {
     title: "",
     message: "",
     onConfirm: null,
+  });
+
+  // ==================== SOCKET REAL-TIME UPDATES ====================
+
+  // Handler for menu created (from other tabs/users)
+  const handleSocketMenuCreated = useCallback(async (data) => {
+    console.log("🔔 [Socket] Menu created:", data);
+    await fetchInitialData(); // Re-fetch để có dữ liệu mới nhất
+  }, []);
+
+  // Handler for menu updated (from other tabs/users)
+  const handleSocketMenuUpdated = useCallback(async (data) => {
+    console.log("🔔 [Socket] Menu updated:", data);
+    await fetchInitialData(); // Re-fetch để có dữ liệu mới nhất
+  }, []);
+
+  // Handler for menu deleted (from other tabs/users)
+  const handleSocketMenuDeleted = useCallback(async (data) => {
+    console.log("🔔 [Socket] Menu deleted:", data);
+    await fetchInitialData(); // Re-fetch để có dữ liệu mới nhất
+  }, []);
+
+  // Connect socket listeners and get connection status
+  const { isConnected: socketConnected } = useMenuSocket({
+    onMenuCreated: handleSocketMenuCreated,
+    onMenuUpdated: handleSocketMenuUpdated,
+    onMenuDeleted: handleSocketMenuDeleted,
   });
 
   // ==================== LIFECYCLE ====================
@@ -634,6 +664,21 @@ const MenuManagementContent = () => {
               </h1>
               <p className="text-gray-600 mt-1">
                 Tổng số: {filteredMenuItems.length} món ăn
+                {/* Socket connection indicator */}
+                <span
+                  className={`ml-3 inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${
+                    socketConnected
+                      ? "bg-green-100 text-green-700"
+                      : "bg-red-100 text-red-700"
+                  }`}
+                >
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      socketConnected ? "bg-green-500" : "bg-red-500"
+                    }`}
+                  ></span>
+                  {socketConnected ? "Live" : "Offline"}
+                </span>
               </p>
             </div>
             <button

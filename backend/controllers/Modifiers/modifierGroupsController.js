@@ -1,4 +1,9 @@
 // backend/controllers/Modifiers/modifierGroupsController.js
+import {
+  emitModifierCreated,
+  emitModifierUpdated,
+  emitModifierDeleted,
+} from "../../utils/modifierSocketEmitters.js";
 
 /**
  * Controller xử lý HTTP requests cho Modifier Groups và Options
@@ -105,6 +110,9 @@ class ModifierGroupsController {
         tenantId
       );
 
+      // Emit socket event for real-time updates
+      emitModifierCreated(tenantId, newGroup);
+
       return res.status(201).json({
         success: true,
         message: "Modifier group created successfully",
@@ -133,6 +141,9 @@ class ModifierGroupsController {
         tenantId
       );
 
+      // Emit socket event for real-time updates
+      emitModifierUpdated(tenantId, updatedGroup);
+
       return res.status(200).json({
         success: true,
         message: "Modifier group updated successfully",
@@ -157,6 +168,9 @@ class ModifierGroupsController {
       const { id } = req.params;
 
       await this.modifierGroupsService.deleteGroup(id, tenantId);
+
+      // Emit socket event for real-time updates
+      emitModifierDeleted(tenantId, id);
 
       return res.status(200).json({
         success: true,
