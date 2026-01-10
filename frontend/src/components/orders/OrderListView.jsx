@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   RotateCcw,
   Trash,
+  Eye,
 } from "lucide-react";
 import {
   formatPrice,
@@ -199,9 +200,10 @@ const OrderListView = memo(
                             <button
                               onClick={() => onEdit(order)}
                               className="text-xs flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold py-2 px-3 rounded-lg transition-colors"
+                              title="Xem chi tiết đơn hàng"
                             >
-                              <Edit2 className="w-4 h-4" />
-                              Sửa
+                              <Eye className="w-4 h-4" />
+                              Xem chi tiết
                             </button>
                             {onDelete && (
                               <button

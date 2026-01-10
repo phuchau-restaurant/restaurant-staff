@@ -8,6 +8,7 @@ import {
   DollarSign,
   RotateCcw,
   Trash,
+  Eye,
 } from "lucide-react";
 import {
   formatPrice,
@@ -205,9 +206,10 @@ const OrderCard = memo(
                 <button
                   onClick={() => onEdit(order)}
                   className="flex-1 flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold py-2 px-3 rounded-lg transition-colors"
+                  title="Xem chi tiết đơn hàng"
                 >
-                  <Edit2 className="w-4 h-4" />
-                  Chỉnh sửa
+                  <Eye className="w-4 h-4" />
+                  Xem chi tiết
                 </button>
                 {onDelete && (
                   <button

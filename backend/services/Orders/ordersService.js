@@ -2,11 +2,12 @@
 import OrdersStatus from "../../constants/orderStatus.js";
 import OrderDetailStatus from "../../constants/orderdetailStatus.js";
 class OrdersService {
-  // Inject 3 Repo: Orders, OrderDetails và Menus (để check giá món)
-  constructor(ordersRepo, orderDetailsRepo, menusRepo) {
+  // Inject 4 Repo: Orders, OrderDetails, Menus và OrderItemModifiers
+  constructor(ordersRepo, orderDetailsRepo, menusRepo, orderItemModifiersRepo) {
     this.ordersRepo = ordersRepo;
     this.orderDetailsRepo = orderDetailsRepo;
     this.menusRepo = menusRepo;
+    this.orderItemModifiersRepo = orderItemModifiersRepo;
   }
 
   async createOrder({ tenantId, tableId, dishes }) {
@@ -21,8 +22,8 @@ class OrdersService {
     const orderDetailsToCreate = [];
 
     for (const dish of dishes) {
-      // API gửi dishId, quantity, description
-      const { dishId, quantity, description } = dish;
+      // API gửi dishId, quantity, description, modifiers
+      const { dishId, quantity, description, modifiers } = dish;
 
       if (!dishId || quantity <= 0) continue;
 
@@ -37,16 +38,24 @@ class OrdersService {
       }
 
       const unitPrice = menuItem.price;
-      const subTotal = unitPrice * quantity;
+      
+      // Tính giá modifiers
+      let modifierTotal = 0;
+      if (modifiers && Array.isArray(modifiers)) {
+        modifierTotal = modifiers.reduce((sum, mod) => sum + (mod.price || 0), 0);
+      }
+      
+      const subTotal = (unitPrice + modifierTotal) * quantity;
       calculatedTotalAmount += subTotal;
 
       orderDetailsToCreate.push({
         tenantId,
-        dishId: dishId, // Model OrderDetails dùng dishId
+        dishId: dishId,
         quantity,
         unitPrice,
-        note: description, // Map description từ API vào note
+        note: description,
         status: null,
+        modifiers, // Lưu modifiers tạm để xử lý sau
       });
     }
 
@@ -63,16 +72,38 @@ class OrdersService {
     if (!newOrder) throw new Error("Failed to create order");
 
     // 3. Gắn OrderID vào các chi tiết và Lưu hàng loạt
-    const finalDetailsPayload = orderDetailsToCreate.map((detail) => ({
-      ...detail,
-      orderId: newOrder.id,
-    }));
+    const finalDetailsPayload = orderDetailsToCreate.map((detail) => {
+      const { modifiers, ...rest } = detail; // Tách modifiers ra
+      return {
+        ...rest,
+        orderId: newOrder.id,
+      };
+    });
 
     const createdDetails = await this.orderDetailsRepo.createMany(
       finalDetailsPayload
     );
 
-    // 4. Trả về kết quả gộp
+    // 4. Lưu modifiers vào bảng order_item_modifiers
+    const modifiersToCreate = [];
+    createdDetails.forEach((detail, index) => {
+      const originalDish = orderDetailsToCreate[index];
+      if (originalDish.modifiers && Array.isArray(originalDish.modifiers)) {
+        originalDish.modifiers.forEach((mod) => {
+          modifiersToCreate.push({
+            orderDetailId: detail.id,
+            modifierOptionId: mod.optionId,
+            optionName: mod.optionName,
+          });
+        });
+      }
+    });
+
+    if (modifiersToCreate.length > 0) {
+      await this.orderItemModifiersRepo.createMany(modifiersToCreate);
+    }
+
+    // 5. Trả về kết quả gộp
     return {
       order: newOrder,
       details: createdDetails,
@@ -103,7 +134,21 @@ class OrdersService {
       };
     });
 
-    return { order, details: enrichedDetails };
+    // Fetch modifiers cho các order details
+    const detailIds = details.map((d) => d.id);
+    const allModifiers = await this.orderItemModifiersRepo.getByOrderDetailIds(
+      detailIds
+    );
+
+    // Group modifiers by order_detail_id và gắn vào details
+    const enrichedDetailsWithModifiers = enrichedDetails.map((detail) => ({
+      ...detail,
+      modifiers: allModifiers
+        .filter((mod) => mod.orderDetailId === detail.id)
+        .map((mod) => mod.toResponse()),
+    }));
+
+    return { order, details: enrichedDetailsWithModifiers };
   }
   async updateOrder(id, tenantId, updates) {
     const currentOrder = await this.getOrderById(id, tenantId);
@@ -112,15 +157,26 @@ class OrdersService {
     if (updates.dishes && Array.isArray(updates.dishes)) {
       const dishes = updates.dishes;
 
-      // 1. Xóa order details cũ
+      // 1. Lấy danh sách order detail IDs hiện tại
+      const currentDetails = await this.orderDetailsRepo.getByOrderId(id);
+      const currentDetailIds = currentDetails.map((d) => d.id);
+
+      // 2. Xóa modifiers cũ trước
+      if (currentDetailIds.length > 0) {
+        await this.orderItemModifiersRepo.deleteByOrderDetailIds(
+          currentDetailIds
+        );
+      }
+
+      // 3. Xóa order details cũ
       await this.orderDetailsRepo.deleteByOrderId(id);
 
-      // 2. Tính toán totalAmount từ dishes mới
+      // 4. Tính toán totalAmount từ dishes mới
       let calculatedTotalAmount = 0;
       const orderDetailsToCreate = [];
 
       for (const dish of dishes) {
-        const { dishId, quantity, description } = dish;
+        const { dishId, quantity, description, modifiers } = dish;
 
         if (!dishId || quantity <= 0) continue;
 
@@ -131,7 +187,17 @@ class OrdersService {
         }
 
         const unitPrice = menuItem.price;
-        const subTotal = unitPrice * quantity;
+
+        // Tính giá modifiers
+        let modifierTotal = 0;
+        if (modifiers && Array.isArray(modifiers)) {
+          modifierTotal = modifiers.reduce(
+            (sum, mod) => sum + (mod.price || 0),
+            0
+          );
+        }
+
+        const subTotal = (unitPrice + modifierTotal) * quantity;
         calculatedTotalAmount += subTotal;
 
         orderDetailsToCreate.push({
@@ -141,16 +207,43 @@ class OrdersService {
           quantity,
           unitPrice,
           note: description || "",
-          status: OrderDetailStatus.PENDING, // Reset status khi update
+          status: OrderDetailStatus.PENDING,
+          modifiers, // Lưu tạm
         });
       }
 
-      // 3. Tạo new order details
+      // 5. Tạo new order details
       if (orderDetailsToCreate.length > 0) {
-        await this.orderDetailsRepo.createMany(orderDetailsToCreate);
+        const finalDetailsPayload = orderDetailsToCreate.map((detail) => {
+          const { modifiers, ...rest } = detail;
+          return rest;
+        });
+
+        const createdDetails = await this.orderDetailsRepo.createMany(
+          finalDetailsPayload
+        );
+
+        // 6. Lưu modifiers mới
+        const modifiersToCreate = [];
+        createdDetails.forEach((detail, index) => {
+          const originalDish = orderDetailsToCreate[index];
+          if (originalDish.modifiers && Array.isArray(originalDish.modifiers)) {
+            originalDish.modifiers.forEach((mod) => {
+              modifiersToCreate.push({
+                orderDetailId: detail.id,
+                modifierOptionId: mod.optionId,
+                optionName: mod.optionName,
+              });
+            });
+          }
+        });
+
+        if (modifiersToCreate.length > 0) {
+          await this.orderItemModifiersRepo.createMany(modifiersToCreate);
+        }
       }
 
-      // 4. Update totalAmount
+      // 7. Update totalAmount
       updates.totalAmount = calculatedTotalAmount;
       // Bỏ dishes khỏi updates vì đã xử lý riêng
       delete updates.dishes;
@@ -203,11 +296,19 @@ class OrdersService {
   async deleteOrder(id, tenantId) {
     await this.getOrderById(id, tenantId);
 
-    // 2. Xóa dữ liệu con trước (OrderDetails)
-    // Để tránh lỗi Foreign Key Constraint nếu DB không có Cascade Delete
+    // 1. Lấy order detail IDs
+    const details = await this.orderDetailsRepo.getByOrderId(id);
+    const detailIds = details.map((d) => d.id);
+
+    // 2. Xóa modifiers trước (nếu có)
+    if (detailIds.length > 0) {
+      await this.orderItemModifiersRepo.deleteByOrderDetailIds(detailIds);
+    }
+
+    // 3. Xóa order details
     await this.orderDetailsRepo.deleteByOrderId(id);
 
-    // 3. Xóa dữ liệu cha (Order)
+    // 4. Xóa order
     return await this.ordersRepo.delete(id);
   }
 

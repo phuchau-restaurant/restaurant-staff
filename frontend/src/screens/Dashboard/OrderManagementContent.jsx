@@ -6,6 +6,7 @@ import OrderFilterBar from "../../components/orders/OrderFilterBar";
 import OrderCard from "../../components/orders/OrderCard";
 import OrderListView from "../../components/orders/OrderListView";
 import OrderForm from "../../components/orders/OrderForm";
+import OrderDetailViewModal from "../../components/orders/OrderDetailViewModal";
 import AlertModal from "../../components/Modal/AlertModal";
 import ConfirmModal from "../../components/Modal/ConfirmModal";
 import LoadingOverlay from "../../components/SpinnerLoad/LoadingOverlay";
@@ -54,7 +55,9 @@ const OrderManagementContent = () => {
   // State quản lý UI
   const [viewMode, setViewMode] = useState(VIEW_MODES.GRID);
   const [showForm, setShowForm] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const [editingOrder, setEditingOrder] = useState(null);
+  const [viewingOrder, setViewingOrder] = useState(null);
   const [isLoadingForm, setIsLoadingForm] = useState(false);
 
   // State quản lý filters
@@ -340,21 +343,20 @@ const OrderManagementContent = () => {
   };
 
   /**
-   * Xử lý click edit
+   * Xử lý click view details (xem chi tiết đơn hàng)
    */
-  const handleEditClick = async (order) => {
+  const handleViewClick = async (order) => {
     setIsLoadingForm(true);
     try {
-      // Fetch đầy đủ thông tin (có dishName) khi click edit
-      const orderDetail = await orderService.fetchOrderByIdWithDetails(
-        order.id
-      );
-      setEditingOrder(orderDetail);
-      setShowForm(true);
+      // API trả về { ...order, items } trực tiếp với items đã bao gồm modifiers
+      const orderWithDetails = await orderService.fetchOrderByIdWithDetails(order.id);
+      
+      setViewingOrder(orderWithDetails);
+      setShowDetailModal(true);
     } catch (error) {
       console.error("Error fetching order details:", error);
-      setEditingOrder(order);
-      setShowForm(true);
+      setViewingOrder(order);
+      setShowDetailModal(true);
     } finally {
       setIsLoadingForm(false);
     }
@@ -612,7 +614,7 @@ const OrderManagementContent = () => {
                         key={order.id}
                         order={order}
                         tables={tables}
-                        onEdit={handleEditClick}
+                        onEdit={handleViewClick}
                         onDelete={handleDeleteClick}
                         onRestore={handleRestoreClick}
                         onDeletePermanent={handleDeletePermanentClick}
@@ -624,7 +626,7 @@ const OrderManagementContent = () => {
                   <OrderListView
                     orders={paginatedOrders}
                     tables={tables}
-                    onEdit={handleEditClick}
+                    onEdit={handleViewClick}
                     onDelete={handleDeleteClick}
                     onRestore={handleRestoreClick}
                     onDeletePermanent={handleDeletePermanentClick}
@@ -654,7 +656,7 @@ const OrderManagementContent = () => {
           <LoadingOverlay message="Đang tải dữ liệu đơn hàng..." />
         )}
 
-        {/* Form Modal */}
+        {/* Form Modal - For creating new orders */}
         {showForm && (
           <OrderForm
             order={editingOrder}
@@ -663,6 +665,18 @@ const OrderManagementContent = () => {
             modifierGroups={modifierGroups}
             onSubmit={handleFormSubmit}
             onClose={handleCloseForm}
+          />
+        )}
+
+        {/* Detail View Modal - For viewing order details (read-only) */}
+        {showDetailModal && (
+          <OrderDetailViewModal
+            order={viewingOrder}
+            tables={tables}
+            onClose={() => {
+              setShowDetailModal(false);
+              setViewingOrder(null);
+            }}
           />
         )}
 
