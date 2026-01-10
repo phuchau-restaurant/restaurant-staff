@@ -38,13 +38,16 @@ class OrdersService {
       }
 
       const unitPrice = menuItem.price;
-      
+
       // Tính giá modifiers
       let modifierTotal = 0;
       if (modifiers && Array.isArray(modifiers)) {
-        modifierTotal = modifiers.reduce((sum, mod) => sum + (mod.price || 0), 0);
+        modifierTotal = modifiers.reduce(
+          (sum, mod) => sum + (mod.price || 0),
+          0
+        );
       }
-      
+
       const subTotal = (unitPrice + modifierTotal) * quantity;
       calculatedTotalAmount += subTotal;
 
@@ -125,12 +128,21 @@ class OrdersService {
     const dishIds = details.map((d) => d.dishId);
     const dishesInfo = await this.menusRepo.getByIds(dishIds);
 
-    // Map dishName vào details
+    // Map dishName và thông tin menu đầy đủ vào details
     const enrichedDetails = details.map((detail) => {
       const dishInfo = dishesInfo.find((d) => d.id === detail.dishId);
       return {
         ...detail,
         dishName: dishInfo?.name || "Unknown Dish",
+        menu: dishInfo
+          ? {
+              id: dishInfo.id,
+              name: dishInfo.name,
+              categoryId: dishInfo.categoryId,
+              image: dishInfo.image,
+              price: dishInfo.price,
+            }
+          : null,
       };
     });
 
@@ -356,6 +368,12 @@ class OrdersService {
     const dishIds = allDetails.map((d) => d.dishId);
     const dishesInfo = await this.menusRepo.getByIds(dishIds);
 
+    // --- LẤY MODIFIERS ---
+    const detailIds = allDetails.map((d) => d.id);
+    const allModifiers = await this.orderItemModifiersRepo.getByOrderDetailIds(
+      detailIds
+    );
+
     // Ghép dữ liệu lại theo cấu trúc yêu cầu
     const result = orders
       .map((order) => {
@@ -377,6 +395,15 @@ class OrdersService {
               return null; // comment dòng này để trả về tất cả các món
             }
 
+            // Lọc modifiers cho item này
+            const itemModifiers = allModifiers
+              .filter((m) => m.orderDetailId === item.id)
+              .map((m) => ({
+                id: m.id,
+                optionName: m.optionName,
+                price: m.price,
+              }));
+
             return {
               order_detail_id: item.id,
               dishId: item.dishId,
@@ -384,6 +411,7 @@ class OrdersService {
               quantity: item.quantity,
               note: item.note,
               status: item.status,
+              modifiers: itemModifiers, // Thêm modifiers vào response
               // Trả về categoryId để frontend tiện debug nếu cần
               categoryId: dish ? dish.categoryId : null,
               image: dish ? dish.imgUrl : null,

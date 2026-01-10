@@ -51,8 +51,8 @@ const KitchenHeader = ({
               onClick={() => setViewMode("card")}
               className={`p-3 rounded-lg transition-all ${
                 viewMode === "card"
-                  ? "bg-linear-to-r from-orange-400 to-orange-500 text-white shadow-lg"
-                  : "bg-linear-to-r from-orange-100 to-amber-100 text-gray-700 hover:from-orange-400 hover:to-orange-500 hover:text-white"
+                  ? "bg-gradient-to-r from-orange-400 to-orange-500 text-white shadow-lg"
+                  : "bg-gradient-to-r from-orange-100 to-amber-100 text-gray-700 hover:from-orange-400 hover:to-orange-500 hover:text-white"
               }`}
             >
               <Grid3x3 size={24} />
@@ -61,8 +61,8 @@ const KitchenHeader = ({
               onClick={() => setViewMode("list")}
               className={`p-3 rounded-lg transition-all ${
                 viewMode === "list"
-                  ? "bg-linear-to-r from-orange-400 to-orange-500 text-white shadow-lg"
-                  : "bg-linear-to-r from-orange-100 to-amber-100 text-gray-700 hover:from-orange-400 hover:to-orange-500 hover:text-white"
+                  ? "bg-gradient-to-r from-orange-400 to-orange-500 text-white shadow-lg"
+                  : "bg-gradient-to-r from-orange-100 to-amber-100 text-gray-700 hover:from-orange-400 hover:to-orange-500 hover:text-white"
               }`}
             >
               <List size={24} />
