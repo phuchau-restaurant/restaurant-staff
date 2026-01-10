@@ -144,6 +144,30 @@ class ReportService {
     };
   }
 
+  /**
+   * Lấy thống kê giờ cao điểm
+   * @param {string} tenantId
+   * @returns {Promise<Object>} { labels, values }
+   */
+  async getPeakHours(tenantId) {
+    // 30 ngày gần nhất
+    const now = new Date();
+    const fromDate = new Date(now);
+    fromDate.setDate(now.getDate() - 30);
+    fromDate.setHours(0, 0, 0, 0);
+    const toDate = new Date(now);
+    toDate.setHours(23, 59, 59, 999);
+
+    const rawData = await this.reportRepo.getRevenueByDateRange(
+      tenantId,
+      fromDate,
+      toDate
+    );
+
+    const { labels, values } = this._aggregatePeakHours(rawData);
+    return { labels, values };
+  }
+
   // ==================== HELPER METHODS ====================
 
   _getWeekLabels(fromDate) {
@@ -212,6 +236,24 @@ class ReportService {
     });
 
     return values;
+  }
+
+  _aggregatePeakHours(rawData) {
+    // 24 giờ
+    const values = new Array(24).fill(0);
+    const labels = Array.from({ length: 24 }, (_, i) => `${i}:00`);
+
+    rawData.forEach((order) => {
+      const d = new Date(order.created_at);
+      const h = d.getHours();
+      if (h >= 0 && h < 24) {
+        // Có thể đếm số đơn (orders) hoặc doanh thu. 
+        // Peak hours thường nói về lượng khách/đơn hàng.
+        values[h] += 1; 
+      }
+    });
+
+    return { labels, values };
   }
 }
 

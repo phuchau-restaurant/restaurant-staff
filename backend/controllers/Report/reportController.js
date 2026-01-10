@@ -109,6 +109,25 @@ class ReportController {
       next(error);
     }
   };
+
+  /**
+   * GET /api/report/peak-hours
+   * Lấy thống kê giờ cao điểm
+   */
+  getPeakHours = async (req, res, next) => {
+    try {
+      const tenantId = req.tenantId;
+      const data = await this.reportService.getPeakHours(tenantId);
+      return res.status(200).json({
+        success: true,
+        message: "Peak hours report fetched successfully",
+        data,
+      });
+    } catch (error) {
+      error.statusCode = 400;
+      next(error);
+    }
+  };
 }
 
 export default ReportController;

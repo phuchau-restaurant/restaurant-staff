@@ -9,6 +9,7 @@ import {
   TrendingUp,
   DollarSign,
   Utensils,
+  Clock,
 } from "lucide-react";
 import {
   AreaChart,
@@ -40,16 +41,37 @@ const DashboardContent = () => {
   });
   const [revenueData, setRevenueData] = useState([]);
   const [bestSellers, setBestSellers] = useState([]);
+  const [peakHoursData, setPeakHoursData] = useState([]);
+  const [dateError, setDateError] = useState("");
+  
+  // Custom Date Range State
+  const [customRange, setCustomRange] = useState({
+    from: new Date().toISOString().split("T")[0],
+    to: new Date().toISOString().split("T")[0],
+  });
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  // Fetch data
 
   // Fetch data
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [summaryData, revenueResult, bestSellersData] = await Promise.all([
+        let revenueResult;
+        
+        if (period === "custom") {
+          // Fetch custom range
+          revenueResult = await reportService.fetchRevenueByDateRange(customRange.from, customRange.to);
+        } else {
+          // Fetch standard period
+          revenueResult = await reportService.fetchRevenueByPeriod(period);
+        }
+
+        const [summaryData, bestSellersData, peakHoursResult] = await Promise.all([
           reportService.fetchDashboardSummary(),
-          reportService.fetchRevenueByPeriod(period),
           reportService.fetchBestSellers(5),
+          reportService.fetchPeakHours(),
         ]);
 
         if (summaryData) setSummary(summaryData);
@@ -64,6 +86,14 @@ const DashboardContent = () => {
         }
 
         if (bestSellersData) setBestSellers(bestSellersData);
+
+        if (peakHoursResult) {
+          const pData = peakHoursResult.labels.map((label, index) => ({
+            name: label,
+            value: peakHoursResult.values[index],
+          }));
+          setPeakHoursData(pData);
+        }
       } catch (error) {
         console.error("Dashboard fetch error:", error);
       } finally {
@@ -72,7 +102,52 @@ const DashboardContent = () => {
     };
 
     fetchData();
-  }, [period]);
+  }, [period]); // Note: For custom range, we might want to fetch only when user clicks "Apply", but for now simplest is fetching when period changes to other values.
+
+  // Separate handler for applying custom range
+  const handleApplyCustomRange = async () => {
+    if (period !== "custom") return;
+    
+    // Validate dates
+    if (new Date(customRange.to) < new Date(customRange.from)) {
+      setDateError("Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu");
+      return;
+    }
+    setDateError("");
+    setLoading(true);
+    try {
+      const revenueResult = await reportService.fetchRevenueByDateRange(customRange.from, customRange.to);
+      if (revenueResult) {
+        const chartData = revenueResult.labels.map((label, index) => ({
+          name: label,
+          value: revenueResult.values[index],
+        }));
+        setRevenueData(chartData);
+      }
+      
+      // Also refresh other data when applying custom range
+      const [summaryData, bestSellersData, peakHoursResult] = await Promise.all([
+        reportService.fetchDashboardSummary(),
+        reportService.fetchBestSellers(5),
+        reportService.fetchPeakHours(),
+      ]);
+
+      if (summaryData) setSummary(summaryData);
+      if (bestSellersData) setBestSellers(bestSellersData);
+      if (peakHoursResult) {
+          const pData = peakHoursResult.labels.map((label, index) => ({
+            name: label,
+            value: peakHoursResult.values[index],
+          }));
+          setPeakHoursData(pData);
+      }
+
+    } catch (error) {
+      console.error("Custom range fetch error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const stats = [
     {
@@ -110,6 +185,7 @@ const DashboardContent = () => {
     { value: "week", label: "7 ngày qua" },
     { value: "month", label: "30 ngày qua" },
     { value: "year", label: "Năm nay" },
+    { value: "custom", label: "Tùy chọn" },
   ];
 
   if (loading && !summary.totalRevenue) {
@@ -130,8 +206,11 @@ const DashboardContent = () => {
         </div>
 
         {/* Filter */}
-        <div className="relative group">
-          <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:border-blue-500 hover:text-blue-600 transition-colors shadow-sm">
+        <div className="relative">
+          <button 
+            onClick={() => setIsFilterOpen(!isFilterOpen)}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:border-blue-500 hover:text-blue-600 transition-colors shadow-sm"
+          >
             <Calendar size={18} />
             <span className="font-medium text-sm">
               {PERIOD_OPTIONS.find((p) => p.value === period)?.label}
@@ -139,21 +218,68 @@ const DashboardContent = () => {
             <ChevronDown size={16} />
           </button>
           
-          <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-100 hidden group-hover:block z-10">
-            {PERIOD_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => setPeriod(opt.value)}
-                className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg ${
-                  period === opt.value ? "text-blue-600 font-medium bg-blue-50" : "text-gray-700"
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
+          {isFilterOpen && (
+            <>
+              <div 
+                className="fixed inset-0 z-10" 
+                onClick={() => setIsFilterOpen(false)}
+              ></div>
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-100 z-20 animate-in fade-in zoom-in-95 duration-200">
+                {PERIOD_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => {
+                      setPeriod(opt.value);
+                      setIsFilterOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg ${
+                      period === opt.value ? "text-blue-600 font-medium bg-blue-50" : "text-gray-700"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
+
+      {/* Custom Range Picker */}
+      {period === "custom" && (
+        <div className="flex flex-wrap items-end gap-4 mb-8 bg-white p-4 rounded-xl border border-gray-200 shadow-sm animate-in fade-in slide-in-from-top-2">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Từ ngày</label>
+            <input
+              type="date"
+              value={customRange.from}
+              onChange={(e) => setCustomRange({ ...customRange, from: e.target.value })}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Đến ngày</label>
+            <input
+              type="date"
+              value={customRange.to}
+              onChange={(e) => setCustomRange({ ...customRange, to: e.target.value })}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+            />
+          </div>
+          <button
+            onClick={handleApplyCustomRange}
+            className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm h-[42px]"
+          >
+            Áp dụng
+          </button>
+          
+          {dateError && (
+            <div className="w-full text-red-500 text-sm mt-2 flex items-center gap-1">
+               ⚠️ {dateError}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -277,6 +403,48 @@ const DashboardContent = () => {
               </div>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Peak Hours Section */}
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+            <Clock className="text-purple-500" size={20} />
+            Khung Giờ Cao Điểm
+          </h3>
+        </div>
+        <div className="h-[300px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={peakHoursData}
+              margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+              <XAxis 
+                dataKey="name" 
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: '#64748b', fontSize: 12 }}
+                dy={10}
+              />
+              <YAxis 
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: '#64748b', fontSize: 12 }}
+              />
+              <Tooltip 
+                cursor={{ fill: '#f8fafc' }}
+                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+              />
+              <Bar 
+                dataKey="value" 
+                fill="#8b5cf6" 
+                radius={[4, 4, 0, 0]}
+                barSize={30}
+              />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
     </div>

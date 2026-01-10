@@ -11,6 +11,7 @@ router.use(tenantMiddleware);
 // Revenue reports
 router.get("/revenue", reportController.getRevenue);
 router.get("/revenue/range", reportController.getRevenueRange);
+router.get("/peak-hours", reportController.getPeakHours);
 
 // Best sellers
 router.get("/best-sellers", reportController.getBestSellers);
