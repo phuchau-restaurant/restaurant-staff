@@ -1,0 +1,142 @@
+{
+  "info": {
+    "name": "Menus APIs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Collection chứa các API quản lý menus (menu items - món ăn)"
+  },
+  "item": [
+    {
+      "name": "Get All Menus",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-tenant-id",
+            "value": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/api/menus?categoryId=1&available=true",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "menus"],
+          "query": [
+            {
+              "key": "categoryId",
+              "value": "1"
+            },
+            {
+              "key": "available",
+              "value": "true"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Menu By ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-tenant-id",
+            "value": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/api/menus/1",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "menus", "1"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Menu",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "x-tenant-id",
+            "value": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"category_id\": 1,\n  \"name\": \"Phở Bò\",\n  \"description\": \"Phở bò truyền thống\",\n  \"price\": 50000,\n  \"is_available\": true\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/menus",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "menus"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update Menu",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "x-tenant-id",
+            "value": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Phở Bò Đặc Biệt\",\n  \"price\": 60000,\n  \"is_available\": true\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/menus/1",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "menus", "1"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Menu",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "x-tenant-id",
+            "value": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/api/menus/1",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "menus", "1"]
+        }
+      },
+      "response": []
+    }
+  ]
+}

@@ -1,0 +1,159 @@
+{
+  "info": {
+    "name": "Categories APIs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Collection chứa các API quản lý categories (danh mục món ăn)"
+  },
+  "item": [
+    {
+      "name": "Get All Categories",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-tenant-id",
+            "value": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/api/categories?status=active",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "categories"],
+          "query": [
+            {
+              "key": "status",
+              "value": "active"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Category By ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-tenant-id",
+            "value": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/api/categories/1",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "categories", "1"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Category",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "x-tenant-id",
+            "value": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Main Course\",\n  \"description\": \"Món chính\",\n  \"display_order\": 1\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/categories",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "categories"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update Category",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "x-tenant-id",
+            "value": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Appetizers\",\n  \"description\": \"Món khai vị\",\n  \"display_order\": 1,\n  \"is_active\": true\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/categories/1",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "categories", "1"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Category (Soft)",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "x-tenant-id",
+            "value": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/api/categories/1",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "categories", "1"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Category (Permanent)",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "x-tenant-id",
+            "value": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/api/categories/1/permanent",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "categories", "1", "permanent"]
+        }
+      },
+      "response": []
+    }
+  ]
+}

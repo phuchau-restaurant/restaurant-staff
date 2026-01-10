@@ -107,7 +107,6 @@ const OrderManagementContent = () => {
 
   // Handler for order updated (from other tabs/users)
   const handleSocketOrderUpdated = useCallback(async (data) => {
-    console.log("🔔 [Socket] Order updated:", data);
     try {
       // Fetch updated order details
       const updatedOrder = await orderService.fetchOrderById(data.orderId);

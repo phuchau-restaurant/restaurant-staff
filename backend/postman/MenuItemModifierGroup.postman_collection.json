@@ -1,0 +1,80 @@
+{
+  "info": {
+    "name": "MenuItemModifierGroup APIs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Collection chứa các API quản lý liên kết giữa menu items và modifier groups"
+  },
+  "item": [
+    {
+      "name": "Add Link (Menu Item - Modifier Group)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"dishId\": 123,\n  \"modifierGroupId\": 5\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/menu-item-modifier-group",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "menu-item-modifier-group"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Remove Link (Menu Item - Modifier Group)",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"dishId\": 123,\n  \"modifierGroupId\": 5\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/menu-item-modifier-group",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "menu-item-modifier-group"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Find Links By Dish ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/menu-item-modifier-group?dishId=123",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "menu-item-modifier-group"],
+          "query": [
+            {
+              "key": "dishId",
+              "value": "123"
+            }
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

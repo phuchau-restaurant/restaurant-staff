@@ -1,0 +1,138 @@
+{
+  "info": {
+    "name": "Upload APIs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Collection chứa các API upload và quản lý file"
+  },
+  "item": [
+    {
+      "name": "Upload Single File",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "x-tenant-id",
+            "value": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "image",
+              "type": "file",
+              "src": []
+            },
+            {
+              "key": "folder",
+              "value": "dishes",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/upload",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "upload"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Upload Multiple Files (Batch)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "x-tenant-id",
+            "value": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "images",
+              "type": "file",
+              "src": []
+            },
+            {
+              "key": "folder",
+              "value": "dishes",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/upload/batch",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "upload", "batch"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete File",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "x-tenant-id",
+            "value": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"url\": \"https://your-supabase-url/storage/v1/object/public/bucket/file.jpg\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/upload",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "upload"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "List Files",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-tenant-id",
+            "value": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/api/upload?folder=dishes",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "upload"],
+          "query": [
+            {
+              "key": "folder",
+              "value": "dishes"
+            }
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
