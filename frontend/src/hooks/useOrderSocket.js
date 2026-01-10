@@ -39,7 +39,6 @@ export const useOrderSocket = (callbacks = {}) => {
     // Order updated event
     if (onOrderUpdated) {
       socket.on("order:updated", (data) => {
-        console.log("📨 Received order:updated event:", data);
         onOrderUpdated(data);
       });
     }

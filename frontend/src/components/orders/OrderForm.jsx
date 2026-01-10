@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { X, Plus, Trash2, Minus, ShoppingCart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatPrice, validateOrderData } from "../../utils/orderUtils";
+import * as menuItemModifierGroupService from "../../services/menuItemModifierGroupService";
 
 /**
  * OrderForm Component
@@ -22,6 +23,7 @@ const OrderForm = ({
 
   const [selectedDish, setSelectedDish] = useState(null);
   const [selectedModifiers, setSelectedModifiers] = useState([]);
+  const [dishModifierGroupIds, setDishModifierGroupIds] = useState([]); // IDs của modifier groups cho món được chọn
   const [quantity, setQuantity] = useState(1);
   const [note, setNote] = useState("");
   const [errors, setErrors] = useState([]);
@@ -63,11 +65,22 @@ const OrderForm = ({
   });
 
   // Handle chọn món ăn
-  const handleSelectDish = (dish) => {
+  const handleSelectDish = async (dish) => {
     setSelectedDish(dish);
     setSelectedModifiers([]);
     setQuantity(1);
     setNote("");
+    
+    // Fetch modifier groups cho món này
+    try {
+      const modifierLinks = await menuItemModifierGroupService.fetchModifierGroupsByDishId(dish.id);
+      // modifierLinks là array of { dishId, groupId }
+      const groupIds = modifierLinks.map(link => link.groupId);
+      setDishModifierGroupIds(groupIds);
+    } catch (error) {
+      console.error("Error fetching modifier groups for dish:", error);
+      setDishModifierGroupIds([]);
+    }
   };
 
   // Drag handlers
@@ -214,12 +227,9 @@ const OrderForm = ({
   const getDishModifierGroups = () => {
     if (!selectedDish) return [];
 
-    // Lấy modifier groups của món ăn
-    const dishModifiers = selectedDish.modifierGroups || [];
-
-    // Filter từ danh sách tất cả modifier groups
-    return modifierGroups.filter((group) =>
-      dishModifiers.some((dm) => dm.id === group.id)
+    // Lọc modifierGroups dựa trên dishModifierGroupIds đã fetch từ API
+    return modifierGroups.filter((group) => 
+      dishModifierGroupIds.includes(group.id) && group.isActive !== false
     );
   };
 
@@ -235,8 +245,11 @@ const OrderForm = ({
         dishId: dish.dishId,
         quantity: dish.quantity,
         description: dish.note || "",
-        // Modifiers có thể cần format khác tùy theo API backend yêu cầu
-        modifiers: dish.modifiers.map((m) => m.optionId),
+        // Send full modifier objects with optionId and optionName
+        modifiers: dish.modifiers.map((m) => ({
+          optionId: m.optionId,
+          optionName: m.optionName,
+        })),
       })),
     };
 
@@ -401,7 +414,7 @@ const OrderForm = ({
                                 {group.name}
                               </p>
                               <div className="space-y-1">
-                                {group.options?.map((option) => (
+                                {group.modifiers?.map((option) => (
                                   <label
                                     key={option.id}
                                     className="flex items-center justify-between p-2 bg-white rounded hover:bg-gray-50 cursor-pointer"
@@ -415,7 +428,7 @@ const OrderForm = ({
                                             option.id,
                                             group.id,
                                             option.name,
-                                            option.additionalPrice
+                                            option.additionalPrice || option.price || 0
                                           )
                                         }
                                         className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
@@ -424,9 +437,9 @@ const OrderForm = ({
                                         {option.name}
                                       </span>
                                     </div>
-                                    {option.additionalPrice > 0 && (
+                                    {(option.additionalPrice || option.price) > 0 && (
                                       <span className="text-xs text-orange-600">
-                                        +{formatPrice(option.additionalPrice)}
+                                        +{formatPrice(option.additionalPrice || option.price)}
                                       </span>
                                     )}
                                   </label>

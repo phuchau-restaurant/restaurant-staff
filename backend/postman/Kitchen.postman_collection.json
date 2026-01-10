@@ -1,0 +1,74 @@
+{
+  "info": {
+    "name": "Kitchen APIs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Collection chứa các API cho bếp (kitchen operations)"
+  },
+  "item": [
+    {
+      "name": "Get Kitchen Orders",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-tenant-id",
+            "value": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/api/kitchen/orders?categoryId=1&orderStatus=pending&itemStatus=pending",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "kitchen", "orders"],
+          "query": [
+            {
+              "key": "categoryId",
+              "value": "1"
+            },
+            {
+              "key": "orderStatus",
+              "value": "pending"
+            },
+            {
+              "key": "itemStatus",
+              "value": "pending"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update Order Detail Status",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "x-tenant-id",
+            "value": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"cooking\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/kitchen/orders/1/2",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "kitchen", "orders", "1", "2"]
+        }
+      },
+      "response": []
+    }
+  ]
+}

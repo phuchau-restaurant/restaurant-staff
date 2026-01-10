@@ -3,6 +3,21 @@ import { createContext, useState, useEffect, useContext } from "react";
 
 const AuthContext = createContext(null);
 
+// Helper function để xác định route dựa trên role
+export const getRoleBasedRoute = (role) => {
+  switch (role?.toLowerCase()) {
+    case 'admin':
+      return '/dashboard';
+    case 'chef':
+      return '/kitchen';
+    case 'waiter':
+    case 'staff':
+      return '/waiter';
+    default:
+      return '/dashboard'; // Fallback cho các role không xác định
+  }
+};
+
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -186,6 +201,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     refreshToken,
     updateUser,
+    getRoleBasedRoute,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
