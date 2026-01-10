@@ -3,6 +3,7 @@ import {
   emitTableCreated,
   emitTableUpdated,
   emitTableStatusChanged,
+  emitTableDeleted,
 } from "../../utils/tableSocketEmitters.js";
 
 class TablesController {
@@ -164,6 +165,29 @@ class TablesController {
       });
     } catch (error) {
       error.statusCode = 400;
+      next(error);
+    }
+  }
+
+  // [DELETE] /api/admin/tables/:id
+  delete = async (req, res, next) => {
+    try {
+      const tenantId = req.tenantId;
+      const { id } = req.params;
+
+      await this.tablesService.deleteTable(id, tenantId);
+
+      // Emit socket event for real-time updates
+      emitTableDeleted(tenantId, id);
+
+      return res.status(200).json({
+        success: true,
+        message: `Table with id ${id} deleted permanently`,
+      });
+    } catch (error) {
+      if (error.message.includes("not found")) error.statusCode = 404;
+      else if (error.message.includes("Access denied")) error.statusCode = 403;
+      else error.statusCode = 400;
       next(error);
     }
   }

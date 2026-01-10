@@ -185,3 +185,28 @@ export const checkDuplicateTableNumber = async (tableNumber, currentTableId = nu
     return false;
   }
 };
+
+/**
+ * Xóa vĩnh viễn bàn
+ * @param {number} tableId - ID bàn
+ * @returns {Promise<Object>} Kết quả xóa
+ */
+export const deleteTablePermanent = async (tableId) => {
+  try {
+    const response = await fetch(`${BASE_URL}/${tableId}`, {
+      method: "DELETE",
+      headers: HEADERS,
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || "Xóa bàn thất bại");
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Delete table permanently error:", error);
+    throw error;
+  }
+};
