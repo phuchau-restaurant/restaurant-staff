@@ -138,7 +138,7 @@ export const deleteModifierGroup = async (groupId) => {
   try {
     const response = await fetch(`${BASE_URL}/modifier-groups/${groupId}`, {
       method: "DELETE",
-      headers: HEADERS,
+      headers: getHeaders(),
     });
 
     const result = await response.json();
@@ -192,7 +192,7 @@ export const fetchDishModifierGroups = async (dishId) => {
     const url = `${import.meta.env.VITE_BACKEND_URL
       }/api/menu-item-modifier-group?dishId=${dishId}`;
 
-    const response = await fetch(url, { headers: HEADERS });
+    const response = await fetch(url, { headers: getHeaders() });
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -405,7 +405,7 @@ export const deleteModifierGroupPermanent = async (groupId) => {
   try {
     const response = await fetch(`${BASE_URL}/modifier-groups/${groupId}`, {
       method: "DELETE",
-      headers: HEADERS,
+      headers: getHeaders(),
     });
 
     const result = await response.json();

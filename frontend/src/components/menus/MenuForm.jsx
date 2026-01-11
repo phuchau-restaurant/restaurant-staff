@@ -34,6 +34,17 @@ const MenuForm = ({
   // Initialize form with menuItem data if editing
   useEffect(() => {
     if (menuItem) {
+      // Extract modifier group IDs - handle both object and direct ID formats
+      let selectedIds = [];
+      if (menuItem.modifierGroups) {
+        selectedIds = menuItem.modifierGroups
+          .map((g) => {
+            // Support both { id: X } and direct ID formats
+            return typeof g === "object" ? g.id : g;
+          })
+          .filter((id) => id !== undefined && id !== null);
+      }
+
       setFormData({
         name: menuItem.name || "",
         description: menuItem.description || "",
@@ -43,7 +54,7 @@ const MenuForm = ({
         isAvailable:
           menuItem.isAvailable !== undefined ? menuItem.isAvailable : true,
         images: menuItem.images || [],
-        selectedModifierGroups: menuItem.modifierGroups?.map((g) => g.id) || [],
+        selectedModifierGroups: selectedIds,
       });
     }
   }, [menuItem]);
@@ -557,33 +568,40 @@ const MenuForm = ({
                   <div className="grid grid-cols-2 gap-3">
                     {modifierGroups
                       .filter((group) => group.isActive)
-                      .map((group) => (
-                        <label
-                          key={group.id}
-                          className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                            formData.selectedModifierGroups.includes(group.id)
-                              ? "bg-blue-50 border-blue-300"
-                              : "bg-white border-gray-200 hover:bg-gray-50"
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={formData.selectedModifierGroups.includes(
-                              group.id
-                            )}
-                            onChange={() => handleModifierGroupToggle(group.id)}
-                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                          />
-                          <div className="flex-1">
-                            <span className="font-medium text-gray-800">
-                              {group.name}
-                            </span>
-                            <p className="text-xs text-gray-500">
-                              {group.modifiers?.length || 0} options
-                            </p>
-                          </div>
-                        </label>
-                      ))}
+                      .map((group) => {
+                        // Use string comparison to handle type mismatches
+                        const isSelected = formData.selectedModifierGroups.some(
+                          (id) => String(id) === String(group.id)
+                        );
+
+                        return (
+                          <label
+                            key={group.id}
+                            className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                              isSelected
+                                ? "bg-blue-50 border-blue-300"
+                                : "bg-white border-gray-200 hover:bg-gray-50"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() =>
+                                handleModifierGroupToggle(group.id)
+                              }
+                              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                            />
+                            <div className="flex-1">
+                              <span className="font-medium text-gray-800">
+                                {group.name}
+                              </span>
+                              <p className="text-xs text-gray-500">
+                                {group.modifiers?.length || 0} options
+                              </p>
+                            </div>
+                          </label>
+                        );
+                      })}
                   </div>
                 </div>
               )}

@@ -84,18 +84,27 @@ const MenuManagementContent = () => {
   // Handler for menu created (from other tabs/users)
   const handleSocketMenuCreated = useCallback(async (data) => {
     console.log("🔔 [Socket] Menu created:", data);
+    // Close form if open to prevent flash
+    setShowForm(false);
+    setEditingMenuItem(null);
     await fetchInitialData(); // Re-fetch để có dữ liệu mới nhất
   }, []);
 
   // Handler for menu updated (from other tabs/users)
   const handleSocketMenuUpdated = useCallback(async (data) => {
     console.log("🔔 [Socket] Menu updated:", data);
+    // Close form if open to prevent flash
+    setShowForm(false);
+    setEditingMenuItem(null);
     await fetchInitialData(); // Re-fetch để có dữ liệu mới nhất
   }, []);
 
   // Handler for menu deleted (from other tabs/users)
   const handleSocketMenuDeleted = useCallback(async (data) => {
     console.log("🔔 [Socket] Menu deleted:", data);
+    // Close form if open to prevent flash
+    setShowForm(false);
+    setEditingMenuItem(null);
     await fetchInitialData(); // Re-fetch để có dữ liệu mới nhất
   }, []);
 
@@ -162,11 +171,20 @@ const MenuManagementContent = () => {
         categoryMap[cat.id] = cat.name;
       });
 
-      // Fetch ảnh cho từng món ăn và map categoryName
-      const menuItemsWithImages = await Promise.all(
+      // Fetch ảnh và modifier groups cho từng món ăn
+      const menuItemsWithImagesAndModifiers = await Promise.all(
         menuData.map(async (item) => {
           try {
+            // Fetch ảnh
             const photos = await menuService.getPhotosByDishId(item.id);
+
+            // Fetch modifier groups đã gắn cho món này
+            const attachedModifiers =
+              await modifierService.fetchDishModifierGroups(item.id);
+            const modifierGroupIds = attachedModifiers.map(
+              (mod) => mod.groupId || mod.id
+            );
+
             return {
               ...item,
               categoryName: categoryMap[item.categoryId] || "",
@@ -175,18 +193,21 @@ const MenuManagementContent = () => {
                 url: photo.url,
                 isPrimary: photo.isPrimary || photo.is_primary || false,
               })),
+              modifierGroups: modifierGroupIds.map((id) => ({ id })),
             };
           } catch (error) {
-            // Nếu lỗi thì giữ nguyên item không có images
+            // Nếu lỗi thì giữ nguyên item không có images/modifiers
+            console.warn(`Error fetching data for item ${item.id}:`, error);
             return {
               ...item,
               categoryName: categoryMap[item.categoryId] || "",
+              modifierGroups: [],
             };
           }
         })
       );
 
-      setMenuItems(menuItemsWithImages);
+      setMenuItems(menuItemsWithImagesAndModifiers);
       setCategories(categoryList);
       setModifierGroups(modifierData.data || modifierData || []);
     } catch (error) {
