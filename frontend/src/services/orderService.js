@@ -23,8 +23,9 @@ export const fetchOrders = async (filters = {}) => {
       queryParams.append("status", filters.status);
     }
 
-    const url = `${BASE_URL}${queryParams.toString() ? `?${queryParams.toString()}` : ""
-      }`;
+    const url = `${BASE_URL}${
+      queryParams.toString() ? `?${queryParams.toString()}` : ""
+    }`;
 
     const response = await fetch(url, { headers: getHeaders() });
     if (!response.ok) {
@@ -56,7 +57,13 @@ export const fetchOrderById = async (orderId) => {
     const result = await response.json();
 
     if (result.success) {
-      return result.data;
+      // Transform orderDetails to items for frontend compatibility
+      const data = result.data;
+      if (data.orderDetails) {
+        data.items = data.orderDetails;
+        delete data.orderDetails;
+      }
+      return data;
     }
     throw new Error(result.message || "Failed to fetch order");
   } catch (error) {
@@ -190,8 +197,9 @@ export const fetchKitchenOrders = async (filters = {}) => {
     if (filters.itemStatus)
       queryParams.append("itemStatus", filters.itemStatus);
 
-    const url = `${import.meta.env.VITE_BACKEND_URL}/api/kitchen/orders${queryParams.toString() ? `?${queryParams.toString()}` : ""
-      }`;
+    const url = `${import.meta.env.VITE_BACKEND_URL}/api/kitchen/orders${
+      queryParams.toString() ? `?${queryParams.toString()}` : ""
+    }`;
 
     const response = await fetch(url, { headers: getHeaders() });
     const result = await response.json();
@@ -219,8 +227,9 @@ export const updateOrderDetailStatus = async (
   status
 ) => {
   try {
-    const url = `${import.meta.env.VITE_BACKEND_URL
-      }/api/kitchen/orders/${orderId}/${orderDetailId}`;
+    const url = `${
+      import.meta.env.VITE_BACKEND_URL
+    }/api/kitchen/orders/${orderId}/${orderDetailId}`;
 
     const response = await fetch(url, {
       method: "PUT",
