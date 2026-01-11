@@ -38,11 +38,12 @@ export const useKitchenOrders = (initialOrders) => {
   };
 
   // Actions
+  // handleStart chuyển đơn sang status 'Approved' (đã xác nhận sẽ làm)
   const handleStart = (orderId) => {
     setOrders((prev) =>
       prev.map((o) =>
         o.id === orderId
-          ? { ...o, status: "cooking", startTime: new Date() }
+          ? { ...o, status: "Approved", startTime: new Date() }
           : o
       )
     );

@@ -137,12 +137,13 @@ const WaiterOrderCard = ({
                           Phục vụ
                         </button>
                       </>
-                    ) : order.status === "cooking" ||
+                    ) : order.status === "Approved" ||
+                      order.status === "Pending" ||
                       order.status === "late" ? (
                       <span className="text-blue-600 text-xs font-bold text-center whitespace-nowrap">
                         Pending
                       </span>
-                    ) : order.status === "cancelled" ? (
+                    ) : order.status === "cancelled" || order.status === "Cancelled" ? (
                       <span className="text-red-600 text-xs font-bold text-center whitespace-nowrap">
                         Cancel
                       </span>
@@ -251,12 +252,13 @@ const WaiterOrderCard = ({
                             Phục vụ
                           </button>
                         </>
-                      ) : order.status === "cooking" ||
+                      ) : order.status === "Approved" ||
+                        order.status === "Pending" ||
                         order.status === "late" ? (
                         <span className="text-blue-600 text-sm font-bold text-center whitespace-nowrap">
                           Pending
                         </span>
-                      ) : order.status === "cancelled" ? (
+                      ) : order.status === "cancelled" || order.status === "Cancelled" ? (
                         <span className="text-red-600 text-sm font-bold text-center whitespace-nowrap">
                           Cancel
                         </span>

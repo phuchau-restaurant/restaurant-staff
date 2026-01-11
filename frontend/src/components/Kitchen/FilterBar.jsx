@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ChevronDown, Search, SlidersHorizontal } from "lucide-react";
+import { ChevronDown, Search, SlidersHorizontal, Grid3x3, List } from "lucide-react";
 
 const FilterBar = ({
   filterStation,
@@ -10,6 +10,8 @@ const FilterBar = ({
   setSearchOrderId,
   statusOptions = [],
   categoryOptions = [],
+  viewMode,
+  setViewMode,
 }) => {
   const [showStationDropdown, setShowStationDropdown] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
@@ -59,8 +61,8 @@ const FilterBar = ({
                   setShowStatusDropdown(false);
                 }}
                 className={`w-full px-4 py-2.5 text-left text-sm font-medium transition-colors ${filterStatus === status.value
-                    ? "bg-blue-50 text-blue-700 border-l-4 border-blue-500"
-                    : "text-gray-700 hover:bg-gray-50"
+                  ? "bg-blue-50 text-blue-700 border-l-4 border-blue-500"
+                  : "text-gray-700 hover:bg-gray-50"
                   }`}
               >
                 {status.label}
@@ -94,8 +96,8 @@ const FilterBar = ({
                   setShowStationDropdown(false);
                 }}
                 className={`w-full px-4 py-2.5 text-left text-sm font-medium transition-colors ${filterStation === category.value
-                    ? "bg-blue-50 text-blue-700 border-l-4 border-blue-500"
-                    : "text-gray-700 hover:bg-gray-50"
+                  ? "bg-blue-50 text-blue-700 border-l-4 border-blue-500"
+                  : "text-gray-700 hover:bg-gray-50"
                   }`}
               >
                 {category.label}
@@ -104,6 +106,32 @@ const FilterBar = ({
           </div>
         )}
       </div>
+
+      {/* View Mode Toggle */}
+      {viewMode !== undefined && setViewMode && (
+        <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
+          <button
+            onClick={() => setViewMode("card")}
+            className={`p-2 rounded-md transition-colors ${viewMode === "card"
+              ? "bg-white text-gray-800 shadow-sm"
+              : "text-gray-500 hover:text-gray-700"
+              }`}
+            title="Chế độ lưới"
+          >
+            <Grid3x3 size={18} />
+          </button>
+          <button
+            onClick={() => setViewMode("list")}
+            className={`p-2 rounded-md transition-colors ${viewMode === "list"
+              ? "bg-white text-gray-800 shadow-sm"
+              : "text-gray-500 hover:text-gray-700"
+              }`}
+            title="Chế độ danh sách"
+          >
+            <List size={18} />
+          </button>
+        </div>
+      )}
     </div>
   );
 };

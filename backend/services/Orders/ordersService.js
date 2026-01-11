@@ -467,6 +467,7 @@ class OrdersService {
           tableId: order.tableId,
           note: order.note || "...",
           createdAt: order.createdAt,
+          prepTimeOrder: order.prepTimeOrder, // Thời gian chuẩn bị đơn hàng (phút)
           dishes: visibleDishes, // Chỉ trả về các món đã lọc
         };
       })

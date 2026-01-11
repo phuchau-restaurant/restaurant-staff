@@ -29,7 +29,9 @@ const WaiterScreen = () => {
         id: item.dishId,
         name: item.name || "Món ăn",
         quantity: item.quantity,
-        completed: item.status === "Completed",
+        // OrderDetail status: Pending, Ready, Served, Cancelled
+        completed: item.status === "Ready" || item.status === "Served",
+        cancelled: item.status === "Cancelled",
       })),
     };
     setOrders((prev) => [newOrder, ...prev]);
@@ -53,7 +55,13 @@ const WaiterScreen = () => {
             ...order,
             items: order.items.map((item) =>
               item.id === data.dishId
-                ? { ...item, completed: data.status === "Completed" }
+                ? { 
+                    ...item, 
+                    // OrderDetail status: Pending, Ready, Served, Cancelled
+                    completed: data.status === "Ready" || data.status === "Served",
+                    cancelled: data.status === "Cancelled",
+                    status: data.status
+                  }
                 : item
             ),
           };
@@ -120,12 +128,16 @@ const WaiterScreen = () => {
     let completedItems = 0;
 
     orders.forEach((order) => {
-      if (order.status !== "cancelled") {
+      if (order.status !== "cancelled" && order.status !== "Cancelled") {
         order.items.forEach((item) => {
           totalItems++;
           if (item.completed) {
             completedItems++;
-          } else if (order.status === "cooking" || order.status === "late") {
+          } else if (
+            order.status === "Approved" || 
+            order.status === "Pending" || 
+            order.status === "late"
+          ) {
             preparingItems++;
           }
         });
