@@ -7,8 +7,6 @@ import OrderManagementContent from "../../screens/Dashboard/OrderManagementConte
 import CategoryManagementContent from "../../screens/Dashboard/CategoryManagementContent";
 import MenuManagementContent from "../../screens/Dashboard/MenuManagementContent";
 import ModifierManagementContent from "../../screens/Dashboard/ModifierManagementContent";
-import SalesContent from "../../screens/Dashboard/SalesContent";
-import FeedbackContent from "../../screens/Dashboard/FeedbackContent";
 import TablesScreen from "../../screens/TablesScreen";
 import StaffScreen from "../../screens/StaffScreen";
 
@@ -43,10 +41,6 @@ const DashboardLayout = () => {
         return <ModifierManagementContent />;
       case "staff":
         return <StaffScreen />;
-      case "sales":
-        return <SalesContent />;
-      case "feedback":
-        return <FeedbackContent />;
       default:
         return <DashboardContent />;
     }
@@ -70,4 +64,3 @@ const DashboardLayout = () => {
 };
 
 export default DashboardLayout;
-

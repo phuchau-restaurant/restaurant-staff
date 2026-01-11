@@ -12,7 +12,13 @@ import {
 } from "lucide-react";
 import { ProfileDropup } from "../Profile";
 
-const Sidebar = ({ activeMenu = "dashboard", onNavigate, user, onLogout, onUserUpdate }) => {
+const Sidebar = ({
+  activeMenu = "dashboard",
+  onNavigate,
+  user,
+  onLogout,
+  onUserUpdate,
+}) => {
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: Home },
     { id: "orders", label: "Order Management", icon: ShoppingBag },
@@ -21,8 +27,6 @@ const Sidebar = ({ activeMenu = "dashboard", onNavigate, user, onLogout, onUserU
     { id: "inventory", label: "Category Management", icon: Package },
     { id: "menus", label: "Menu Management", icon: UtensilsCrossed },
     { id: "modifiers", label: "Modifier Management", icon: Settings2 },
-    { id: "sales", label: "Sales Reports", icon: BarChart3 },
-    { id: "feedback", label: "Customer Feedback", icon: MessageSquare },
   ];
 
   return (
@@ -51,10 +55,11 @@ const Sidebar = ({ activeMenu = "dashboard", onNavigate, user, onLogout, onUserU
             <button
               key={item.id}
               onClick={() => onNavigate && onNavigate(item.id)}
-              className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${isActive
+              className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${
+                isActive
                   ? "text-blue-500 bg-blue-50 border-r-4 border-blue-500"
                   : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }`}
+              }`}
             >
               <Icon size={20} />
               {item.label}
@@ -76,4 +81,3 @@ const Sidebar = ({ activeMenu = "dashboard", onNavigate, user, onLogout, onUserU
 };
 
 export default Sidebar;
-
