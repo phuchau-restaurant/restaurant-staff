@@ -109,7 +109,6 @@ class OrdersController {
       const tenantId = req.tenantId;
       const { orderId, orderDetailId } = req.params;
       const { status } = req.body; // Ví dụ: 'Ready', 'Served', 'Cancelled' hoặc OrderStatus.READY, .SERVED, .CANCELLED
-      console.log("Updating order detail:", { orderId, orderDetailId, status });
       if (!status) {
         return res.status(400).json({
           success: false,
