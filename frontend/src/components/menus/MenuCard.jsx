@@ -129,9 +129,18 @@ const MenuCard = memo(
             {menuItem.description || "Không có mô tả"}
           </p>
 
-          <span className="ml-auto text-xl font-bold text-orange-600 whitespace-nowrap">
-            {formatPrice(menuItem.price)}
-          </span>
+          {/* Prep Time and Price */}
+          <div className="mt-3 flex items-center justify-between">
+            {menuItem.prepTimeMinutes !== undefined &&
+              menuItem.prepTimeMinutes > 0 && (
+                <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded">
+                  ⏱️ {menuItem.prepTimeMinutes} phút
+                </span>
+              )}
+            <span className="ml-auto text-xl font-bold text-orange-600 whitespace-nowrap">
+              {formatPrice(menuItem.price)}
+            </span>
+          </div>
 
           {/* Footer pushed to bottom */}
           <div className="mt-auto pt-4">

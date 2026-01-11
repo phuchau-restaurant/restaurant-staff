@@ -95,6 +95,9 @@ const MenuListView = memo(
                   Giá
                 </th>
                 <th className="px-6 py-3 text-center text-sm font-semibold text-gray-700">
+                  Thời gian chuẩn bị
+                </th>
+                <th className="px-6 py-3 text-center text-sm font-semibold text-gray-700">
                   Ảnh
                 </th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
@@ -156,6 +159,16 @@ const MenuListView = memo(
                       <span className="font-semibold text-orange-600">
                         {formatPrice(item.price)}
                       </span>
+                    </td>
+                    <td className={`px-6 py-4 text-center ${inactiveStyle}`}>
+                      {item.prepTimeMinutes !== undefined &&
+                      item.prepTimeMinutes > 0 ? (
+                        <span className="text-sm bg-orange-100 text-orange-700 px-2 py-1 rounded inline-block">
+                          ⏱️ {item.prepTimeMinutes} phút
+                        </span>
+                      ) : (
+                        <span className="text-gray-400 text-sm">-</span>
+                      )}
                     </td>
                     <td className={`px-6 py-4 text-center ${inactiveStyle}`}>
                       <span className="text-sm text-gray-600">

@@ -93,7 +93,12 @@ export const fetchMenuItemById = async (menuId) => {
     const result = await response.json();
 
     if (result.success) {
-      return result.data;
+      // Transform prepTimeMinutes back to preparationTime for form
+      const data = result.data;
+      if (data.prepTimeMinutes !== undefined) {
+        data.preparationTime = data.prepTimeMinutes;
+      }
+      return data;
     }
     throw new Error(result.message || "Failed to fetch menu item");
   } catch (error) {
@@ -109,10 +114,19 @@ export const fetchMenuItemById = async (menuId) => {
  */
 export const createMenuItem = async (menuData) => {
   try {
+    // Transform preparationTime to prepTimeMinutes for API
+    const payload = {
+      ...menuData,
+      prepTimeMinutes: menuData.preparationTime
+        ? parseInt(menuData.preparationTime)
+        : undefined,
+    };
+    delete payload.preparationTime;
+
     const response = await fetch(BASE_URL, {
       method: "POST",
       headers: HEADERS,
-      body: JSON.stringify(menuData),
+      body: JSON.stringify(payload),
     });
 
     const result = await response.json();
@@ -135,10 +149,19 @@ export const createMenuItem = async (menuData) => {
  */
 export const updateMenuItem = async (menuId, menuData) => {
   try {
+    // Transform preparationTime to prepTimeMinutes for API
+    const payload = {
+      ...menuData,
+      prepTimeMinutes: menuData.preparationTime
+        ? parseInt(menuData.preparationTime)
+        : undefined,
+    };
+    delete payload.preparationTime;
+
     const response = await fetch(`${BASE_URL}/${menuId}`, {
       method: "PUT",
       headers: HEADERS,
-      body: JSON.stringify(menuData),
+      body: JSON.stringify(payload),
     });
 
     const result = await response.json();
