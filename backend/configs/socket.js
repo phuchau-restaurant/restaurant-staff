@@ -1,6 +1,6 @@
 // Socket.IO Configuration
 import { Server } from "socket.io";
-import jwt from "jsonwebtoken";
+import { verifyToken } from "../utils/jwt.js";
 
 let io;
 
@@ -26,11 +26,7 @@ export const initializeSocket = (httpServer) => {
         return next(new Error("Authentication token required"));
       }
 
-      console.log(
-        "🔐 JWT_ACCESS_SECRET loaded:",
-        process.env.JWT_ACCESS_SECRET ? "✓" : "✗"
-      );
-      const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+      const decoded = verifyToken(token);
       console.log("✅ Token verified. Payload:", {
         id: decoded.id,
         tenantId: decoded.tenantId,
