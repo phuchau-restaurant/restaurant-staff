@@ -1,18 +1,19 @@
 import React from 'react';
 import { CheckCircle } from 'lucide-react';
 import OrderCard from '../OrderCard/OrderCard';
+import OrderListItem from '../OrderCard/OrderListItem';
 
-const OrdersGrid = ({ 
-  orders, 
-  currentTime, 
-  getElapsedTime, 
-  getOrderStatus, 
-  handleStart, 
-  handleComplete, 
-  handleCancel, 
+const OrdersGrid = ({
+  orders,
+  currentTime,
+  getElapsedTime,
+  getOrderStatus,
+  handleStart,
+  handleComplete,
+  handleCancel,
   handleRecall,
   handleCompleteItem,
-  viewMode 
+  viewMode
 }) => {
   if (orders.length === 0) {
     return (
@@ -30,19 +31,34 @@ const OrdersGrid = ({
         : 'space-y-4'
     }>
       {orders.map(order => (
-        <OrderCard
-          key={order.id}
-          order={order}
-          currentTime={currentTime}
-          getElapsedTime={getElapsedTime}
-          getOrderStatus={getOrderStatus}
-          handleStart={handleStart}
-          handleComplete={handleComplete}
-          handleCancel={handleCancel}
-          handleRecall={handleRecall}
-          handleCompleteItem={handleCompleteItem}
-          viewMode={viewMode}
-        />
+        viewMode === 'list' ? (
+          <OrderListItem
+            key={order.id}
+            order={order}
+            getElapsedTime={getElapsedTime}
+            getOrderStatus={getOrderStatus}
+            handleStart={handleStart}
+            handleComplete={handleComplete}
+            handleCancel={handleCancel}
+            handleRecall={handleRecall}
+            handleCompleteItem={handleCompleteItem}
+            viewMode={viewMode}
+          />
+        ) : (
+          <OrderCard
+            key={order.id}
+            order={order}
+            currentTime={currentTime}
+            getElapsedTime={getElapsedTime}
+            getOrderStatus={getOrderStatus}
+            handleStart={handleStart}
+            handleComplete={handleComplete}
+            handleCancel={handleCancel}
+            handleRecall={handleRecall}
+            handleCompleteItem={handleCompleteItem}
+            viewMode={viewMode}
+          />
+        )
       ))}
     </div>
   );

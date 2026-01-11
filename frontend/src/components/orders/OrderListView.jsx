@@ -16,7 +16,13 @@ import {
   isOrderOverdue,
   getTotalItemsCount,
 } from "../../utils/orderUtils";
-import { DEFAULT_PREP_TIME } from "../../constants/orderConstants";
+import {
+  DEFAULT_PREP_TIME,
+  getNextStatus,
+  getPrevStatus,
+  ORDER_STATUS_LABELS,
+  ORDER_STATUS_BUTTON_COLORS,
+} from "../../constants/orderConstants";
 
 /**
  * OrderListView Component
@@ -30,6 +36,7 @@ const OrderListView = memo(
     onDelete,
     onRestore,
     onDeletePermanent,
+    onStatusChange,
     prepTime = DEFAULT_PREP_TIME,
   }) => {
     if (!orders || orders.length === 0) {
@@ -61,6 +68,9 @@ const OrderListView = memo(
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
                   Trạng thái
                 </th>
+                <th className="px-6 py-3 text-center text-sm font-semibold text-gray-700">
+                  TG chuẩn bị
+                </th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
                   Thời gian tạo
                 </th>
@@ -87,18 +97,20 @@ const OrderListView = memo(
                   ? `${table.tableNumber}`
                   : `Bàn #${order.tableId}`;
 
+                // Get previous and next status
+                const prevStatus = getPrevStatus(order.status);
+                const nextStatus = getNextStatus(order.status);
+
                 return (
                   <tr
                     key={order.id || index}
-                    className={`border-b border-gray-200 hover:bg-gray-50 transition-colors ${
-                      isOverdue ? "bg-red-50/30" : ""
-                    } ${isCancelled ? "bg-gray-50" : ""}`}
+                    className={`border-b border-gray-200 hover:bg-gray-50 transition-colors ${isOverdue ? "bg-red-50/30" : ""
+                      } ${isCancelled ? "bg-gray-50" : ""}`}
                   >
                     {/* Order ID */}
                     <td
-                      className={`px-6 py-4 ${
-                        isCancelled ? "opacity-50 bg-gray-50" : ""
-                      }`}
+                      className={`px-6 py-4 ${isCancelled ? "opacity-50 bg-gray-50" : ""
+                        }`}
                     >
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
@@ -120,9 +132,8 @@ const OrderListView = memo(
 
                     {/* Table */}
                     <td
-                      className={`px-6 py-4 ${
-                        isCancelled ? "opacity-50 bg-gray-50" : ""
-                      }`}
+                      className={`px-6 py-4 ${isCancelled ? "opacity-50 bg-gray-50" : ""
+                        }`}
                     >
                       <span className="font-medium text-gray-700">
                         {tableName}
@@ -131,18 +142,16 @@ const OrderListView = memo(
 
                     {/* Items Count */}
                     <td
-                      className={`px-6 py-4 ${
-                        isCancelled ? "opacity-50 bg-gray-50" : ""
-                      }`}
+                      className={`px-6 py-4 ${isCancelled ? "opacity-50 bg-gray-50" : ""
+                        }`}
                     >
                       <span className="text-gray-700">{itemsCount}</span>
                     </td>
 
                     {/* Total Amount */}
                     <td
-                      className={`px-6 py-4 text-right ${
-                        isCancelled ? "opacity-50 bg-gray-50" : ""
-                      }`}
+                      className={`px-6 py-4 text-right ${isCancelled ? "opacity-50 bg-gray-50" : ""
+                        }`}
                     >
                       <span className="font-semibold text-orange-600">
                         {formatPrice(order.totalAmount)}
@@ -151,9 +160,8 @@ const OrderListView = memo(
 
                     {/* Status */}
                     <td
-                      className={`px-6 py-4 ${
-                        isCancelled ? "opacity-50 bg-gray-50" : ""
-                      }`}
+                      className={`px-6 py-4 ${isCancelled ? "opacity-50 bg-gray-50" : ""
+                        }`}
                     >
                       <span
                         className={`inline-block px-3 py-1 rounded-full text-xs font-semibold border ${statusColor}`}
@@ -162,11 +170,24 @@ const OrderListView = memo(
                       </span>
                     </td>
 
+                    {/* Prep Time */}
+                    <td
+                      className={`px-6 py-4 text-center ${isCancelled ? "opacity-50 bg-gray-50" : ""
+                        }`}
+                    >
+                      {order.prepTimeOrder > 0 ? (
+                        <span className="font-semibold text-blue-600">
+                          {order.prepTimeOrder} phút
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </td>
+
                     {/* Created At */}
                     <td
-                      className={`px-6 py-4 text-sm text-gray-600 ${
-                        isCancelled ? "opacity-50 bg-gray-50" : ""
-                      }`}
+                      className={`px-6 py-4 text-sm text-gray-600 ${isCancelled ? "opacity-50 bg-gray-50" : ""
+                        }`}
                     >
                       {formatDate(order.createdAt)}
                     </td>
@@ -197,6 +218,25 @@ const OrderListView = memo(
                           </>
                         ) : (
                           <>
+                            {/* Status Transition Buttons */}
+                            {prevStatus && (
+                              <button
+                                onClick={() => onStatusChange && onStatusChange(order, prevStatus)}
+                                className={`text-xs flex items-center justify-center gap-1 font-medium py-2 px-3 rounded-lg transition-colors ${ORDER_STATUS_BUTTON_COLORS[prevStatus]}`}
+                                title={`Chuyển về ${ORDER_STATUS_LABELS[prevStatus]}`}
+                              >
+                                ← {ORDER_STATUS_LABELS[prevStatus]}
+                              </button>
+                            )}
+                            {nextStatus && (
+                              <button
+                                onClick={() => onStatusChange && onStatusChange(order, nextStatus)}
+                                className={`text-xs flex items-center justify-center gap-1 font-medium py-2 px-3 rounded-lg transition-colors ${ORDER_STATUS_BUTTON_COLORS[nextStatus]}`}
+                                title={`Chuyển sang ${ORDER_STATUS_LABELS[nextStatus]}`}
+                              >
+                                {ORDER_STATUS_LABELS[nextStatus]} →
+                              </button>
+                            )}
                             <button
                               onClick={() => onEdit(order)}
                               className="text-xs flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold py-2 px-3 rounded-lg transition-colors"

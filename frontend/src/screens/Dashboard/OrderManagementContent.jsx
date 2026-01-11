@@ -24,6 +24,8 @@ import {
   VIEW_MODES,
   SORT_OPTIONS,
   ORDER_STATUS,
+  ORDER_DETAIL_STATUS,
+  ORDER_STATUS_LABELS,
   DEFAULT_PREP_TIME,
 } from "../../constants/orderConstants";
 
@@ -323,6 +325,84 @@ const OrderManagementContent = () => {
   // ==================== HANDLERS ====================
 
   /**
+   * Xử lý chuyển trạng thái đơn hàng
+   * Kiểm tra items có đang Pending/Preparing không trước khi chuyển
+   */
+  const handleStatusChange = async (order, newStatus) => {
+    // Kiểm tra các items có đang Pending hoặc Preparing không
+    const unfinishedItems = (order.items || []).filter(
+      (item) =>
+        item.status === ORDER_DETAIL_STATUS.PENDING ||
+        item.status === ORDER_DETAIL_STATUS.PREPARING
+    );
+
+    const hasUnfinishedItems = unfinishedItems.length > 0;
+
+    if (hasUnfinishedItems) {
+      // Hiển confirm modal
+      setConfirmDialog({
+        isOpen: true,
+        title: "Xác nhận chuyển trạng thái",
+        message: `Đơn hàng có ${unfinishedItems.length} món chưa hoàn thành (Pending/Preparing). Bạn có muốn chuyển các món này thành Ready và chuyển trạng thái đơn hàng sang ${ORDER_STATUS_LABELS[newStatus]}?`,
+        onConfirm: async () => {
+          setConfirmDialog({ isOpen: false, title: "", message: "", onConfirm: null });
+          await executeStatusChange(order, newStatus, true);
+        },
+      });
+    } else {
+      // Không có items chưa hoàn thành, chuyển trạng thái trực tiếp
+      await executeStatusChange(order, newStatus, false);
+    }
+  };
+
+  /**
+   * Thực hiện chuyển trạng thái đơn hàng
+   */
+  const executeStatusChange = async (order, newStatus, updateItemsToReady) => {
+    try {
+      // Nếu cần update items thành Ready trước
+      if (updateItemsToReady) {
+        const unfinishedItems = (order.items || []).filter(
+          (item) =>
+            item.status === ORDER_DETAIL_STATUS.PENDING ||
+            item.status === ORDER_DETAIL_STATUS.PREPARING
+        );
+
+        // Update từng item thành Ready
+        for (const item of unfinishedItems) {
+          await orderService.updateOrderDetailStatus(
+            order.id,
+            item.id,
+            ORDER_DETAIL_STATUS.READY
+          );
+        }
+      }
+
+      // Update trạng thái order
+      await orderService.updateOrderStatus(order.id, newStatus);
+
+      // Fetch lại order để cập nhật state
+      const updatedOrder = await orderService.fetchOrderById(order.id);
+      setOrders((prev) =>
+        prev.map((o) => (o.id === order.id ? updatedOrder : o))
+      );
+
+      showAlert(
+        "Thành công",
+        `Đã chuyển đơn hàng sang ${ORDER_STATUS_LABELS[newStatus]}`,
+        "success"
+      );
+    } catch (error) {
+      console.error("Status change error:", error);
+      showAlert(
+        "Lỗi",
+        error.message || "Không thể chuyển trạng thái đơn hàng",
+        "error"
+      );
+    }
+  };
+
+  /**
    * Xử lý submit form
    */
   const handleFormSubmit = async (orderId, orderData) => {
@@ -349,7 +429,7 @@ const OrderManagementContent = () => {
     try {
       // API trả về { ...order, items } trực tiếp với items đã bao gồm modifiers
       const orderWithDetails = await orderService.fetchOrderByIdWithDetails(order.id);
-      
+
       setViewingOrder(orderWithDetails);
       setShowDetailModal(true);
     } catch (error) {
@@ -481,16 +561,14 @@ const OrderManagementContent = () => {
                 / {Math.ceil(filteredOrders.length / itemsPerPage) || 1}
                 {/* Socket connection indicator */}
                 <span
-                  className={`ml-3 inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${
-                    socketConnected
+                  className={`ml-3 inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${socketConnected
                       ? "bg-green-100 text-green-700"
                       : "bg-red-100 text-red-700"
-                  }`}
+                    }`}
                 >
                   <span
-                    className={`w-2 h-2 rounded-full ${
-                      socketConnected ? "bg-green-500" : "bg-red-500"
-                    }`}
+                    className={`w-2 h-2 rounded-full ${socketConnected ? "bg-green-500" : "bg-red-500"
+                      }`}
                   ></span>
                   {socketConnected ? "Live" : "Offline"}
                 </span>
@@ -617,6 +695,7 @@ const OrderManagementContent = () => {
                         onDelete={handleDeleteClick}
                         onRestore={handleRestoreClick}
                         onDeletePermanent={handleDeletePermanentClick}
+                        onStatusChange={handleStatusChange}
                         prepTime={prepTime}
                       />
                     ))}
@@ -629,6 +708,7 @@ const OrderManagementContent = () => {
                     onDelete={handleDeleteClick}
                     onRestore={handleRestoreClick}
                     onDeletePermanent={handleDeletePermanentClick}
+                    onStatusChange={handleStatusChange}
                     prepTime={prepTime}
                   />
                 )}

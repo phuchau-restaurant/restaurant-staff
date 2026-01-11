@@ -14,6 +14,42 @@ export const ORDER_STATUS = {
   CANCELLED: "Cancelled",
 };
 
+// Thứ tự trạng thái đơn hàng (không bao gồm Cancelled)
+export const ORDER_STATUS_FLOW = [
+  ORDER_STATUS.UNSUBMIT,
+  ORDER_STATUS.APPROVED,
+  ORDER_STATUS.PENDING,
+  ORDER_STATUS.COMPLETED,
+  ORDER_STATUS.SERVED,
+  ORDER_STATUS.PAID,
+];
+
+/**
+ * Lấy trạng thái tiếp theo của đơn hàng
+ * @param {string} currentStatus - Trạng thái hiện tại
+ * @returns {string|null} Trạng thái tiếp theo hoặc null nếu đã là cuối
+ */
+export const getNextStatus = (currentStatus) => {
+  const currentIndex = ORDER_STATUS_FLOW.indexOf(currentStatus);
+  if (currentIndex === -1 || currentIndex === ORDER_STATUS_FLOW.length - 1) {
+    return null;
+  }
+  return ORDER_STATUS_FLOW[currentIndex + 1];
+};
+
+/**
+ * Lấy trạng thái trước đó của đơn hàng
+ * @param {string} currentStatus - Trạng thái hiện tại
+ * @returns {string|null} Trạng thái trước hoặc null nếu đã là đầu
+ */
+export const getPrevStatus = (currentStatus) => {
+  const currentIndex = ORDER_STATUS_FLOW.indexOf(currentStatus);
+  if (currentIndex <= 0) {
+    return null;
+  }
+  return ORDER_STATUS_FLOW[currentIndex - 1];
+};
+
 // Trạng thái chi tiết đơn hàng (order detail/item)
 export const ORDER_DETAIL_STATUS = {
   PENDING: "Pending",
@@ -52,6 +88,17 @@ export const ORDER_STATUS_COLORS = {
   [ORDER_STATUS.SERVED]: "bg-purple-100 text-purple-700 border-purple-300",
   [ORDER_STATUS.PAID]: "bg-emerald-100 text-emerald-700 border-emerald-300",
   [ORDER_STATUS.CANCELLED]: "bg-red-100 text-red-700 border-red-300",
+};
+
+// Màu sắc cho các nút chuyển trạng thái (có hover)
+export const ORDER_STATUS_BUTTON_COLORS = {
+  [ORDER_STATUS.UNSUBMIT]: "bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300",
+  [ORDER_STATUS.APPROVED]: "bg-blue-100 hover:bg-blue-200 text-blue-700 border border-blue-300",
+  [ORDER_STATUS.PENDING]: "bg-yellow-100 hover:bg-yellow-200 text-yellow-700 border border-yellow-300",
+  [ORDER_STATUS.COMPLETED]: "bg-green-100 hover:bg-green-200 text-green-700 border border-green-300",
+  [ORDER_STATUS.SERVED]: "bg-purple-100 hover:bg-purple-200 text-purple-700 border border-purple-300",
+  [ORDER_STATUS.PAID]: "bg-emerald-100 hover:bg-emerald-200 text-emerald-700 border border-emerald-300",
+  [ORDER_STATUS.CANCELLED]: "bg-red-100 hover:bg-red-200 text-red-700 border border-red-300",
 };
 
 // Màu sắc cho các trạng thái chi tiết đơn hàng
@@ -105,6 +152,8 @@ export const SORT_OPTIONS = [
   { value: "createdAt-asc", label: "Cũ nhất" },
   { value: "totalAmount-desc", label: "Giá cao nhất" },
   { value: "totalAmount-asc", label: "Giá thấp nhất" },
+  { value: "prepTimeOrder-desc", label: "TG chuẩn bị (cao → thấp)" },
+  { value: "prepTimeOrder-asc", label: "TG chuẩn bị (thấp → cao)" },
   { value: "tableId-asc", label: "Bàn (A-Z)" },
 ];
 

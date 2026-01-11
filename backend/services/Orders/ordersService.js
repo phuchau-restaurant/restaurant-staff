@@ -19,6 +19,7 @@ class OrdersService {
 
     // 1. Tính toán & Chuẩn bị data chi tiết
     let calculatedTotalAmount = 0;
+    let totalPrepTime = 0; // Tổng thời gian chuẩn bị
     const orderDetailsToCreate = [];
 
     for (const dish of dishes) {
@@ -38,13 +39,18 @@ class OrdersService {
       }
 
       const unitPrice = menuItem.price;
-      
+
+      // Cộng dồn thời gian chuẩn bị của từng món
+      if (menuItem.prepTimeMinutes) {
+        totalPrepTime += menuItem.prepTimeMinutes * quantity;
+      }
+
       // Tính giá modifiers
       let modifierTotal = 0;
       if (modifiers && Array.isArray(modifiers)) {
         modifierTotal = modifiers.reduce((sum, mod) => sum + (mod.price || 0), 0);
       }
-      
+
       const subTotal = (unitPrice + modifierTotal) * quantity;
       calculatedTotalAmount += subTotal;
 
@@ -65,6 +71,7 @@ class OrdersService {
       tableId,
       status: OrdersStatus.UNSUBMIT, // Mặc định khi tạo là 'Unsubmit'
       totalAmount: calculatedTotalAmount,
+      prepTimeOrder: totalPrepTime, // Tổng thời gian chuẩn bị đơn hàng
       // Tạo mã đơn hiển thị (ví dụ đơn giản)
       displayOrder: `ORD-${Date.now().toString().slice(-6)}`,
     });
@@ -133,12 +140,12 @@ class OrdersService {
         dishName: dishInfo?.name || "Unknown Dish",
         menu: dishInfo
           ? {
-              id: dishInfo.id,
-              name: dishInfo.name,
-              categoryId: dishInfo.categoryId,
-              image: dishInfo.image,
-              price: dishInfo.price,
-            }
+            id: dishInfo.id,
+            name: dishInfo.name,
+            categoryId: dishInfo.categoryId,
+            image: dishInfo.image,
+            price: dishInfo.price,
+          }
           : null,
       };
     });
@@ -180,8 +187,9 @@ class OrdersService {
       // 3. Xóa order details cũ
       await this.orderDetailsRepo.deleteByOrderId(id);
 
-      // 4. Tính toán totalAmount từ dishes mới
+      // 4. Tính toán totalAmount và prepTimeOrder từ dishes mới
       let calculatedTotalAmount = 0;
+      let totalPrepTime = 0; // Tổng thời gian chuẩn bị
       const orderDetailsToCreate = [];
 
       for (const dish of dishes) {
@@ -196,6 +204,11 @@ class OrdersService {
         }
 
         const unitPrice = menuItem.price;
+
+        // Cộng dồn thời gian chuẩn bị của từng món
+        if (menuItem.prepTimeMinutes) {
+          totalPrepTime += menuItem.prepTimeMinutes * quantity;
+        }
 
         // Tính giá modifiers
         let modifierTotal = 0;
@@ -252,8 +265,9 @@ class OrdersService {
         }
       }
 
-      // 7. Update totalAmount
+      // 7. Update totalAmount và prepTimeOrder
       updates.totalAmount = calculatedTotalAmount;
+      updates.prepTimeOrder = totalPrepTime;
       // Bỏ dishes khỏi updates vì đã xử lý riêng
       delete updates.dishes;
     }
@@ -275,17 +289,44 @@ class OrdersService {
       updates.status === OrdersStatus.COMPLETED &&
       currentOrder.order.status !== OrdersStatus.COMPLETED
     ) {
-      // All OrderDetail.Status != ORDER_DETAIL_STATUS.PENDING
+      // Tự động chuyển các OrderDetail có status Pending/Preparing thành Ready
       const allDetails = currentOrder.details;
-      const allServed = allDetails.every(
-        (item) => item.status !== OrderDetailStatus.PENDING // Ready, Served, Cancelled
+      const pendingOrPreparingItems = allDetails.filter(
+        (item) => item.status === OrderDetailStatus.PENDING || item.status === OrderDetailStatus.PREPARING
       );
-      if (!allServed) {
-        throw new Error(
-          "Cannot complete order: there are still pending dishes"
-        );
+
+      // Update các items chưa hoàn thành thành Ready
+      if (pendingOrPreparingItems.length > 0) {
+        for (const item of pendingOrPreparingItems) {
+          await this.orderDetailsRepo.update(item.id, {
+            status: OrderDetailStatus.READY,
+          });
+        }
       }
+
       updates.completedAt = new Date();
+    }
+
+    // IF OrderStatus == Served -> Tự động chuyển các items thành Served
+    else if (
+      updates.status === OrdersStatus.SERVED &&
+      currentOrder.order.status !== OrdersStatus.SERVED
+    ) {
+      // Chuyển tất cả items còn Ready thành Served
+      const allDetails = currentOrder.details;
+      const readyItems = allDetails.filter(
+        (item) => item.status === OrderDetailStatus.READY ||
+          item.status === OrderDetailStatus.PENDING ||
+          item.status === OrderDetailStatus.PREPARING
+      );
+
+      if (readyItems.length > 0) {
+        for (const item of readyItems) {
+          await this.orderDetailsRepo.update(item.id, {
+            status: OrderDetailStatus.SERVED,
+          });
+        }
+      }
     }
 
     // IF OrderStatus == Cancelled -> All OrderDetail = Cancelled
