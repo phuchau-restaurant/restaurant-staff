@@ -41,16 +41,50 @@ const KitchenScreen = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isLoading, setIsLoading] = useState(true);
   const [notification, setNotification] = useState(null);
+  const [isAudioEnabled, setIsAudioEnabled] = useState(false);
   
-  // Tạo audio element một lần khi component mount
-  const audioRef = React.useRef(null);
-  
+  // Khởi tạo audio từ file MP3 trong thư mục public
+  const notificationAudio = useMemo(() => new Audio('/notification.mp3'), []);
+
+  // Hàm phát âm thanh thông báo
+  const playNotificationSound = useCallback(() => {
+    if (notificationAudio) {
+      notificationAudio.currentTime = 0; // Chơi lại từ đầu
+      notificationAudio.play().catch(error => {
+        console.warn("🔇 Không thể tự động phát âm thanh (cần tương tác người dùng):", error);
+      });
+    }
+  }, [notificationAudio]);
+
+  // Cần ít nhất 1 tương tác để trình duyệt cho phép phát audio
   useEffect(() => {
-    // Tạo beep sound bằng data URL
-    const beepSound = 'data:audio/wav;base64,UklGRhIAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU4AAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA';
-    audioRef.current = new Audio(beepSound);
-    audioRef.current.volume = 0.5;
-  }, []);
+    const unlockAudio = async () => {
+      try {
+        // Thử phát âm thanh im lặng để unlock
+        notificationAudio.muted = true;
+        await notificationAudio.play();
+        notificationAudio.pause();
+        notificationAudio.muted = false;
+        
+        setIsAudioEnabled(true);
+        console.log("✅ Âm thanh đã được mở khóa (Audio Unlocked)");
+        
+        // Gỡ bỏ listener sau khi đã unlock thành công
+        document.removeEventListener('click', unlockAudio);
+        document.removeEventListener('keydown', unlockAudio);
+      } catch (error) {
+        console.warn("🔇 Chờ tương tác người dùng để mở âm thanh...");
+      }
+    };
+
+    document.addEventListener('click', unlockAudio);
+    document.addEventListener('keydown', unlockAudio);
+    
+    return () => {
+      document.removeEventListener('click', unlockAudio);
+      document.removeEventListener('keydown', unlockAudio);
+    };
+  }, [notificationAudio]);
 
   // Fetch orders từ API - dùng useCallback để có thể gọi lại từ socket
   const fetchOrders = useCallback(async () => {
@@ -195,36 +229,7 @@ const KitchenScreen = () => {
     }
   }, []);
 
-  // Phát âm thanh thông báo - đơn giản hơn với HTML Audio
-  const playNotificationSound = useCallback(() => {
-    try {
-      if (audioRef.current) {
-        // Reset về đầu và phát
-        audioRef.current.currentTime = 0;
-        const playPromise = audioRef.current.play();
-        
-        if (playPromise !== undefined) {
-          playPromise
-            .then(() => {
-              console.log('🔊 Notification sound played');
-              // Phát lần 2 sau 200ms
-              setTimeout(() => {
-                if (audioRef.current) {
-                  audioRef.current.currentTime = 0;
-                  audioRef.current.play().catch(e => console.log('Second beep failed:', e));
-                }
-              }, 200);
-            })
-            .catch(error => {
-              console.error('Audio play failed:', error);
-              console.log('⚠️ Browser may require user interaction before playing audio');
-            });
-        }
-      }
-    } catch (error) {
-      console.error('Error playing notification sound:', error);
-    }
-  }, []);
+
 
   // Socket callbacks with useCallback to prevent infinite re-renders
   // Cập nhật state trực tiếp thay vì fetch lại toàn bộ để tránh reload màn hình
@@ -577,6 +582,17 @@ const KitchenScreen = () => {
 
   return (
     <div className="h-full bg-linear-to-br from-slate-100 to-slate-200 flex flex-col">
+      {/* Notification Banner */}
+      {!isAudioEnabled && (
+        <div className="bg-amber-100 border-b border-amber-200 px-6 py-2 flex items-center justify-center gap-2 text-amber-800 text-sm animate-pulse cursor-pointer"
+             onClick={() => {
+                notificationAudio.play().then(() => setIsAudioEnabled(true)).catch(() => {});
+             }}>
+          <Bell className="w-4 h-4" />
+          <span>Vui lòng click vào màn hình để kích hoạt âm thanh thông báo.</span>
+        </div>
+      )}
+
       <KitchenHeader
         currentTime={currentTime}
         viewMode={viewMode}
@@ -591,7 +607,6 @@ const KitchenScreen = () => {
         categoryOptions={CATEGORY_OPTIONS}
       />
 
-      {/* Notification Banner */}
       {notification && (
         <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-4 flex items-center justify-between shadow-lg animate-in slide-in-from-top duration-300">
           <div className="flex items-center gap-3">
@@ -619,7 +634,11 @@ const KitchenScreen = () => {
         className="fixed bottom-4 right-4 z-50 bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-full shadow-lg transition-all hover:scale-110"
         title="Test âm thanh thông báo"
       >
-        <Bell className="w-5 h-5" />
+        <Bell className={`w-5 h-5 ${isAudioEnabled ? 'text-white' : 'text-red-200 animate-pulse'}`} />
+        {!isAudioEnabled && <span className="absolute -top-1 -right-1 flex h-3 w-3">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+        </span>}
       </button>
 
       <div className="flex-1 p-6 overflow-y-auto">
