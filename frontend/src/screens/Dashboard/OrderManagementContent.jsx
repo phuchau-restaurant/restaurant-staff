@@ -8,7 +8,6 @@ import OrderListView from "../../components/orders/OrderListView";
 import OrderForm from "../../components/orders/OrderForm";
 import OrderDetailViewModal from "../../components/orders/OrderDetailViewModal";
 import AlertModal from "../../components/Modal/AlertModal";
-import ConfirmModal from "../../components/Modal/ConfirmModal";
 import LoadingOverlay from "../../components/SpinnerLoad/LoadingOverlay";
 import Pagination from "../../components/SpinnerLoad/Pagination";
 
@@ -84,6 +83,9 @@ const OrderManagementContent = () => {
     title: "",
     message: "",
     onConfirm: null,
+    type: "warning",
+    confirmText: "Xác nhận",
+    items: [], // Danh sách items để hiển thị
   });
 
   // Prep time configuration (có thể lấy từ API settings sau)
@@ -326,54 +328,102 @@ const OrderManagementContent = () => {
 
   /**
    * Xử lý chuyển trạng thái đơn hàng
-   * Kiểm tra items có đang Pending/Preparing không trước khi chuyển
+   * Kiểm tra items theo logic:
+   * - Chuyển sang Approved (Xác nhận đơn): Kiểm tra các món chưa xác nhận (status == null), chuyển sang Pending
+   * - Chuyển sang Pending (Bếp nhận đơn): Không cần kiểm tra, chuyển trực tiếp
+   * - Chuyển sang Completed (Hoàn thành): Kiểm tra các món Pending, chuyển sang Ready
+   * - Chuyển sang Served (Đã phục vụ): Kiểm tra các món chưa Served, chuyển sang Served
    */
   const handleStatusChange = async (order, newStatus) => {
-    // Kiểm tra các items có đang Pending hoặc Preparing không
-    const unfinishedItems = (order.items || []).filter(
-      (item) =>
-        item.status === ORDER_DETAIL_STATUS.PENDING ||
-        item.status === ORDER_DETAIL_STATUS.PREPARING
-    );
+    const items = order.items || [];
+    
+    // Xác định logic kiểm tra dựa trên trạng thái mới
+    let unfinishedItems = [];
+    let targetItemStatus = "";
+    let warningMessage = "";
+    let actionDescription = "";
 
-    const hasUnfinishedItems = unfinishedItems.length > 0;
+    switch (newStatus) {
+      case ORDER_STATUS.APPROVED:
+        // Chuyển sang Approved (Xác nhận đơn) -> Kiểm tra món chưa xác nhận (status == null)
+        unfinishedItems = items.filter(
+          (item) => !item.status || item.status === null
+        );
+        targetItemStatus = ORDER_DETAIL_STATUS.PENDING;
+        warningMessage = `Đơn hàng có ${unfinishedItems.length} món chưa được xác nhận.`;
+        actionDescription = `chuyển sang Chờ xử lý (Pending)`;
+        break;
 
-    if (hasUnfinishedItems) {
-      // Hiển confirm modal
+      case ORDER_STATUS.PENDING:
+        // Chuyển sang Pending (Bếp nhận đơn) -> Không cần kiểm tra, chuyển trực tiếp
+        await executeStatusChange(order, newStatus, null, null);
+        return;
+
+      case ORDER_STATUS.COMPLETED:
+        // Chuyển sang Completed (Hoàn thành) -> Kiểm tra món Pending
+        unfinishedItems = items.filter(
+          (item) => item.status === ORDER_DETAIL_STATUS.PENDING
+        );
+        targetItemStatus = ORDER_DETAIL_STATUS.READY;
+        warningMessage = `Đơn hàng có ${unfinishedItems.length} món chưa sẵn sàng.`;
+        actionDescription = `chuyển sang Sẵn sàng (Ready)`;
+        break;
+
+      case ORDER_STATUS.SERVED:
+        // Chuyển sang Served (Đã phục vụ) -> Kiểm tra món chưa Served
+        unfinishedItems = items.filter(
+          (item) =>
+            item.status !== ORDER_DETAIL_STATUS.SERVED &&
+            item.status !== ORDER_DETAIL_STATUS.CANCELLED
+        );
+        targetItemStatus = ORDER_DETAIL_STATUS.SERVED;
+        warningMessage = `Đơn hàng có ${unfinishedItems.length} món chưa được phục vụ.`;
+        actionDescription = `chuyển sang Đã phục vụ (Served)`;
+        break;
+
+      default:
+        // Các trạng thái khác không cần kiểm tra
+        await executeStatusChange(order, newStatus, null, null);
+        return;
+    }
+
+    if (unfinishedItems.length > 0) {
+      // Hiển confirm modal với thông tin chi tiết
       setConfirmDialog({
         isOpen: true,
         title: "Xác nhận chuyển trạng thái",
-        message: `Đơn hàng có ${unfinishedItems.length} món chưa hoàn thành (Pending/Preparing). Bạn có muốn chuyển các món này thành Ready và chuyển trạng thái đơn hàng sang ${ORDER_STATUS_LABELS[newStatus]}?`,
+        message: `${warningMessage}\n\nCác món này sẽ được ${actionDescription} khi chuyển đơn hàng sang ${ORDER_STATUS_LABELS[newStatus]}.\n\nBạn có chắc chắn muốn tiếp tục?`,
+        type: "warning",
+        confirmText: "Xác nhận",
+        items: unfinishedItems,
         onConfirm: async () => {
-          setConfirmDialog({ isOpen: false, title: "", message: "", onConfirm: null });
-          await executeStatusChange(order, newStatus, true);
+          setConfirmDialog({ isOpen: false, title: "", message: "", onConfirm: null, items: [] });
+          await executeStatusChange(order, newStatus, unfinishedItems, targetItemStatus);
         },
       });
     } else {
-      // Không có items chưa hoàn thành, chuyển trạng thái trực tiếp
-      await executeStatusChange(order, newStatus, false);
+      // Không có items cần update, chuyển trạng thái trực tiếp
+      await executeStatusChange(order, newStatus, null, null);
     }
   };
 
   /**
    * Thực hiện chuyển trạng thái đơn hàng
+   * @param {Object} order - Đơn hàng
+   * @param {string} newStatus - Trạng thái mới của đơn
+   * @param {Array|null} itemsToUpdate - Danh sách items cần update (null nếu không cần)
+   * @param {string|null} targetItemStatus - Trạng thái đích của items (null nếu không cần)
    */
-  const executeStatusChange = async (order, newStatus, updateItemsToReady) => {
+  const executeStatusChange = async (order, newStatus, itemsToUpdate, targetItemStatus) => {
     try {
-      // Nếu cần update items thành Ready trước
-      if (updateItemsToReady) {
-        const unfinishedItems = (order.items || []).filter(
-          (item) =>
-            item.status === ORDER_DETAIL_STATUS.PENDING ||
-            item.status === ORDER_DETAIL_STATUS.PREPARING
-        );
-
-        // Update từng item thành Ready
-        for (const item of unfinishedItems) {
+      // Nếu cần update items trước
+      if (itemsToUpdate && itemsToUpdate.length > 0 && targetItemStatus) {
+        // Update từng item sang trạng thái đích
+        for (const item of itemsToUpdate) {
           await orderService.updateOrderDetailStatus(
             order.id,
             item.id,
-            ORDER_DETAIL_STATUS.READY
+            targetItemStatus
           );
         }
       }
@@ -449,14 +499,11 @@ const OrderManagementContent = () => {
       isOpen: true,
       title: "Xác nhận hủy đơn hàng",
       message: `Bạn có chắc chắn muốn hủy (vô hiệu hóa) đơn hàng #${order.id}?`,
+      items: [],
+      confirmText: "Xác nhận hủy",
       onConfirm: () => {
         handleDeleteOrder(order.id);
-        setConfirmDialog({
-          isOpen: false,
-          title: "",
-          message: "",
-          onConfirm: null,
-        });
+        setConfirmDialog({ isOpen: false, title: "", message: "", onConfirm: null, items: [] });
       },
     });
   };
@@ -469,14 +516,11 @@ const OrderManagementContent = () => {
       isOpen: true,
       title: "Xác nhận khôi phục",
       message: `Bạn có chắc chắn muốn khôi phục đơn hàng #${order.id}?`,
+      items: [],
+      confirmText: "Khôi phục",
       onConfirm: () => {
         handleRestoreOrder(order.id);
-        setConfirmDialog({
-          isOpen: false,
-          title: "",
-          message: "",
-          onConfirm: null,
-        });
+        setConfirmDialog({ isOpen: false, title: "", message: "", onConfirm: null, items: [] });
       },
     });
   };
@@ -489,14 +533,11 @@ const OrderManagementContent = () => {
       isOpen: true,
       title: "Xác nhận xóa vĩnh viễn",
       message: `Bạn có chắc chắn muốn xóa vĩnh viễn đơn hàng #${order.id}? Hành động này không thể hoàn tác!`,
+      items: [],
+      confirmText: "Xóa vĩnh viễn",
       onConfirm: () => {
         handleDeleteOrderPermanent(order.id);
-        setConfirmDialog({
-          isOpen: false,
-          title: "",
-          message: "",
-          onConfirm: null,
-        });
+        setConfirmDialog({ isOpen: false, title: "", message: "", onConfirm: null, items: [] });
       },
     });
   };
@@ -768,14 +809,61 @@ const OrderManagementContent = () => {
           type={alertModal.type}
         />
 
-        {/* Confirm Modal */}
-        <ConfirmModal
-          isOpen={confirmDialog.isOpen}
-          onClose={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
-          onConfirm={confirmDialog.onConfirm}
-          title={confirmDialog.title}
-          message={confirmDialog.message}
-        />
+        {/* Confirm Modal với danh sách items */}
+        {confirmDialog.isOpen && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+            <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden">
+              {/* Header */}
+              <div className="bg-amber-50 border-b border-amber-200 p-5">
+                <h3 className="text-xl font-bold text-amber-800 flex items-center gap-2">
+                  <AlertTriangle className="w-6 h-6 text-amber-600" />
+                  {confirmDialog.title}
+                </h3>
+              </div>
+
+              {/* Content */}
+              <div className="p-5">
+                {/* Hiển thị danh sách items nếu có */}
+                {confirmDialog.items && confirmDialog.items.length > 0 && (
+                  <>
+                    <p className="text-gray-700 mb-4">
+                      Đơn hàng có <span className="font-bold text-red-600">{confirmDialog.items.length} món</span> cần xử lý:
+                    </p>
+
+                    <div className="bg-gray-50 rounded-lg p-3 mb-4 max-h-40 overflow-y-auto">
+                      {confirmDialog.items.map((item, idx) => (
+                        <div key={item.id || idx} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                          <span className="font-medium text-gray-800">{item.name || item.dishName}</span>
+                          <span className="text-orange-600 font-bold">x{item.quantity}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                <p className="text-gray-600 text-sm whitespace-pre-line">
+                  {confirmDialog.message}
+                </p>
+              </div>
+
+              {/* Actions */}
+              <div className="p-5 bg-gray-50 border-t border-gray-200 flex gap-3">
+                <button
+                  onClick={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
+                  className="flex-1 py-2.5 px-4 rounded-lg font-semibold border-2 border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  onClick={confirmDialog.onConfirm}
+                  className="flex-1 py-2.5 px-4 rounded-lg font-semibold bg-amber-500 text-white hover:bg-amber-600 transition-colors"
+                >
+                  {confirmDialog.confirmText || "Xác nhận"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
