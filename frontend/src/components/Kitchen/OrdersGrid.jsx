@@ -8,7 +8,7 @@ const OrdersGrid = ({
   currentTime,
   getElapsedTime,
   getOrderStatus,
-  handleStart,
+  handleConfirmOrder,
   handleComplete,
   handleCancel,
   handleRecall,
@@ -38,7 +38,7 @@ const OrdersGrid = ({
             order={order}
             getElapsedTime={getElapsedTime}
             getOrderStatus={getOrderStatus}
-            handleStart={handleStart}
+            handleConfirmOrder={handleConfirmOrder}
             handleComplete={handleComplete}
             handleCancel={handleCancel}
             handleRecall={handleRecall}
@@ -53,7 +53,7 @@ const OrdersGrid = ({
             currentTime={currentTime}
             getElapsedTime={getElapsedTime}
             getOrderStatus={getOrderStatus}
-            handleStart={handleStart}
+            handleConfirmOrder={handleConfirmOrder}
             handleComplete={handleComplete}
             handleCancel={handleCancel}
             handleRecall={handleRecall}

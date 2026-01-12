@@ -11,7 +11,7 @@ const OrderListItem = ({
     getOrderStatus,
     handleCompleteItem,
     handleCancelItem,
-    handleStart,
+    handleConfirmOrder,
     handleComplete,
     handleCancel,
     handleRecall,
@@ -19,8 +19,8 @@ const OrderListItem = ({
     const [showDetailModal, setShowDetailModal] = useState(false);
     const status = getOrderStatus(order);
     const statusConfig = STATUS_CONFIG[status] || STATUS_CONFIG["new"];
-    // Use order.status directly from database for the badge display
-    const dbStatus = order.status || "Pending";
+    // Use dbStatus from order for badge display (database status)
+    const dbStatus = order.dbStatus || order.status || "Pending";
     const statusBadge = STATUS_BADGE[dbStatus] || STATUS_BADGE["Pending"];
     const elapsed = getElapsedTime(order.orderTime);
 
@@ -177,8 +177,9 @@ const OrderListItem = ({
                 >
                     <OrderActions
                         status={status}
+                        dbStatus={dbStatus}
                         orderId={order.id}
-                        handleStart={handleStart}
+                        handleConfirmOrder={handleConfirmOrder}
                         handleComplete={handleComplete}
                         handleCancel={handleCancel}
                         handleRecall={handleRecall}
@@ -195,7 +196,7 @@ const OrderListItem = ({
                     statusConfig={statusConfig}
                     elapsed={elapsed}
                     onClose={() => setShowDetailModal(false)}
-                    handleStart={handleStart}
+                    handleConfirmOrder={handleConfirmOrder}
                     handleComplete={handleComplete}
                     handleCancel={handleCancel}
                     handleRecall={handleRecall}

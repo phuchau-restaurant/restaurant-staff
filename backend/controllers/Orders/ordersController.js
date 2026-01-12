@@ -265,6 +265,124 @@ class OrdersController {
       next(error);
     }
   };
+
+  // === WAITER ORDER ENDPOINTS ===
+
+  // [PUT] /api/orders/:id/claim - Nhận đơn
+  claimOrder = async (req, res, next) => {
+    try {
+      const tenantId = req.tenantId;
+      const { id } = req.params;
+      const { waiterId, confirmUnconfirmed } = req.body;
+
+      if (!waiterId) {
+        return res.status(400).json({
+          success: false,
+          message: "Waiter ID is required",
+        });
+      }
+
+      const result = await this.ordersService.claimOrder(
+        id,
+        waiterId,
+        tenantId,
+        confirmUnconfirmed
+      );
+
+      // Nếu cần xác nhận món null
+      if (result.needsConfirmation) {
+        return res.status(200).json({
+          success: true,
+          needsConfirmation: true,
+          message: `Đơn hàng có ${result.unconfirmedItems.length} món chưa được xác nhận`,
+          data: {
+            unconfirmedItems: result.unconfirmedItems,
+            orderId: result.order.id,
+            tableNumber: result.order.tableNumber
+          }
+        });
+      }
+
+      // Clean Response - result now contains { order, details }
+      const { tenantId: _tid, ...orderData } = result.order;
+      const detailsData = result.details.map((d) => {
+        const { tenantId, orderId, ...rest } = d;
+        return rest;
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: "Order claimed successfully",
+        data: {
+          ...orderData,
+          orderDetails: detailsData,
+        },
+      });
+    } catch (error) {
+      if (error.message.includes("already claimed")) {
+        error.statusCode = 409; // Conflict
+      } else if (error.message.includes("not found")) {
+        error.statusCode = 404;
+      }
+      next(error);
+    }
+  };
+
+  // [GET] /api/orders/my-orders?waiterId=xxx - Đơn của tôi
+  getMyOrders = async (req, res, next) => {
+    try {
+      const tenantId = req.tenantId;
+      const { waiterId } = req.query;
+
+      if (!waiterId) {
+        return res.status(400).json({
+          success: false,
+          message: "Waiter ID is required in query params",
+        });
+      }
+
+      const orders = await this.ordersService.getMyOrders(waiterId, tenantId);
+
+      // Clean response
+      const responseData = orders.map((order) => {
+        const { tenantId: _tid, ...rest } = order;
+        return rest;
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: "Get my orders successfully",
+        total: orders.length,
+        data: responseData,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // [GET] /api/orders/unassigned - Đơn chưa có người nhận
+  getUnassignedOrders = async (req, res, next) => {
+    try {
+      const tenantId = req.tenantId;
+
+      const orders = await this.ordersService.getUnassignedOrders(tenantId);
+
+      // Clean response
+      const responseData = orders.map((order) => {
+        const { tenantId: _tid, ...rest } = order;
+        return rest;
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: "Get unassigned orders successfully",
+        total: orders.length,
+        data: responseData,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export default OrdersController;

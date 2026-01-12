@@ -263,13 +263,13 @@ export const STATUS_BADGE = {
   },
   // Database statuses - direct mapping
   Pending: {
-    label: 'Chờ xử lý',
-    bgColor: 'bg-yellow-100',
-    textColor: 'text-yellow-800',
-    borderColor: 'border-yellow-300'
+    label: 'Đang chuẩn bị',
+    bgColor: 'bg-orange-100',
+    textColor: 'text-orange-800',
+    borderColor: 'border-orange-300'
   },
   Approved: {
-    label: 'Đã duyệt',
+    label: 'Đơn mới',
     bgColor: 'bg-blue-100',
     textColor: 'text-blue-800',
     borderColor: 'border-blue-300'

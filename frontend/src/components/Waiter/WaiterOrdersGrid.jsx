@@ -6,6 +6,11 @@ const WaiterOrdersGrid = ({
   currentTime,
   getElapsedTime,
   getOrderStatus,
+  showClaimButton = false,
+  onClaimOrder,
+  onCancelItem,
+  onConfirmItem,
+  onServeItem,
 }) => {
   if (orders.length === 0) {
     return (
@@ -17,18 +22,21 @@ const WaiterOrdersGrid = ({
   }
 
   return (
-    <div className="max-w-[1920px] mx-auto px-6 py-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 auto-rows-fr">
-        {orders.map((order) => (
-          <WaiterOrderCard
-            key={order.id}
-            order={order}
-            currentTime={currentTime}
-            getElapsedTime={getElapsedTime}
-            getOrderStatus={getOrderStatus}
-          />
-        ))}
-      </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 auto-rows-fr">
+      {orders.map((order) => (
+        <WaiterOrderCard
+          key={order.id}
+          order={order}
+          currentTime={currentTime}
+          getElapsedTime={getElapsedTime}
+          getOrderStatus={getOrderStatus}
+          showClaimButton={showClaimButton}
+          onClaimOrder={onClaimOrder}
+          onCancelItem={onCancelItem}
+          onConfirmItem={onConfirmItem}
+          onServeItem={onServeItem}
+        />
+      ))}
     </div>
   );
 };

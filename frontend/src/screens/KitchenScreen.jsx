@@ -6,38 +6,21 @@ import { useAlert } from "../hooks/useAlert";
 import { useKitchenSocket, useOrderSocket } from "../hooks/useOrderSocket";
 import { useAuth } from "../context/AuthContext";
 import { X, Bell } from "lucide-react";
-
-// Map trạng thái từ tiếng Anh sang tiếng Việt
-// Order Status: Unsubmit, Approved, Pending, Completed, Served, Paid, Cancelled
-// OrderDetail Status: Pending, Ready, Served, Cancelled
-const STATUS_MAP = {
-  Unsubmit: "Chưa gửi",
-  Approved: "Đã duyệt",
-  Pending: "Chờ xử lý",
-  Completed: "Hoàn thành",
-  Served: "Đã phục vụ",
-  Paid: "Đã thanh toán",
-  Cancelled: "Đã hủy",
-};
-
-// Options cho dropdown status (hiển thị tiếng Việt)
-// Chỉ hiển thị các trạng thái quan trọng cho bếp
-const STATUS_OPTIONS = [
-  { value: "all", label: "Tất cả trạng thái" },
-  { value: "Pending", label: "Chờ xử lý" },
-  { value: "Approved", label: "Đã duyệt" },
-  { value: "Completed", label: "Hoàn thành" },
-  { value: "Served", label: "Đã phục vụ" },
-  { value: "Cancelled", label: "Đã hủy" },
-];
-
-// Options cho dropdown category (hiển thị tiếng Việt)
-const CATEGORY_OPTIONS = [
-  { value: "all", label: "Tất cả loại món" },
-  { value: "1", label: "Khai vị" },
-  { value: "2", label: "Đồ uống" },
-  { value: "3", label: "Món chính" },
-];
+import * as kitchenService from "../services/kitchenService";
+import {
+  mapKitchenOrdersFromApi,
+  calculateElapsedTime,
+  determineOrderDisplayStatus,
+  getPendingItems,
+  filterOrdersBySearch,
+  sortOrdersByTime,
+  updateOrderInList,
+  updateOrderItemInList,
+  removeOrderFromList,
+  STATUS_MAP,
+  STATUS_OPTIONS,
+  CATEGORY_OPTIONS,
+} from "../utils/kitchenUtils";
 
 const KitchenScreen = () => {
   const { alert, showSuccess, showError, showWarning, showInfo, closeAlert } =
@@ -48,7 +31,7 @@ const KitchenScreen = () => {
   const [filterStatus, setFilterStatus] = useState("all");
   const [searchOrderId, setSearchOrderId] = useState("");
   const [orders, setOrders] = useState([]);
-  
+
   // State cho confirm dialog khi hoàn thành đơn có món pending
   const [confirmComplete, setConfirmComplete] = useState({
     isOpen: false,
@@ -108,78 +91,14 @@ const KitchenScreen = () => {
     try {
       setIsLoading(true);
 
-      // Build query params
-      const params = new URLSearchParams();
-
-      // Add status filter (nếu không phải "all")
-      if (filterStatus !== "all") {
-        // filterStatus đã là giá trị tiếng Anh (Pending, Cooking, etc.)
-        params.append("status", filterStatus);
-      }
-
-      // Add category filter (nếu không phải "all")
-      if (filterStation !== "all") {
-        // filterStation đã là giá trị tiếng Anh (Appetizers, Beverage, etc.)
-        params.append("categoryId", filterStation);
-      }
-
-      const queryString = params.toString();
-      const url = `${import.meta.env.VITE_BACKEND_URL}/api/kitchen/orders${queryString ? `?${queryString}` : ""
-        }`;
-
-      const res = await fetch(url, {
-        headers: { "x-tenant-id": import.meta.env.VITE_TENANT_ID },
+      const data = await kitchenService.fetchKitchenOrders({
+        status: filterStatus,
+        categoryId: filterStation,
       });
 
-      const data = await res.json();
-      if (data.success) {
-        // Map API data to component format
-        const mappedOrders = data.data.map((order) => {
-          // Backend OrderDetail status: Pending, Ready, Served, Cancelled
-          const allDishes = order.dishes || [];
-          
-          // Xác định order status dựa trên status của các món
-          let orderStatus = "Pending";
-          const allReady = allDishes.every((d) => d.status === "Ready" || d.status === "Served");
-          const allCancelled = allDishes.every((d) => d.status === "Cancelled");
-          const hasServed = allDishes.some((d) => d.status === "Served");
-          
-          if (allCancelled) {
-            orderStatus = "Cancelled";
-          } else if (allReady && hasServed) {
-            orderStatus = "Served";
-          } else if (allReady) {
-            orderStatus = "Completed";
-          }
-
-          return {
-            id: order.orderId,
-            orderNumber: order.orderId,
-            tableNumber: order.tableId,
-            orderTime: new Date(order.createdAt),
-            status: orderStatus,
-            prepTimeOrder: order.prepTimeOrder,
-            items: allDishes.map((dish) => ({
-              id: dish.dishId,
-              order_detail_id: dish.order_detail_id,
-              dishId: dish.dishId,
-              name: dish.name,
-              quantity: dish.quantity,
-              note: dish.note || "",
-              status: dish.status,
-              categoryId: dish.categoryId,
-              image: dish.image,
-              // OrderDetail status: Pending, Ready, Served, Cancelled
-              completed: dish.status === "Ready" || dish.status === "Served",
-              cancelled: dish.status === "Cancelled",
-              modifiers: dish.modifiers || [],
-            })),
-            customerName: order.customerName || "Khách",
-            notes: order.note || "",
-          };
-        });
-        setOrders(mappedOrders);
-      }
+      // Map API data to component format
+      const mappedOrders = mapKitchenOrdersFromApi(data);
+      setOrders(mappedOrders);
     } catch (error) {
       console.error("Error fetching kitchen orders:", error);
     } finally {
@@ -203,46 +122,38 @@ const KitchenScreen = () => {
   // Fetch single order by ID từ API và chuyển đổi sang format kitchen
   const fetchSingleOrder = useCallback(async (orderId) => {
     try {
-      const url = `${import.meta.env.VITE_BACKEND_URL}/api/orders/${orderId}`;
-      const res = await fetch(url, {
-        headers: { "x-tenant-id": import.meta.env.VITE_TENANT_ID },
-      });
-      const data = await res.json();
+      const order = await kitchenService.fetchOrderDetails(orderId);
+      if (!order) return null;
 
-      if (data.success && data.data) {
-        const order = data.data;
-        const orderDetails = order.orderDetails || [];
+      const orderDetails = order.orderDetails || [];
+      let orderStatus = order.status || "Pending";
 
-        // Determine order status based on order details
-        let orderStatus = order.status || "Pending";
-
-        return {
-          id: order.id,
-          orderNumber: order.id,
-          tableNumber: order.tableId,
-          orderTime: new Date(order.createdAt),
-          status: orderStatus,
-          items: orderDetails.map((detail) => ({
-            id: detail.dishId,
-            order_detail_id: detail.id,
-            dishId: detail.dishId,
-            name: detail.dishName || detail.menu?.name || "Món ăn",
-            quantity: detail.quantity,
-            note: detail.note || "",
-            status: detail.status,
-            categoryId: detail.menu?.categoryId,
-            image: detail.menu?.image,
-            // OrderDetail status: Pending, Ready, Served, Cancelled
-            completed: detail.status === "Ready" || detail.status === "Served",
-            cancelled: detail.status === "Cancelled",
-            modifiers: detail.modifiers || [],
-          })),
-          customerName: order.customerName || "Khách",
-          notes: order.note || "",
-          server: order.server || "Server",
-        };
-      }
-      return null;
+      return {
+        id: order.id,
+        orderNumber: order.id,
+        tableNumber: order.tableNumber || order.tableId, // Ưu tiên tên bàn, fallback về ID
+        orderTime: new Date(order.createdAt),
+        status: orderStatus,
+        dbStatus: order.status, // Thêm dbStatus để hiển thị button chính xác
+        prepTimeOrder: order.prepTimeOrder, // Thêm prepTimeOrder để đồng bộ với mapKitchenOrderFromApi
+        items: orderDetails.map((detail) => ({
+          id: detail.dishId,
+          order_detail_id: detail.id,
+          dishId: detail.dishId,
+          name: detail.dishName || detail.menu?.name || "Món ăn",
+          quantity: detail.quantity,
+          note: detail.note || "",
+          status: detail.status,
+          categoryId: detail.menu?.categoryId,
+          image: detail.menu?.image,
+          completed: detail.status === "Ready" || detail.status === "Served",
+          cancelled: detail.status === "Cancelled",
+          modifiers: detail.modifiers || [],
+        })),
+        customerName: order.customerName || "Khách",
+        notes: order.note || "",
+        server: order.server || "Server",
+      };
     } catch (error) {
       console.error("Error fetching single order:", error);
       return null;
@@ -257,7 +168,7 @@ const KitchenScreen = () => {
     async (data) => {
       console.log("🔔 New order received:", data);
       setNotification({
-        message: `Đơn mới #${data.orderId} từ bàn ${data.tableId}`,
+        message: `Đơn mới #${data.orderId} từ ${data.tableId}`,
         orderId: data.orderId,
         tableId: data.tableId,
       });
@@ -275,13 +186,14 @@ const KitchenScreen = () => {
   const handleDishStatusChanged = useCallback(
     async (data) => {
       console.log("🔔 Dish status changed:", data);
+      const targetId = String(data.orderId);
 
       // Cập nhật order cụ thể trong state
       const updatedOrder = await fetchSingleOrder(data.orderId);
       if (updatedOrder) {
         setOrders((prev) =>
           prev.map((order) =>
-            order.id === data.orderId ? updatedOrder : order
+            String(order.id) === targetId ? updatedOrder : order
           )
         );
       }
@@ -292,13 +204,14 @@ const KitchenScreen = () => {
   const handleOrderUpdated = useCallback(
     async (data) => {
       console.log("🔔 Order updated:", data);
+      const targetId = String(data.orderId);
 
       // Cập nhật order cụ thể trong state
       const updatedOrder = await fetchSingleOrder(data.orderId);
       if (updatedOrder) {
         setOrders((prev) =>
           prev.map((order) =>
-            order.id === data.orderId ? updatedOrder : order
+            String(order.id) === targetId ? updatedOrder : order
           )
         );
       }
@@ -308,8 +221,9 @@ const KitchenScreen = () => {
 
   const handleOrderDeleted = useCallback((data) => {
     console.log("🔔 Order deleted:", data);
+    const targetId = String(data.orderId);
     // Xóa order khỏi state
-    setOrders((prev) => prev.filter((order) => order.id !== data.orderId));
+    setOrders((prev) => prev.filter((order) => String(order.id) !== targetId));
   }, []);
 
   const handleOrderCreated = useCallback(
@@ -345,149 +259,73 @@ const KitchenScreen = () => {
   // Tính thời gian từ khi order
   const getElapsedTime = useCallback(
     (orderTime) => {
-      const diff = Math.floor((currentTime - orderTime) / 1000 / 60);
-      return diff;
+      return calculateElapsedTime(orderTime, currentTime);
     },
     [currentTime]
   );
 
   // Xác định trạng thái hiển thị dựa trên status backend và thời gian
-  // Order Status từ backend: Unsubmit, Approved, Pending, Completed, Served, Paid, Cancelled
   const getOrderStatus = useCallback(
     (order) => {
-      const statusLower = (order.status || "").toLowerCase();
-
-      // Map backend status to frontend display status
-      if (statusLower === "completed" || statusLower === "served" || statusLower === "paid") {
-        return "completed";
-      }
-
-      if (statusLower === "cancelled") {
-        return "cancelled";
-      }
-
       const elapsed = getElapsedTime(order.orderTime);
-      const prepTime = order.prepTimeOrder || order.prepTime || 15;
-
-      // Pending/Approved -> đang chờ bếp xử lý
-      if (statusLower === "pending" || statusLower === "approved") {
-        return elapsed >= prepTime ? "late" : "new";
-      }
-
-      // Unsubmit -> chưa gửi đến bếp
-      if (statusLower === "unsubmit") {
-        return "new";
-      }
-
-      // Default: treat as new
-      return elapsed >= prepTime ? "late" : "new";
+      return determineOrderDisplayStatus(order, elapsed);
     },
     [getElapsedTime]
   );
 
   // Lọc orders (chỉ filter search vì status và category đã được filter ở API)
   const filteredOrders = useMemo(() => {
-    const filtered = orders
-      .filter((order) => {
-        // Tìm kiếm theo orderNumber
-        if (
-          searchOrderId &&
-          !String(order.orderNumber)
-            .toLowerCase()
-            .includes(searchOrderId.toLowerCase())
-        ) {
-          return false;
-        }
-        return true;
-      })
-      .sort((a, b) => a.orderTime - b.orderTime);
-
-    return filtered;
+    const filtered = filterOrdersBySearch(orders, searchOrderId);
+    return sortOrdersByTime(filtered, "asc");
   }, [orders, searchOrderId]);
 
   // Actions
-  // Bắt đầu xử lý đơn - chuyển sang Approved (đã xác nhận bếp sẽ làm)
-  const handleStart = async (orderId) => {
+  // Xác nhận đơn Approved - chuyển sang Pending (Bếp bắt đầu xử lý)
+  const handleConfirmOrder = async (orderId) => {
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/orders/${orderId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            "x-tenant-id": import.meta.env.VITE_TENANT_ID,
-          },
-          body: JSON.stringify({ status: "Approved" }),
-        }
+      await kitchenService.confirmKitchenOrder(orderId);
+      // Update local state
+      setOrders((prev) =>
+        updateOrderInList(prev, orderId, {
+          status: "Pending",
+          dbStatus: "Pending",
+          startTime: new Date(),
+        })
       );
-
-      const data = await res.json();
-      if (data.success) {
-        // Update local state
-        setOrders((prev) =>
-          prev.map((o) =>
-            o.id === orderId
-              ? { ...o, status: "Approved", startTime: new Date() }
-              : o
-          )
-        );
-        showSuccess(`Đã xác nhận đơn #${orderId}`);
-      } else {
-        console.error("Failed to update order status:", data.message);
-        showError("Không thể cập nhật trạng thái đơn hàng");
-      }
+      showSuccess(`Bếp đã nhận đơn #${orderId}`);
     } catch (error) {
       console.error("Error updating order status:", error);
-      showError("Lỗi khi cập nhật trạng thái đơn hàng");
+      showError("Không thể cập nhật trạng thái đơn hàng");
     }
   };
 
   // Hàm thực sự gọi API hoàn thành đơn
   const doCompleteOrder = async (orderId) => {
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/orders/${orderId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            "x-tenant-id": import.meta.env.VITE_TENANT_ID,
-          },
-          body: JSON.stringify({ status: "Completed" }),
-        }
+      await kitchenService.completeOrder(orderId);
+      // Update local state
+      setOrders((prev) =>
+        updateOrderInList(prev, orderId, {
+          status: "Completed",
+          dbStatus: "Completed",
+          completeTime: new Date(),
+        })
       );
-
-      const data = await res.json();
-      if (data.success) {
-        // Update local state
-        setOrders((prev) =>
-          prev.map((o) =>
-            o.id === orderId
-              ? { ...o, status: "Completed", completeTime: new Date() }
-              : o
-          )
-        );
-        showSuccess(`Đã hoàn thành đơn #${orderId}`);
-      } else {
-        console.error("Failed to update order status:", data.message);
-        showError("Không thể cập nhật trạng thái đơn hàng");
-      }
+      showSuccess(`Đã hoàn thành đơn #${orderId}`);
     } catch (error) {
-      console.error("Error updating order status:", error);
-      showError("Lỗi khi cập nhật trạng thái đơn hàng");
+      console.error("Error completing order:", error);
+      showError("Không thể hoàn thành đơn hàng");
     }
   };
 
   // Hàm xử lý khi nhấn hoàn thành - kiểm tra có món pending không
   const handleComplete = async (orderId) => {
-    const order = orders.find((o) => o.id === orderId);
+    const targetId = String(orderId);
+    const order = orders.find((o) => String(o.id) === targetId);
     if (!order) return;
 
     // Tìm các món đang ở trạng thái Pending (chưa nấu)
-    const pendingItems = order.items.filter((item) => {
-      const status = item.status || "Pending";
-      return status === "Pending" && !item.completed && !item.cancelled;
-    });
+    const pendingItems = getPendingItems(order);
 
     if (pendingItems.length > 0) {
       // Có món pending -> hiện dialog xác nhận
@@ -505,15 +343,15 @@ const KitchenScreen = () => {
   // Xác nhận hoàn thành đơn và chuyển các món pending sang Ready
   const confirmCompleteOrder = async () => {
     const { orderId, pendingItems } = confirmComplete;
-    
+
     // Chuyển tất cả các món pending sang Ready trước
     for (const item of pendingItems) {
       await markItemAsReady(orderId, item);
     }
-    
+
     // Sau đó hoàn thành đơn
     await doCompleteOrder(orderId);
-    
+
     // Đóng dialog
     setConfirmComplete({ isOpen: false, orderId: null, pendingItems: [] });
   };
@@ -521,34 +359,14 @@ const KitchenScreen = () => {
   // Hàm đánh dấu món là Ready (dùng cho confirmCompleteOrder)
   const markItemAsReady = async (orderId, item) => {
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/kitchen/orders/${orderId}/${item.order_detail_id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            "x-tenant-id": import.meta.env.VITE_TENANT_ID,
-          },
-          body: JSON.stringify({ status: "Ready" }),
-        }
+      await kitchenService.markItemAsReady(orderId, item.order_detail_id);
+      // Update local state
+      setOrders((prev) =>
+        updateOrderItemInList(prev, orderId, item.order_detail_id, {
+          completed: true,
+          status: "Ready",
+        })
       );
-
-      if (res.ok) {
-        // Update local state
-        setOrders((prev) =>
-          prev.map((o) => {
-            if (o.id === orderId) {
-              return {
-                ...o,
-                items: o.items.map((i) =>
-                  i.id === item.id ? { ...i, completed: true, status: "Ready" } : i
-                ),
-              };
-            }
-            return o;
-          })
-        );
-      }
     } catch (error) {
       console.error("Error marking item as ready:", error);
     }
@@ -556,33 +374,18 @@ const KitchenScreen = () => {
 
   const handleCancel = async (orderId) => {
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/orders/${orderId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            "x-tenant-id": import.meta.env.VITE_TENANT_ID,
-          },
-          body: JSON.stringify({ status: "Cancelled" }),
-        }
+      await kitchenService.cancelOrder(orderId);
+      // Update local state
+      setOrders((prev) =>
+        updateOrderInList(prev, orderId, {
+          status: "Cancelled",
+          dbStatus: "Cancelled",
+        })
       );
-
-      const data = await res.json();
-      if (data.success) {
-        // Update local state
-        setOrders((prev) =>
-          prev.map((o) =>
-            o.id === orderId ? { ...o, status: "Cancelled" } : o
-          )
-        );
-      } else {
-        console.error("Failed to update order status:", data.message);
-        showError("Không thể hủy đơn hàng");
-      }
+      showSuccess(`Đã hủy đơn #${orderId}`);
     } catch (error) {
       console.error("Error cancelling order:", error);
-      showError("Lỗi khi hủy đơn hàng");
+      showError("Không thể hủy đơn hàng");
     }
   };
 
@@ -604,8 +407,9 @@ const KitchenScreen = () => {
       if (data.success) {
         showSuccess(`Đã gọi nhân viên phục vụ đến lấy món - Đơn ${orderId}`);
         // Update local state
+        const targetId = String(orderId);
         setOrders((prev) =>
-          prev.map((o) => (o.id === orderId ? { ...o, status: "Served" } : o))
+          prev.map((o) => (String(o.id) === targetId ? { ...o, status: "Served", dbStatus: "Served" } : o))
         );
       } else {
         console.error("Failed to update order status:", data.message);
@@ -619,8 +423,10 @@ const KitchenScreen = () => {
 
   const handleCompleteItem = async (orderId, itemId) => {
     // Lấy thông tin món trước khi update
-    const order = orders.find((o) => o.id === orderId);
-    const item = order?.items.find((i) => i.id === itemId);
+    const targetOrderId = String(orderId);
+    const targetItemId = String(itemId);
+    const order = orders.find((o) => String(o.id) === targetOrderId);
+    const item = order?.items.find((i) => String(i.id) === targetItemId);
 
     // Chỉ xử lý nếu món tồn tại và chưa hoàn thành
     if (!item || item.completed) return;
@@ -630,95 +436,64 @@ const KitchenScreen = () => {
       `🔔 Đã thông báo nhân viên!\n\nMón: ${item.name} x${item.quantity}\nBàn: ${order.tableNumber}\nĐơn: ${order.orderNumber}\n\n✅ Món đã sẵn sàng để phục vụ!`
     );
 
-    const res = await fetch(
-      `${import.meta.env.VITE_BACKEND_URL}/api/kitchen/orders/${orderId}/${item.order_detail_id}`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "x-tenant-id": import.meta.env.VITE_TENANT_ID,
-        },
-        body: JSON.stringify({ status: "Ready" }),
-      }
-    );
-
-    if (!res.ok) {
-      showError("Không thể cập nhật trạng thái món ăn");
-      return;
-    }
-
-    // Update state sau khi thông báo
-    // OrderDetail status: Pending -> Ready (món đã sẵn sàng)
-    setOrders((prev) =>
-      prev.map((o) => {
-        if (o.id === orderId) {
-          const updatedItems = o.items.map((i) =>
-            i.id === itemId ? { ...i, completed: true, status: "Ready" } : i
-          );
-
-          // Kiểm tra nếu tất cả món đã Ready hoặc Cancelled thì chuyển order sang Completed
-          const allCompleted = updatedItems.every((i) => 
-            i.status === "Ready" || i.status === "Served" || i.status === "Cancelled"
-          );
-
-          if (allCompleted) {
-            // Gọi trực tiếp API hoàn thành (không cần confirm vì tất cả món đã xong)
-            doCompleteOrder(orderId);
-          }
-
-          return {
-            ...o,
-            items: updatedItems,
-            status: allCompleted ? "Completed" : o.status,
-            completeTime: allCompleted ? new Date() : o.completeTime,
-          };
-        }
-        return o;
-      })
-    );
-  };
-
-  // Cancel individual item
-  const handleCancelItem = async (orderId, itemId) => {
-    const order = orders.find((o) => o.id === orderId);
-    const item = order?.items.find((i) => i.id === itemId);
-
-    if (!item || item.completed || item.cancelled) return;
-
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/kitchen/orders/${orderId}/${item.order_detail_id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            "x-tenant-id": import.meta.env.VITE_TENANT_ID,
-          },
-          body: JSON.stringify({ status: "Cancelled" }),
-        }
-      );
-
-      if (!res.ok) {
-        showError("Không thể hủy món ăn");
-        return;
-      }
-
-      showWarning(`Đã hủy món: ${item.name} x${item.quantity} - Bàn ${order.tableNumber}`);
-
-      // Update state
+      await kitchenService.markItemAsReady(orderId, item.order_detail_id);
+      
+      // Update state sau khi thông báo
       setOrders((prev) =>
         prev.map((o) => {
-          if (o.id === orderId) {
+          if (String(o.id) === targetOrderId) {
             const updatedItems = o.items.map((i) =>
-              i.id === itemId ? { ...i, cancelled: true, status: "Cancelled" } : i
+              String(i.id) === targetItemId ? { ...i, completed: true, status: "Ready" } : i
             );
-            return { ...o, items: updatedItems };
+
+            // Kiểm tra nếu tất cả món đã Ready hoặc Cancelled thì chuyển order sang Completed
+            const allCompleted = updatedItems.every((i) =>
+              i.status === "Ready" || i.status === "Served" || i.status === "Cancelled"
+            );
+
+            if (allCompleted) {
+              // Gọi trực tiếp API hoàn thành (không cần confirm vì tất cả món đã xong)
+              doCompleteOrder(orderId);
+            }
+
+            return {
+              ...o,
+              items: updatedItems,
+              status: allCompleted ? "Completed" : o.status,
+              completeTime: allCompleted ? new Date() : o.completeTime,
+            };
           }
           return o;
         })
       );
     } catch (error) {
-      showError("Lỗi khi hủy món ăn");
+      showError("Không thể cập nhật trạng thái món ăn");
+    }
+  };
+
+  // Cancel individual item
+  const handleCancelItem = async (orderId, itemId) => {
+    const targetOrderId = String(orderId);
+    const targetItemId = String(itemId);
+    const order = orders.find((o) => String(o.id) === targetOrderId);
+    const item = order?.items.find((i) => String(i.id) === targetItemId);
+
+    if (!item || item.completed || item.cancelled) return;
+
+    try {
+      await kitchenService.cancelOrderItem(orderId, item.order_detail_id);
+      showWarning(`Đã hủy món: ${item.name}`);
+      
+      // Update local state
+      setOrders((prev) =>
+        updateOrderItemInList(prev, orderId, item.order_detail_id, {
+          cancelled: true,
+          status: "Cancelled",
+        })
+      );
+    } catch (error) {
+      showError("Không thể hủy món ăn");
     }
   };
 
@@ -726,10 +501,12 @@ const KitchenScreen = () => {
     <div className="h-full bg-linear-to-br from-slate-100 to-slate-200 flex flex-col">
       {/* Notification Banner */}
       {!isAudioEnabled && (
-        <div className="bg-amber-100 border-b border-amber-200 px-6 py-2 flex items-center justify-center gap-2 text-amber-800 text-sm animate-pulse cursor-pointer"
+        <div 
+          className="bg-amber-100 border-b border-amber-200 px-6 py-2 flex items-center justify-center gap-2 text-amber-800 text-sm animate-pulse cursor-pointer"
           onClick={() => {
             notificationAudio.play().then(() => setIsAudioEnabled(true)).catch(() => { });
-          }}>
+          }}
+        >
           <Bell className="w-4 h-4" />
           <span>Vui lòng click vào màn hình để kích hoạt âm thanh thông báo.</span>
         </div>
@@ -800,7 +577,7 @@ const KitchenScreen = () => {
             currentTime={currentTime}
             getElapsedTime={getElapsedTime}
             getOrderStatus={getOrderStatus}
-            handleStart={handleStart}
+            handleConfirmOrder={handleConfirmOrder}
             handleComplete={handleComplete}
             handleCancel={handleCancel}
             handleRecall={handleRecall}
@@ -830,13 +607,13 @@ const KitchenScreen = () => {
                 ⚠️ Xác nhận hoàn thành đơn
               </h3>
             </div>
-            
+
             {/* Content */}
             <div className="p-5">
               <p className="text-gray-700 mb-4">
                 Đơn hàng này có <span className="font-bold text-red-600">{confirmComplete.pendingItems.length} món</span> chưa hoàn thành:
               </p>
-              
+
               <div className="bg-gray-50 rounded-lg p-3 mb-4 max-h-40 overflow-y-auto">
                 {confirmComplete.pendingItems.map((item, idx) => (
                   <div key={item.id || idx} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
@@ -845,12 +622,12 @@ const KitchenScreen = () => {
                   </div>
                 ))}
               </div>
-              
+
               <p className="text-gray-600 text-sm">
                 Các món này sẽ được <span className="font-bold text-green-600">chuyển sang Sẵn sàng (Ready)</span> khi hoàn thành đơn. Bạn có chắc chắn?
               </p>
             </div>
-            
+
             {/* Actions */}
             <div className="p-5 bg-gray-50 border-t border-gray-200 flex gap-3">
               <button

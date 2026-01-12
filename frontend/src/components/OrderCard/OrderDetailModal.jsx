@@ -10,7 +10,7 @@ const OrderDetailModal = ({
   statusConfig,
   elapsed,
   onClose,
-  handleStart,
+  handleConfirmOrder,
   handleComplete,
   handleCancel,
   handleRecall,
@@ -18,7 +18,7 @@ const OrderDetailModal = ({
   handleCancelItem,
 }) => {
   // Get database status badge for the order
-  const dbStatus = order.status || "Pending";
+  const dbStatus = order.dbStatus || order.status || "Pending";
   const orderStatusBadge = STATUS_BADGE[dbStatus] || STATUS_BADGE["Pending"];
   
   // Get prep time from order
@@ -335,8 +335,9 @@ const OrderDetailModal = ({
         <div className="p-6 bg-white border-t border-gray-100 shrink-0">
           <OrderActions
             status={status}
+            dbStatus={dbStatus}
             orderId={order.id}
-            handleStart={handleStart}
+            handleConfirmOrder={handleConfirmOrder}
             handleComplete={handleComplete}
             handleCancel={handleCancel}
             handleRecall={handleRecall}
