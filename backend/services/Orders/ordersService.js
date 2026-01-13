@@ -47,13 +47,36 @@ class OrdersService {
         totalPrepTime += menuItem.prepTimeMinutes * quantity;
       }
 
-      // Tính giá modifiers
+      // Xử lý modifiers: Lấy giá từ DB để đảm bảo chính xác
       let modifierTotal = 0;
-      if (modifiers && Array.isArray(modifiers)) {
-        modifierTotal = modifiers.reduce((sum, mod) => sum + (mod.price || 0), 0);
+      let validModifiers = [];
+
+      if (modifiers && Array.isArray(modifiers) && modifiers.length > 0) {
+        // Collect option IDs
+        const modifierIds = modifiers.map(m => m.optionId);
+
+        // Fetch modifier options from DB
+        // Sử dụng Promise.all kèm map để lấy thông tin option
+        const modifierOptions = await Promise.all(
+          modifierIds.map(id => this.modifierOptionsRepo.getById(id))
+        );
+
+        // Calculate total and filter valid modifiers
+        modifiers.forEach(mod => {
+          const dbOption = modifierOptions.find(opt => opt && opt.id === mod.optionId);
+          if (dbOption) {
+            const price = (dbOption.priceAdjustment ?? dbOption.price) || 0; // Sử dụng priceAdjustment từ DB
+            modifierTotal += parseFloat(price);
+            validModifiers.push({
+              ...mod,
+              optionName: dbOption.name, // Cập nhật tên từ DB luôn cho chắc chắn
+              price: parseFloat(price)
+            });
+          }
+        });
       }
 
-      const subTotal = (unitPrice + modifierTotal) * quantity;
+      const subTotal = (parseFloat(unitPrice) + modifierTotal) * quantity;
       calculatedTotalAmount += subTotal;
 
       orderDetailsToCreate.push({
@@ -63,7 +86,7 @@ class OrdersService {
         unitPrice,
         note: description,
         status: null,
-        modifiers, // Lưu modifiers tạm để xử lý sau
+        modifiers: validModifiers, // Sử dụng danh sách modifiers đã validate và có giá
       });
     }
 
@@ -243,16 +266,31 @@ class OrdersService {
           totalPrepTime += menuItem.prepTimeMinutes * quantity;
         }
 
-        // Tính giá modifiers
+        // Tính giá modifiers từ DB
         let modifierTotal = 0;
-        if (modifiers && Array.isArray(modifiers)) {
-          modifierTotal = modifiers.reduce(
-            (sum, mod) => sum + (mod.price || 0),
-            0
+        let validModifiers = [];
+
+        if (modifiers && Array.isArray(modifiers) && modifiers.length > 0) {
+          const modifierIds = modifiers.map(m => m.optionId);
+          const modifierOptions = await Promise.all(
+            modifierIds.map(id => this.modifierOptionsRepo.getById(id))
           );
+
+          modifiers.forEach(mod => {
+            const dbOption = modifierOptions.find(opt => opt && opt.id === mod.optionId);
+            if (dbOption) {
+              const price = (dbOption.priceAdjustment ?? dbOption.price) || 0;
+              modifierTotal += parseFloat(price);
+              validModifiers.push({
+                ...mod,
+                optionName: dbOption.name,
+                price: parseFloat(price)
+              });
+            }
+          });
         }
 
-        const subTotal = (unitPrice + modifierTotal) * quantity;
+        const subTotal = (parseFloat(unitPrice) + modifierTotal) * quantity;
         calculatedTotalAmount += subTotal;
 
         orderDetailsToCreate.push({
@@ -263,7 +301,7 @@ class OrdersService {
           unitPrice,
           note: description || "",
           status: OrderDetailStatus.PENDING,
-          modifiers, // Lưu tạm
+          modifiers: validModifiers, // Lưu modifiers đã validate
         });
       }
 
