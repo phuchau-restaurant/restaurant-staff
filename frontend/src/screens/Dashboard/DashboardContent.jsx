@@ -21,7 +21,7 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
-  Cell
+  Cell,
 } from "recharts";
 import StatCard from "../../components/Dashboard/StatCard";
 import * as reportService from "../../services/reportService";
@@ -43,7 +43,7 @@ const DashboardContent = () => {
   const [bestSellers, setBestSellers] = useState([]);
   const [peakHoursData, setPeakHoursData] = useState([]);
   const [dateError, setDateError] = useState("");
-  
+
   // Custom Date Range State
   const [customRange, setCustomRange] = useState({
     from: new Date().toISOString().split("T")[0],
@@ -59,23 +59,27 @@ const DashboardContent = () => {
       setLoading(true);
       try {
         let revenueResult;
-        
+
         if (period === "custom") {
           // Fetch custom range
-          revenueResult = await reportService.fetchRevenueByDateRange(customRange.from, customRange.to);
+          revenueResult = await reportService.fetchRevenueByDateRange(
+            customRange.from,
+            customRange.to
+          );
         } else {
           // Fetch standard period
           revenueResult = await reportService.fetchRevenueByPeriod(period);
         }
 
-        const [summaryData, bestSellersData, peakHoursResult] = await Promise.all([
-          reportService.fetchDashboardSummary(),
-          reportService.fetchBestSellers(5),
-          reportService.fetchPeakHours(),
-        ]);
+        const [summaryData, bestSellersData, peakHoursResult] =
+          await Promise.all([
+            reportService.fetchDashboardSummary(),
+            reportService.fetchBestSellers(5),
+            reportService.fetchPeakHours(),
+          ]);
 
         if (summaryData) setSummary(summaryData);
-        
+
         // Format revenue data for Recharts
         if (revenueResult) {
           const chartData = revenueResult.labels.map((label, index) => ({
@@ -107,7 +111,7 @@ const DashboardContent = () => {
   // Separate handler for applying custom range
   const handleApplyCustomRange = async () => {
     if (period !== "custom") return;
-    
+
     // Validate dates
     if (new Date(customRange.to) < new Date(customRange.from)) {
       setDateError("Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu");
@@ -116,7 +120,10 @@ const DashboardContent = () => {
     setDateError("");
     setLoading(true);
     try {
-      const revenueResult = await reportService.fetchRevenueByDateRange(customRange.from, customRange.to);
+      const revenueResult = await reportService.fetchRevenueByDateRange(
+        customRange.from,
+        customRange.to
+      );
       if (revenueResult) {
         const chartData = revenueResult.labels.map((label, index) => ({
           name: label,
@@ -124,24 +131,25 @@ const DashboardContent = () => {
         }));
         setRevenueData(chartData);
       }
-      
+
       // Also refresh other data when applying custom range
-      const [summaryData, bestSellersData, peakHoursResult] = await Promise.all([
-        reportService.fetchDashboardSummary(),
-        reportService.fetchBestSellers(5),
-        reportService.fetchPeakHours(),
-      ]);
+      const [summaryData, bestSellersData, peakHoursResult] = await Promise.all(
+        [
+          reportService.fetchDashboardSummary(),
+          reportService.fetchBestSellers(5),
+          reportService.fetchPeakHours(),
+        ]
+      );
 
       if (summaryData) setSummary(summaryData);
       if (bestSellersData) setBestSellers(bestSellersData);
       if (peakHoursResult) {
-          const pData = peakHoursResult.labels.map((label, index) => ({
-            name: label,
-            value: peakHoursResult.values[index],
-          }));
-          setPeakHoursData(pData);
+        const pData = peakHoursResult.labels.map((label, index) => ({
+          name: label,
+          value: peakHoursResult.values[index],
+        }));
+        setPeakHoursData(pData);
       }
-
     } catch (error) {
       console.error("Custom range fetch error:", error);
     } finally {
@@ -207,7 +215,7 @@ const DashboardContent = () => {
 
         {/* Filter */}
         <div className="relative">
-          <button 
+          <button
             onClick={() => setIsFilterOpen(!isFilterOpen)}
             className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:border-blue-500 hover:text-blue-600 transition-colors shadow-sm"
           >
@@ -217,11 +225,11 @@ const DashboardContent = () => {
             </span>
             <ChevronDown size={16} />
           </button>
-          
+
           {isFilterOpen && (
             <>
-              <div 
-                className="fixed inset-0 z-10" 
+              <div
+                className="fixed inset-0 z-10"
                 onClick={() => setIsFilterOpen(false)}
               ></div>
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-100 z-20 animate-in fade-in zoom-in-95 duration-200">
@@ -233,7 +241,9 @@ const DashboardContent = () => {
                       setIsFilterOpen(false);
                     }}
                     className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg ${
-                      period === opt.value ? "text-blue-600 font-medium bg-blue-50" : "text-gray-700"
+                      period === opt.value
+                        ? "text-blue-600 font-medium bg-blue-50"
+                        : "text-gray-700"
                     }`}
                   >
                     {opt.label}
@@ -249,20 +259,28 @@ const DashboardContent = () => {
       {period === "custom" && (
         <div className="flex flex-wrap items-end gap-4 mb-8 bg-white p-4 rounded-xl border border-gray-200 shadow-sm animate-in fade-in slide-in-from-top-2">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Từ ngày</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Từ ngày
+            </label>
             <input
               type="date"
               value={customRange.from}
-              onChange={(e) => setCustomRange({ ...customRange, from: e.target.value })}
+              onChange={(e) =>
+                setCustomRange({ ...customRange, from: e.target.value })
+              }
               className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Đến ngày</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Đến ngày
+            </label>
             <input
               type="date"
               value={customRange.to}
-              onChange={(e) => setCustomRange({ ...customRange, to: e.target.value })}
+              onChange={(e) =>
+                setCustomRange({ ...customRange, to: e.target.value })
+              }
               className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
             />
           </div>
@@ -272,10 +290,10 @@ const DashboardContent = () => {
           >
             Áp dụng
           </button>
-          
+
           {dateError && (
             <div className="w-full text-red-500 text-sm mt-2 flex items-center gap-1">
-               ⚠️ {dateError}
+              ⚠️ {dateError}
             </div>
           )}
         </div>
@@ -284,25 +302,14 @@ const DashboardContent = () => {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {stats.map((stat, index) => (
-          <div
+          <StatCard
             key={index}
-            className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
-          >
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm text-gray-500 font-medium mb-1">
-                  {stat.label}
-                </p>
-                <h3 className="text-2xl font-bold text-gray-900">
-                  {stat.value}
-                </h3>
-                <p className="text-xs text-gray-400 mt-1">{stat.change}</p>
-              </div>
-              <div className={`p-3 rounded-xl ${stat.color}`}>
-                <stat.icon size={24} />
-              </div>
-            </div>
-          </div>
+            label={stat.label}
+            value={stat.value}
+            change={stat.change}
+            icon={stat.icon}
+            color={stat.color}
+          />
         ))}
       </div>
 
@@ -328,22 +335,30 @@ const DashboardContent = () => {
                     <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis 
-                  dataKey="name" 
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke="#f1f5f9"
+                />
+                <XAxis
+                  dataKey="name"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: '#64748b', fontSize: 12 }}
+                  tick={{ fill: "#64748b", fontSize: 12 }}
                   dy={10}
                 />
-                <YAxis 
+                <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: '#64748b', fontSize: 12 }}
+                  tick={{ fill: "#64748b", fontSize: 12 }}
                   tickFormatter={(value) => `${value / 1000}k`}
                 />
-                <Tooltip 
-                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: "8px",
+                    border: "none",
+                    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                  }}
                   formatter={(value) => formatPrice(value)}
                 />
                 <Area
@@ -368,7 +383,10 @@ const DashboardContent = () => {
           <div className="space-y-4">
             {bestSellers.length > 0 ? (
               bestSellers.map((item, index) => (
-                <div key={index} className="flex items-center gap-4 p-3 hover:bg-gray-50 rounded-xl transition-colors">
+                <div
+                  key={index}
+                  className="flex items-center gap-4 p-3 hover:bg-gray-50 rounded-xl transition-colors"
+                >
                   <div className="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
                     {item.imgUrl ? (
                       <img
@@ -420,26 +438,34 @@ const DashboardContent = () => {
               data={peakHoursData}
               margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
             >
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis 
-                dataKey="name" 
+              <CartesianGrid
+                strokeDasharray="3 3"
+                vertical={false}
+                stroke="#f1f5f9"
+              />
+              <XAxis
+                dataKey="name"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: '#64748b', fontSize: 12 }}
+                tick={{ fill: "#64748b", fontSize: 12 }}
                 dy={10}
               />
-              <YAxis 
+              <YAxis
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: '#64748b', fontSize: 12 }}
+                tick={{ fill: "#64748b", fontSize: 12 }}
               />
-              <Tooltip 
-                cursor={{ fill: '#f8fafc' }}
-                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+              <Tooltip
+                cursor={{ fill: "#f8fafc" }}
+                contentStyle={{
+                  borderRadius: "8px",
+                  border: "none",
+                  boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                }}
               />
-              <Bar 
-                dataKey="value" 
-                fill="#8b5cf6" 
+              <Bar
+                dataKey="value"
+                fill="#8b5cf6"
                 radius={[4, 4, 0, 0]}
                 barSize={30}
               />
