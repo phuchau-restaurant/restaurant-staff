@@ -100,15 +100,6 @@ const WaiterOrderCard = ({
     }
   };
 
-  // Handle serve item (chuyển từ Ready sang Served)
-  const handleServeItem = (e, item) => {
-    e.stopPropagation();
-    if (onServeItem) {
-      onServeItem(order.id, item.id);
-      showSuccess(`Đã phục vụ món: ${item.name}`);
-    }
-  };
-
   // Get status color for item
   const getItemStatusColor = (item) => {
     if (item.status === "Cancelled") return "bg-red-100 border-red-200";
@@ -125,16 +116,6 @@ const WaiterOrderCard = ({
     if (item.status === "Ready") return "text-green-600";
     if (item.status === "Pending") return "text-blue-600";
     return "text-gray-600";
-  };
-
-  // Get status label
-  const getItemStatusLabel = (item) => {
-    if (item.status === "Cancelled") return "Đã hủy";
-    if (item.status === "Served") return "Đã phục vụ";
-    if (item.status === "Ready") return "Sẵn sàng";
-    if (item.status === "Pending") return "Đang chờ bếp";
-    if (item.status === "Preparing") return "Đang nấu";
-    return "Chưa xác nhận";
   };
 
   return (
@@ -480,20 +461,6 @@ const WaiterOrderCard = ({
                 <div className="flex justify-between items-center">
                   <span className="text-base sm:text-lg font-bold text-gray-700">Tổng cộng:</span>
                   <span className="text-xl sm:text-2xl font-black text-green-600">
-                    {order.items?.reduce((sum, item) => {
-                      if (item.status === "Cancelled") return sum;
-                      const modifierTotal = (item.modifiers || []).reduce((modSum, mod) => modSum + (mod.price || 0), 0);
-                      return sum + ((item.unitPrice || 0) + modifierTotal) * (item.quantity || 1);
-                    }, 0).toLocaleString('vi-VN')}đ
-                  </span>
-                </div>
-              </div>
-
-              {/* Total Amount */}
-              <div className="mt-6 pt-4 border-t-2 border-gray-200">
-                <div className="flex justify-between items-center">
-                  <span className="text-xl font-bold text-gray-700">Tổng cộng:</span>
-                  <span className="text-2xl font-black text-green-600">
                     {order.items?.reduce((sum, item) => {
                       if (item.status === "Cancelled") return sum;
                       const modifierTotal = (item.modifiers || []).reduce((modSum, mod) => modSum + (mod.price || 0), 0);
