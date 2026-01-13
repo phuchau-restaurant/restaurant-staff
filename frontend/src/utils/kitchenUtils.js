@@ -9,7 +9,7 @@
  */
 export const mapKitchenOrderFromApi = (order) => {
   const allDishes = order.dishes || [];
-  
+
   // Lấy trạng thái từ database
   const dbStatus = order.orderStatus || "Pending";
 
@@ -22,7 +22,7 @@ export const mapKitchenOrderFromApi = (order) => {
     dbStatus: dbStatus, // Giữ dbStatus riêng cho button logic
     prepTimeOrder: order.prepTimeOrder,
     items: allDishes.map((dish) => ({
-      id: dish.dishId,
+      id: dish.order_detail_id, // ✅ SỬA: Dùng order_detail_id làm ID (unique), KHÔNG dùng dishId (có thể trùng)
       order_detail_id: dish.order_detail_id,
       dishId: dish.dishId,
       name: dish.name,
@@ -73,7 +73,7 @@ export const determineOrderDisplayStatus = (order, elapsed) => {
   if (dbStatus === "completed") {
     return "completed";
   }
-  
+
   if (dbStatus === "served" || dbStatus === "paid") {
     return "completed";
   }
@@ -104,13 +104,13 @@ export const determineOrderDisplayStatus = (order, elapsed) => {
 };
 
 /**
- * Kiểm tra xem đơn có món nào đang pending không
+ * Kiểm tra xem đơn có món nào đang pending/preparing không
  * @param {Object} order - Đơn hàng
- * @returns {Array} Danh sách món đang pending
+ * @returns {Array} Danh sách món đang pending hoặc preparing
  */
 export const getPendingItems = (order) => {
   return (order.items || []).filter(
-    (item) => item.status === "Pending" && !item.cancelled
+    (item) => (item.status === "Pending") && !item.cancelled
   );
 };
 
@@ -186,7 +186,7 @@ export const updateOrderItemInList = (ordersList, orderId, itemId, updates) => {
   // Chuyển về string để so sánh chính xác
   const targetOrderId = String(orderId);
   const targetItemId = String(itemId);
-  
+
   return ordersList.map((order) => {
     if (String(order.id) === targetOrderId) {
       return {
