@@ -27,14 +27,15 @@ const OrderDetailViewModal = ({ order, tables, onClose }) => {
 
   // Lấy thông tin bàn
   const table = tables.find((t) => t.id === order.tableId);
-  const tableName = table
-    ? `${table.tableNumber}`
-    : `Bàn #${order.tableId}`;
+  const tableName = table ? `${table.tableNumber}` : `Bàn #${order.tableId}`;
 
-  // Tính tổng tiền cho từng món (không bao gồm modifier vì không có price)
+  // Tính tổng tiền cho từng món (bao gồm modifier)
   const calculateDishTotal = (item) => {
     const basePrice = item.unitPrice * item.quantity;
-    return basePrice;
+    const modifiersPrice = (item.modifiers || []).reduce((sum, mod) => {
+      return sum + (mod.price || 0) * item.quantity;
+    }, 0);
+    return basePrice + modifiersPrice;
   };
 
   // Tính tổng tiền đơn hàng
@@ -143,7 +144,9 @@ const OrderDetailViewModal = ({ order, tables, onClose }) => {
             onMouseDown={onDragStart}
             style={{ userSelect: "none" }}
           >
-            <h2 className="text-2xl font-bold">Chi Tiết Đơn Hàng #{order.id}</h2>
+            <h2 className="text-2xl font-bold">
+              Chi Tiết Đơn Hàng #{order.id}
+            </h2>
             <button
               onClick={onClose}
               className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
@@ -162,16 +165,22 @@ const OrderDetailViewModal = ({ order, tables, onClose }) => {
               </div>
               <div>
                 <p className="text-sm text-gray-600 font-medium">Trạng thái</p>
-                <p className="text-lg font-bold text-gray-800">{order.status}</p>
+                <p className="text-lg font-bold text-gray-800">
+                  {order.status}
+                </p>
               </div>
               <div>
-                <p className="text-sm text-gray-600 font-medium">Thời gian tạo</p>
+                <p className="text-sm text-gray-600 font-medium">
+                  Thời gian tạo
+                </p>
                 <p className="text-lg font-bold text-gray-800">
                   {formatDate(order.createdAt)}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-600 font-medium">Số lượng món</p>
+                <p className="text-sm text-gray-600 font-medium">
+                  Số lượng món
+                </p>
                 <p className="text-lg font-bold text-gray-800">
                   {order.items?.length || 0} món
                 </p>
@@ -211,11 +220,18 @@ const OrderDetailViewModal = ({ order, tables, onClose }) => {
                                 {item.modifiers.map((mod, modIndex) => (
                                   <div
                                     key={modIndex}
-                                    className="flex items-center text-sm"
+                                    className="flex items-center justify-between text-sm"
                                   >
                                     <span className="text-gray-700">
-                                      • {mod.optionName || `Option #${mod.optionId}`}
+                                      •{" "}
+                                      {mod.optionName ||
+                                        `Option #${mod.optionId}`}
                                     </span>
+                                    {mod.price ? (
+                                      <span className="text-gray-600 text-xs">
+                                        +{formatPrice(mod.price)}
+                                      </span>
+                                    ) : null}
                                   </div>
                                 ))}
                               </div>
@@ -233,17 +249,36 @@ const OrderDetailViewModal = ({ order, tables, onClose }) => {
 
                       {/* Quantity and Price */}
                       <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
-                        <div className="flex items-center gap-4">
-                          <span className="text-sm text-gray-600">
-                            Đơn giá: {formatPrice(item.unitPrice)}
-                          </span>
-                          <span className="text-sm font-medium text-gray-700 bg-gray-100 px-3 py-1 rounded-full">
-                            Số lượng: x{item.quantity}
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center gap-4">
+                            <span className="text-sm text-gray-600">
+                              Đơn giá: {formatPrice(item.unitPrice)}
+                            </span>
+                            <span className="text-sm font-medium text-gray-700 bg-gray-100 px-3 py-1 rounded-full">
+                              Số lượng: x{item.quantity}
+                            </span>
+                          </div>
+                          {item.modifiers && item.modifiers.length > 0 && (
+                            <div className="text-xs text-gray-600 ml-4">
+                              {item.modifiers.map((mod, idx) => (
+                                <div key={idx}>
+                                  {mod.optionName}:{" "}
+                                  {mod.price
+                                    ? `+${formatPrice(mod.price)}`
+                                    : "0đ"}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm text-gray-600 mb-1">
+                            Thành tiền:
+                          </div>
+                          <span className="text-lg font-bold text-orange-600">
+                            {formatPrice(calculateDishTotal(item))}
                           </span>
                         </div>
-                        <span className="text-lg font-bold text-orange-600">
-                          {formatPrice(calculateDishTotal(item))}
-                        </span>
                       </div>
                     </div>
                   ))}

@@ -62,6 +62,9 @@ const OrderListView = memo(
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
                   Số món
                 </th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
+                  Chi tiết
+                </th>
                 <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">
                   Tổng tiền
                 </th>
@@ -104,13 +107,15 @@ const OrderListView = memo(
                 return (
                   <tr
                     key={order.id || index}
-                    className={`border-b border-gray-200 hover:bg-gray-50 transition-colors ${isOverdue ? "bg-red-50/30" : ""
-                      } ${isCancelled ? "bg-gray-50" : ""}`}
+                    className={`border-b border-gray-200 hover:bg-gray-50 transition-colors ${
+                      isOverdue ? "bg-red-50/30" : ""
+                    } ${isCancelled ? "bg-gray-50" : ""}`}
                   >
                     {/* Order ID */}
                     <td
-                      className={`px-6 py-4 ${isCancelled ? "opacity-50 bg-gray-50" : ""
-                        }`}
+                      className={`px-6 py-4 ${
+                        isCancelled ? "opacity-50 bg-gray-50" : ""
+                      }`}
                     >
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
@@ -129,39 +134,77 @@ const OrderListView = memo(
                         </div>
                       </div>
                     </td>
-
                     {/* Table */}
                     <td
-                      className={`px-6 py-4 ${isCancelled ? "opacity-50 bg-gray-50" : ""
-                        }`}
+                      className={`px-6 py-4 ${
+                        isCancelled ? "opacity-50 bg-gray-50" : ""
+                      }`}
                     >
                       <span className="font-medium text-gray-700">
                         {tableName}
                       </span>
                     </td>
-
                     {/* Items Count */}
                     <td
-                      className={`px-6 py-4 ${isCancelled ? "opacity-50 bg-gray-50" : ""
-                        }`}
+                      className={`px-6 py-4 ${
+                        isCancelled ? "opacity-50 bg-gray-50" : ""
+                      }`}
                     >
                       <span className="text-gray-700">{itemsCount}</span>
                     </td>
-
+                    {/* Details - Items with modifiers */}
+                    <td
+                      className={`px-6 py-4 text-sm ${
+                        isCancelled ? "opacity-50 bg-gray-50" : ""
+                      }`}
+                    >
+                      <div className="space-y-1">
+                        {order.items && order.items.length > 0 && (
+                          <>
+                            {order.items.slice(0, 2).map((item, idx) => (
+                              <div key={idx} className="text-gray-700">
+                                <div>
+                                  {item.dishName || `Món #${item.dishId}`} (x
+                                  {item.quantity})
+                                </div>
+                                {item.modifiers &&
+                                  item.modifiers.length > 0 && (
+                                    <div className="text-xs text-gray-500 ml-2">
+                                      {item.modifiers
+                                        .map(
+                                          (m) =>
+                                            m.optionName ||
+                                            `Option #${m.optionId}`
+                                        )
+                                        .join(", ")}
+                                    </div>
+                                  )}
+                              </div>
+                            ))}
+                            {order.items.length > 2 && (
+                              <div className="text-xs text-gray-400">
+                                +{order.items.length - 2} món khác...
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </td>{" "}
                     {/* Total Amount */}
                     <td
-                      className={`px-6 py-4 text-right ${isCancelled ? "opacity-50 bg-gray-50" : ""
-                        }`}
+                      className={`px-6 py-4 text-right ${
+                        isCancelled ? "opacity-50 bg-gray-50" : ""
+                      }`}
                     >
                       <span className="font-semibold text-orange-600">
                         {formatPrice(order.totalAmount)}
                       </span>
                     </td>
-
                     {/* Status */}
                     <td
-                      className={`px-6 py-4 ${isCancelled ? "opacity-50 bg-gray-50" : ""
-                        }`}
+                      className={`px-6 py-4 ${
+                        isCancelled ? "opacity-50 bg-gray-50" : ""
+                      }`}
                     >
                       <span
                         className={`inline-block px-3 py-1 rounded-full text-xs font-semibold border ${statusColor}`}
@@ -169,11 +212,11 @@ const OrderListView = memo(
                         {statusLabel}
                       </span>
                     </td>
-
                     {/* Prep Time */}
                     <td
-                      className={`px-6 py-4 text-center ${isCancelled ? "opacity-50 bg-gray-50" : ""
-                        }`}
+                      className={`px-6 py-4 text-center ${
+                        isCancelled ? "opacity-50 bg-gray-50" : ""
+                      }`}
                     >
                       {order.prepTimeOrder > 0 ? (
                         <span className="font-semibold text-blue-600">
@@ -183,15 +226,14 @@ const OrderListView = memo(
                         <span className="text-gray-400">-</span>
                       )}
                     </td>
-
                     {/* Created At */}
                     <td
-                      className={`px-6 py-4 text-sm text-gray-600 ${isCancelled ? "opacity-50 bg-gray-50" : ""
-                        }`}
+                      className={`px-6 py-4 text-sm text-gray-600 ${
+                        isCancelled ? "opacity-50 bg-gray-50" : ""
+                      }`}
                     >
                       {formatDate(order.createdAt)}
                     </td>
-
                     {/* Actions */}
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-3">
@@ -221,7 +263,10 @@ const OrderListView = memo(
                             {/* Status Transition Buttons */}
                             {prevStatus && (
                               <button
-                                onClick={() => onStatusChange && onStatusChange(order, prevStatus)}
+                                onClick={() =>
+                                  onStatusChange &&
+                                  onStatusChange(order, prevStatus)
+                                }
                                 className={`text-xs flex items-center justify-center gap-1 font-medium py-2 px-3 rounded-lg transition-colors ${ORDER_STATUS_BUTTON_COLORS[prevStatus]}`}
                                 title={`Chuyển về ${ORDER_STATUS_LABELS[prevStatus]}`}
                               >
@@ -230,7 +275,10 @@ const OrderListView = memo(
                             )}
                             {nextStatus && (
                               <button
-                                onClick={() => onStatusChange && onStatusChange(order, nextStatus)}
+                                onClick={() =>
+                                  onStatusChange &&
+                                  onStatusChange(order, nextStatus)
+                                }
                                 className={`text-xs flex items-center justify-center gap-1 font-medium py-2 px-3 rounded-lg transition-colors ${ORDER_STATUS_BUTTON_COLORS[nextStatus]}`}
                                 title={`Chuyển sang ${ORDER_STATUS_LABELS[nextStatus]}`}
                               >

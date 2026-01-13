@@ -54,23 +54,23 @@ const OrderCard = memo(
 
     // Lấy tên bàn từ tableId
     const table = tables.find((t) => t.id === order.tableId);
-    const tableName = table
-      ? `${table.tableNumber}`
-      : `Bàn #${order.tableId}`;
+    const tableName = table ? `${table.tableNumber}` : `Bàn #${order.tableId}`;
 
     return (
       <div
-        className={`bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all h-full flex flex-col border-2 ${isCancelled
-          ? "border-gray-300 bg-gray-50"
-          : "border-blue-300 bg-blue-50/20"
-          }`}
+        className={`bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all h-full flex flex-col border-2 ${
+          isCancelled
+            ? "border-gray-300 bg-gray-50"
+            : "border-blue-300 bg-blue-50/20"
+        }`}
       >
         {/* Header */}
         <div
-          className={`p-4 ${isCancelled
-            ? "bg-gray-100 opacity-50"
-            : "bg-gradient-to-r from-blue-50 to-indigo-50"
-            }`}
+          className={`p-4 ${
+            isCancelled
+              ? "bg-gray-100 opacity-50"
+              : "bg-gradient-to-r from-blue-50 to-indigo-50"
+          }`}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -94,8 +94,9 @@ const OrderCard = memo(
 
         {/* Body */}
         <div
-          className={`p-4 flex-1 flex flex-col gap-3 ${isCancelled ? "opacity-50" : ""
-            }`}
+          className={`p-4 flex-1 flex flex-col gap-3 ${
+            isCancelled ? "opacity-50" : ""
+          }`}
         >
           {/* Overdue Warning */}
           {isOverdue && (
@@ -149,8 +150,9 @@ const OrderCard = memo(
                 Thời gian:
               </span>
               <span
-                className={`text-xs ${isOverdue ? "text-red-600 font-semibold" : "text-gray-500"
-                  }`}
+                className={`text-xs ${
+                  isOverdue ? "text-red-600 font-semibold" : "text-gray-500"
+                }`}
               >
                 {getTimeSinceCreated(order.createdAt)}
               </span>
@@ -167,10 +169,24 @@ const OrderCard = memo(
                     key={index}
                     className="flex items-center justify-between text-xs"
                   >
-                    <span className="text-gray-700 truncate flex-1">
-                      {item.dishName || `Món #${item.dishId}`}
+                    <div className="flex-1">
+                      <span className="text-gray-700 truncate">
+                        {item.dishName || `Món #${item.dishId}`}
+                      </span>
+                      {item.modifiers && item.modifiers.length > 0 && (
+                        <div className="text-gray-500 text-xs ml-2">
+                          {item.modifiers
+                            .map(
+                              (mod) =>
+                                mod.optionName || `Option #${mod.optionId}`
+                            )
+                            .join(", ")}
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-gray-500 ml-2 flex-shrink-0">
+                      x{item.quantity}
                     </span>
-                    <span className="text-gray-500 ml-2">x{item.quantity}</span>
                   </div>
                 ))}
                 {order.items.length > 3 && (
@@ -184,8 +200,9 @@ const OrderCard = memo(
 
           {/* Timestamps */}
           <div
-            className={`mt-auto pt-3 border-t border-gray-200 text-xs text-gray-500 ${isCancelled ? "opacity-50" : ""
-              }`}
+            className={`mt-auto pt-3 border-t border-gray-200 text-xs text-gray-500 ${
+              isCancelled ? "opacity-50" : ""
+            }`}
           >
             <div className="flex justify-between">
               <span>Tạo lúc:</span>
@@ -228,7 +245,9 @@ const OrderCard = memo(
                 <div className="flex gap-2">
                   {prevStatus && (
                     <button
-                      onClick={() => onStatusChange && onStatusChange(order, prevStatus)}
+                      onClick={() =>
+                        onStatusChange && onStatusChange(order, prevStatus)
+                      }
                       className={`flex-1 flex items-center justify-center gap-1 font-medium py-2 px-2 rounded-lg transition-colors text-sm ${ORDER_STATUS_BUTTON_COLORS[prevStatus]}`}
                       title={`Chuyển về ${ORDER_STATUS_LABELS[prevStatus]}`}
                     >
@@ -237,7 +256,9 @@ const OrderCard = memo(
                   )}
                   {nextStatus && (
                     <button
-                      onClick={() => onStatusChange && onStatusChange(order, nextStatus)}
+                      onClick={() =>
+                        onStatusChange && onStatusChange(order, nextStatus)
+                      }
                       className={`flex-1 flex items-center justify-center gap-1 font-medium py-2 px-2 rounded-lg transition-colors text-sm ${ORDER_STATUS_BUTTON_COLORS[nextStatus]}`}
                       title={`Chuyển sang ${ORDER_STATUS_LABELS[nextStatus]}`}
                     >
