@@ -552,9 +552,9 @@ class OrdersService {
       );
 
       if (allServed) {
-        // Tự động update trạng thái đơn hàng cha thành 'completed'
+        // Tự động update trạng thái đơn hàng cha thành 'Served' (Đã phục vụ)
         await this.ordersRepo.update(orderId, {
-          status: OrdersStatus.COMPLETED,
+          status: OrdersStatus.SERVED,
           completedAt: new Date(),
         });
       }

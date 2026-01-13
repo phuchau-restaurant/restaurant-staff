@@ -2,8 +2,10 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import WaiterHeader from "../components/Waiter/WaiterHeader";
 import WaiterOrdersGrid from "../components/Waiter/WaiterOrdersGrid";
 import ConfirmModal from "../components/Modal/ConfirmModal";
+import AlertModal from "../components/Modal/AlertModal"; // Import AlertModal
 import { useOrderSocket } from "../hooks/useOrderSocket";
 import { useAuth } from "../context/AuthContext";
+import { useAlert } from "../hooks/useAlert"; // Import useAlert
 import { Search } from "lucide-react";
 import * as waiterService from "../services/waiterService";
 import {
@@ -18,6 +20,8 @@ import {
 
 const WaiterScreen = () => {
   const { user, logout, updateUser } = useAuth();
+  const { alert, showAlert, closeAlert } = useAlert(); // Init useAlert hook
+
   const [orders, setOrders] = useState([]);
   const [myOrders, setMyOrders] = useState([]);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -79,7 +83,7 @@ const WaiterScreen = () => {
       console.log("📡 Fetching my orders for user:", user.id);
       const orders = await waiterService.fetchMyOrders(user.id);
       console.log("📦 Received my orders:", orders.length, orders.map(o => ({ id: o.id, status: o.status })));
-      
+
       // Fetch details for each order
       const ordersWithDetails = await Promise.all(
         orders.map(async (order) => {
@@ -139,9 +143,16 @@ const WaiterScreen = () => {
       // Map order from response (now includes orderDetails)
       const claimedOrder = mapOrderFromApi(result.data);
       // Remove from unassigned list
-      setOrders((prev) => prev.filter((o) => o.id !== orderId));
-      // Add to my orders list
-      setMyOrders((prev) => [claimedOrder, ...prev]);
+      setOrders((prev) => prev.filter((o) => String(o.id) !== String(orderId)));
+      // Add to my orders list (with duplicate check)
+      setMyOrders((prev) => {
+        const exists = prev.some(o => String(o.id) === String(claimedOrder.id));
+        if (exists) {
+          console.log("⚠️ Order already in myOrders, updating instead:", claimedOrder.id);
+          return prev.map(o => String(o.id) === String(claimedOrder.id) ? claimedOrder : o);
+        }
+        return [claimedOrder, ...prev];
+      });
       // Switch to my orders tab
       setActiveTab("my");
     } catch (error) {
@@ -196,14 +207,43 @@ const WaiterScreen = () => {
   const handleServeItem = async (orderId, itemId) => {
     try {
       await waiterService.serveOrderItem(orderId, itemId);
-      // Update local state
-      const updateOrders = (ordersList) =>
-        updateOrderItemInList(ordersList, orderId, itemId, {
-          status: "Served",
-          completed: true,
-        });
-      setOrders(updateOrders);
-      setMyOrders(updateOrders);
+
+      // Fetch updated order to check status
+      const updatedOrder = await fetchOrderDetails(orderId);
+
+      console.log('🔍 handleServeItem - Updated order:', {
+        orderId,
+        status: updatedOrder?.status,
+        orderNumber: updatedOrder?.orderNumber,
+        items: updatedOrder?.items?.map(i => ({ name: i.name, status: i.status }))
+      });
+
+      if (updatedOrder) {
+        // Update local state with fresh data
+        const updateOrders = (ordersList) =>
+          ordersList.map((o) => (o.id === orderId ? updatedOrder : o));
+
+        setOrders(updateOrders);
+        setMyOrders(updateOrders);
+
+        // Check if order is fully served
+        if (updatedOrder.status === "Served") {
+          console.log('✅ Order is fully served - showing notification');
+          showAlert("Đơn hàng hoàn tất", `Đơn hàng #${updatedOrder.orderNumber} đã phục vụ hoàn tất!`, "success");
+        } else {
+          console.log('⚠️ Order status is not Served yet:', updatedOrder.status);
+        }
+      } else {
+        console.warn('⚠️ Failed to fetch updated order');
+        // Fallback local update if fetch fails
+        const updateOrders = (ordersList) =>
+          updateOrderItemInList(ordersList, orderId, itemId, {
+            status: "Served",
+            completed: true,
+          });
+        setOrders(updateOrders);
+        setMyOrders(updateOrders);
+      }
     } catch (error) {
       console.error("Error serving item:", error);
     }
@@ -214,7 +254,15 @@ const WaiterScreen = () => {
     console.log("🔔 New order created:", data);
     const newOrder = await fetchOrderDetails(data.orderId);
     if (newOrder && !newOrder.waiterId) {
-      setOrders((prev) => [newOrder, ...prev]);
+      // Kiểm tra trùng lặp trước khi thêm
+      setOrders((prev) => {
+        const exists = prev.some(o => String(o.id) === String(newOrder.id));
+        if (exists) {
+          console.log("⚠️ Order already exists in list, skipping:", newOrder.id);
+          return prev;
+        }
+        return [newOrder, ...prev];
+      });
     }
   }, [fetchOrderDetails]);
 
@@ -230,7 +278,7 @@ const WaiterScreen = () => {
     const targetOrderId = String(data.orderId);
     const targetDetailId = String(data.orderDetailId);
     const targetDishId = String(data.dishId);
-    
+
     const updateOrderItems = (ordersList) =>
       ordersList.map((order) => {
         if (String(order.id) === targetOrderId) {
@@ -295,7 +343,7 @@ const WaiterScreen = () => {
   }, [orders, myOrders, activeTab, searchOrderId]);
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-orange-50 via-white to-blue-50">
+    <div className="min-h-screen bg-gray-50">
       <WaiterHeader
         currentTime={currentTime}
         user={user}
@@ -312,7 +360,7 @@ const WaiterScreen = () => {
         message={
           confirmModal.unconfirmedItems.length > 0
             ? `Đơn #${confirmModal.orderId} có ${confirmModal.unconfirmedItems.length} món chưa được xác nhận:\n` +
-              `\nBạn có muốn xác nhận và chuyển các món này sang trạng thái "Đang chờ bếp" không?`
+            `\nBạn có muốn xác nhận và chuyển các món này sang trạng thái "Đang chờ bếp" không?`
             : ""
         }
         confirmText="Xác nhận"
@@ -320,39 +368,55 @@ const WaiterScreen = () => {
         type="warning"
       />
 
-      {/* Tabs */}
-      <div className="max-w-[1920px] mx-auto px-6 py-4">
-        <div className="flex flex-col md:flex-row items-center gap-4 mb-4">
-          <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1">
+      {/* Alert Modal for notifications */}
+      <AlertModal
+        isOpen={alert.isOpen}
+        onClose={closeAlert}
+        title={alert.title}
+        message={alert.message}
+        type={alert.type}
+      />
+
+      {/* Tabs & Search */}
+      <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-4">
+        <div className="flex flex-col sm:flex-row items-center gap-4 mb-5">
+          {/* Pill Tabs */}
+          <div className="flex gap-1 p-1 bg-gray-100 rounded-full w-full sm:w-auto">
             <button
               onClick={() => setActiveTab("new")}
-              className={`px-4 py-2 rounded-lg font-bold text-sm md:text-base whitespace-nowrap transition-all flex-1 md:flex-none ${activeTab === "new"
+              className={`flex-1 sm:flex-none px-5 py-2.5 rounded-full font-semibold text-sm transition-all ${activeTab === "new"
                 ? "bg-orange-500 text-white shadow-md"
-                : "bg-white text-gray-600 hover:bg-orange-100 border border-gray-200"
+                : "text-gray-600 hover:text-gray-800"
                 }`}
             >
-              📋 Đơn mới ({orders.length})
+              Đơn mới
+              <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-bold ${activeTab === "new" ? "bg-white/20" : "bg-gray-200"}`}>
+                {orders.length}
+              </span>
             </button>
             <button
               onClick={() => setActiveTab("my")}
-              className={`px-4 py-2 rounded-lg font-bold text-sm md:text-base whitespace-nowrap transition-all flex-1 md:flex-none ${activeTab === "my"
+              className={`flex-1 sm:flex-none px-5 py-2.5 rounded-full font-semibold text-sm transition-all ${activeTab === "my"
                 ? "bg-blue-500 text-white shadow-md"
-                : "bg-white text-gray-600 hover:bg-blue-100 border border-gray-200"
+                : "text-gray-600 hover:text-gray-800"
                 }`}
             >
-              👤 Đơn của tôi ({myOrders.length})
+              Đơn của tôi
+              <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-bold ${activeTab === "my" ? "bg-white/20" : "bg-gray-200"}`}>
+                {myOrders.length}
+              </span>
             </button>
           </div>
 
           {/* Search Bar */}
-          <div className="w-full md:w-64 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+          <div className="w-full sm:w-64 relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
             <input
               type="text"
               placeholder="Tìm mã đơn..."
               value={searchOrderId}
               onChange={(e) => setSearchOrderId(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              className="w-full pl-10 pr-4 py-2.5 text-sm bg-white border border-gray-200 rounded-full focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-100 transition-all"
             />
           </div>
         </div>

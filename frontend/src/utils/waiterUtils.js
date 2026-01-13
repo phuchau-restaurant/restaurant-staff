@@ -9,6 +9,7 @@
  */
 export const mapOrderFromApi = (order) => ({
   id: order.id,
+  prepTimeOrder: order.prepTimeOrder,
   orderNumber: order.id,
   tableNumber: order.tableNumber || order.tableId, // Ưu tiên tableNumber (tên bàn), fallback về tableId
   orderTime: new Date(order.createdAt),
@@ -50,7 +51,7 @@ export const updateOrderItemInList = (ordersList, orderId, itemId, updates) => {
   // Chuyển về string để so sánh chính xác (tránh lỗi type mismatch)
   const targetOrderId = String(orderId);
   const targetItemId = String(itemId);
-  
+
   return ordersList.map((order) => {
     if (String(order.id) === targetOrderId) {
       return {
@@ -96,7 +97,7 @@ export const determineOrderStatus = (order, elapsed) => {
  */
 export const filterOrdersBySearch = (orders, searchOrderId) => {
   if (!searchOrderId) return orders;
-  
+
   return orders.filter((order) => {
     return String(order.orderNumber)
       .toLowerCase()

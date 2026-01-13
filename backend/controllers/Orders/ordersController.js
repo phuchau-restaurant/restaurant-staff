@@ -310,6 +310,15 @@ class OrdersController {
         return rest;
       });
 
+      // ✅ Emit socket event để Kitchen nhận thông báo đơn mới (Approved)
+      emitOrderUpdated(tenantId, {
+        orderId: result.order.id,
+        tableId: result.order.tableId,
+        tableNumber: result.order.tableNumber,
+        status: result.order.status, // "Approved"
+        waiterId: result.order.waiterId,
+      });
+
       return res.status(200).json({
         success: true,
         message: "Order claimed successfully",

@@ -167,16 +167,18 @@ const KitchenScreen = () => {
   const handleNewOrder = useCallback(
     async (data) => {
       console.log("🔔 New order received:", data);
-      setNotification({
-        message: `Đơn mới #${data.orderId} từ ${data.tableId}`,
-        orderId: data.orderId,
-        tableId: data.tableId,
-      });
-      playNotificationSound();
 
-      // Fetch thông tin đơn hàng mới và thêm vào đầu danh sách
+      // Fetch thông tin đơn hàng mới
       const newOrder = await fetchSingleOrder(data.orderId);
-      if (newOrder) {
+
+      // Chỉ thông báo và thêm vào danh sách nếu đơn ở trạng thái Approved
+      if (newOrder && newOrder.status === "Approved") {
+        setNotification({
+          message: `Đơn mới #${data.orderId} từ ${data.tableId || newOrder.tableNumber}`,
+          orderId: data.orderId,
+          tableId: data.tableId || newOrder.tableNumber,
+        });
+        playNotificationSound();
         setOrders((prev) => [newOrder, ...prev]);
       }
     },
@@ -209,14 +211,29 @@ const KitchenScreen = () => {
       // Cập nhật order cụ thể trong state
       const updatedOrder = await fetchSingleOrder(data.orderId);
       if (updatedOrder) {
-        setOrders((prev) =>
-          prev.map((order) =>
-            String(order.id) === targetId ? updatedOrder : order
-          )
-        );
+        setOrders((prevOrders) => {
+          const existingOrder = prevOrders.find(o => String(o.id) === targetId);
+
+          if (!existingOrder && updatedOrder.status === "Approved") {
+            // Đơn mới vào trạng thái Approved (ví dụ: waiter vừa claim)
+            setNotification({
+              message: `Đơn mới #${data.orderId} từ ${updatedOrder.tableNumber}`,
+              orderId: data.orderId,
+              tableId: updatedOrder.tableNumber,
+            });
+            playNotificationSound();
+            return [updatedOrder, ...prevOrders];
+          } else if (existingOrder) {
+            // Cập nhật đơn đã có
+            return prevOrders.map((order) =>
+              String(order.id) === targetId ? updatedOrder : order
+            );
+          }
+          return prevOrders;
+        });
       }
     },
-    [fetchSingleOrder]
+    [fetchSingleOrder, playNotificationSound]
   );
 
   const handleOrderDeleted = useCallback((data) => {
@@ -229,15 +246,17 @@ const KitchenScreen = () => {
   const handleOrderCreated = useCallback(
     async (data) => {
       console.log("🔔 Order created:", data);
-      setNotification({
-        message: `Đơn mới #${data.orderId}`,
-        orderId: data.orderId,
-      });
-      playNotificationSound();
 
-      // Fetch thông tin đơn hàng mới và thêm vào đầu danh sách
+      // Fetch thông tin đơn hàng mới
       const newOrder = await fetchSingleOrder(data.orderId);
-      if (newOrder) {
+
+      // Chỉ thông báo và thêm vào danh sách nếu đơn ở trạng thái Approved
+      if (newOrder && newOrder.status === "Approved") {
+        setNotification({
+          message: `Đơn mới #${data.orderId}`,
+          orderId: data.orderId,
+        });
+        playNotificationSound();
         setOrders((prev) => [newOrder, ...prev]);
       }
     },
@@ -438,7 +457,7 @@ const KitchenScreen = () => {
 
     try {
       await kitchenService.markItemAsReady(orderId, item.order_detail_id);
-      
+
       // Update state sau khi thông báo
       setOrders((prev) =>
         prev.map((o) => {
@@ -484,7 +503,7 @@ const KitchenScreen = () => {
     try {
       await kitchenService.cancelOrderItem(orderId, item.order_detail_id);
       showWarning(`Đã hủy món: ${item.name}`);
-      
+
       // Update local state
       setOrders((prev) =>
         updateOrderItemInList(prev, orderId, item.order_detail_id, {
@@ -501,7 +520,7 @@ const KitchenScreen = () => {
     <div className="h-full bg-linear-to-br from-slate-100 to-slate-200 flex flex-col">
       {/* Notification Banner */}
       {!isAudioEnabled && (
-        <div 
+        <div
           className="bg-amber-100 border-b border-amber-200 px-6 py-2 flex items-center justify-center gap-2 text-amber-800 text-sm animate-pulse cursor-pointer"
           onClick={() => {
             notificationAudio.play().then(() => setIsAudioEnabled(true)).catch(() => { });

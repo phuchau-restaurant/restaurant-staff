@@ -9,10 +9,13 @@ export const emitOrderCreated = (tenantId, orderData) => {
     // Emit to all users in tenant
     emitToTenant(tenantId, "order:created", orderData);
 
-    // Emit to kitchen staff
-    emitToKitchen(tenantId, "kitchen:new_order", orderData);
+    // CHỈ emit to kitchen nếu đơn đã ở trạng thái Approved (waiter đã claim)
+    // Không thông báo bếp khi đơn mới tạo (Unsubmit)
+    if (orderData.status === "Approved") {
+      emitToKitchen(tenantId, "kitchen:new_order", orderData);
+    }
 
-    console.log(`📡 Emitted order:created for order ${orderData.orderId}`);
+    console.log(`📡 Emitted order:created for order ${orderData.orderId} (status: ${orderData.status})`);
   } catch (error) {
     console.error("Failed to emit order:created event:", error);
   }
@@ -26,12 +29,17 @@ export const emitOrderUpdated = (tenantId, orderData) => {
     // Emit to all users in tenant
     emitToTenant(tenantId, "order:updated", orderData);
 
+    // Emit to kitchen khi đơn chuyển sang Approved (Waiter claim đơn)
+    if (orderData.status === "Approved") {
+      emitToKitchen(tenantId, "kitchen:new_order", orderData);
+    }
+
     // If order is completed or cancelled, notify admins
     if (orderData.status === "Completed" || orderData.status === "Cancelled") {
       emitToAdmin(tenantId, "admin:order_status_changed", orderData);
     }
 
-    console.log(`📡 Emitted order:updated for order ${orderData.orderId}`);
+    console.log(`📡 Emitted order:updated for order ${orderData.orderId} (status: ${orderData.status})`);
   } catch (error) {
     console.error("Failed to emit order:updated event:", error);
   }
