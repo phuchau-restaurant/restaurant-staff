@@ -279,7 +279,7 @@ class OrdersService {
           modifiers.forEach(mod => {
             const dbOption = modifierOptions.find(opt => opt && opt.id === mod.optionId);
             if (dbOption) {
-              const price = dbOption.priceAdjustment || 0;
+              const price = (dbOption.priceAdjustment ?? dbOption.price) || 0;
               modifierTotal += parseFloat(price);
               validModifiers.push({
                 ...mod,
