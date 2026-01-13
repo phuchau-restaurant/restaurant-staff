@@ -44,15 +44,15 @@ const FilterBar = ({
             setShowStatusDropdown(!showStatusDropdown);
             setShowStationDropdown(false);
           }}
-          className="px-4 py-2.5 bg-white border-2 border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors flex items-center gap-2"
+          className="px-4 py-2.5 bg-white border-2 border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors flex items-center gap-2 min-w-[180px]"
         >
-          <SlidersHorizontal size={16} className="text-gray-600" />
-          <span>Trạng thái</span>
-          <ChevronDown size={16} className={`text-gray-500 transition-transform ${showStatusDropdown ? 'rotate-180' : ''}`} />
+          <SlidersHorizontal size={16} className="text-gray-600 shrink-0" />
+          <span className="truncate flex-1 text-left">{selectedStatus.label}</span>
+          <ChevronDown size={16} className={`text-gray-500 transition-transform shrink-0 ${showStatusDropdown ? 'rotate-180' : ''}`} />
         </button>
 
         {showStatusDropdown && (
-          <div className="absolute top-full right-0 mt-1 bg-white border-2 border-gray-200 rounded-lg shadow-lg z-50 min-w-[180px]">
+          <div className="absolute top-full right-0 mt-1 bg-white border-2 border-gray-200 rounded-lg shadow-lg z-50 w-full">
             {statusOptions.map((status) => (
               <button
                 key={status.value}
@@ -79,15 +79,15 @@ const FilterBar = ({
             setShowStationDropdown(!showStationDropdown);
             setShowStatusDropdown(false);
           }}
-          className="px-4 py-2.5 bg-white border-2 border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors flex items-center gap-2"
+          className="px-4 py-2.5 bg-white border-2 border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors flex items-center gap-2 min-w-[180px]"
         >
-          <SlidersHorizontal size={16} className="text-gray-600" />
-          <span>Loại món</span>
-          <ChevronDown size={16} className={`text-gray-500 transition-transform ${showStationDropdown ? 'rotate-180' : ''}`} />
+          <SlidersHorizontal size={16} className="text-gray-600 shrink-0" />
+          <span className="truncate flex-1 text-left">{selectedCategory.label}</span>
+          <ChevronDown size={16} className={`text-gray-500 transition-transform shrink-0 ${showStationDropdown ? 'rotate-180' : ''}`} />
         </button>
 
         {showStationDropdown && (
-          <div className="absolute top-full right-0 mt-1 bg-white border-2 border-gray-200 rounded-lg shadow-lg z-50 min-w-[180px]">
+          <div className="absolute top-full right-0 mt-1 bg-white border-2 border-gray-200 rounded-lg shadow-lg z-50 w-full">
             {categoryOptions.map((category) => (
               <button
                 key={category.value}
