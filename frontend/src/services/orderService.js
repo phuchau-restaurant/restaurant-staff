@@ -23,9 +23,8 @@ export const fetchOrders = async (filters = {}) => {
       queryParams.append("status", filters.status);
     }
 
-    const url = `${BASE_URL}${
-      queryParams.toString() ? `?${queryParams.toString()}` : ""
-    }`;
+    const url = `${BASE_URL}${queryParams.toString() ? `?${queryParams.toString()}` : ""
+      }`;
 
     const response = await fetch(url, { headers: getHeaders() });
     if (!response.ok) {
@@ -184,6 +183,7 @@ export const updateOrderStatus = async (orderId, status) => {
 
 /**
  * Lấy danh sách đơn hàng cho bếp (kitchen view)
+ * GET /api/orders/kitchen
  * @param {Object} filters - { status, categoryId, itemStatus }
  * @returns {Promise<Array>}
  */
@@ -197,9 +197,8 @@ export const fetchKitchenOrders = async (filters = {}) => {
     if (filters.itemStatus)
       queryParams.append("itemStatus", filters.itemStatus);
 
-    const url = `${import.meta.env.VITE_BACKEND_URL}/api/kitchen/orders${
-      queryParams.toString() ? `?${queryParams.toString()}` : ""
-    }`;
+    const url = `${BASE_URL}/kitchen${queryParams.toString() ? `?${queryParams.toString()}` : ""
+      }`;
 
     const response = await fetch(url, { headers: getHeaders() });
     const result = await response.json();
@@ -216,6 +215,7 @@ export const fetchKitchenOrders = async (filters = {}) => {
 
 /**
  * Cập nhật trạng thái chi tiết đơn hàng (order detail/item status)
+ * PATCH /api/orders/:orderId/items/:orderDetailId
  * @param {string} orderId - ID đơn hàng
  * @param {string} orderDetailId - ID chi tiết đơn hàng
  * @param {string} status - Trạng thái mới
@@ -227,12 +227,10 @@ export const updateOrderDetailStatus = async (
   status
 ) => {
   try {
-    const url = `${
-      import.meta.env.VITE_BACKEND_URL
-    }/api/kitchen/orders/${orderId}/${orderDetailId}`;
+    const url = `${BASE_URL}/${orderId}/items/${orderDetailId}`;
 
     const response = await fetch(url, {
-      method: "PUT",
+      method: "PATCH",
       headers: getHeaders(),
       body: JSON.stringify({ status }),
     });

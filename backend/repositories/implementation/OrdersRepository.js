@@ -8,11 +8,11 @@ export class OrdersRepository extends BaseRepository {
     super("orders", "id");
   }
 
-  // Hàm lấy danh sách đơn hàng có lọc status
+  // Hàm lấy danh sách đơn hàng có lọc linh hoạt
   async getAll(filters = {}) {
-    let query = supabase.from(this.tableName).select("*"); //supabase ? -> super.
+    let query = supabase.from(this.tableName).select("*");
 
-    // Lọc theo status (pending, completed...)
+    // Lọc theo status (Unsubmit, Pending, Approved, Completed...)
     if (filters.status) {
       query = query.eq('status', filters.status);
     }
@@ -22,6 +22,11 @@ export class OrdersRepository extends BaseRepository {
       query = query.eq('tenant_id', filters.tenant_id);
     }
 
+    // Lọc theo waiter_id (đơn của tôi)
+    if (filters.waiter_id) {
+      query = query.eq('waiter_id', filters.waiter_id);
+    }
+
     query = query.order('created_at', { ascending: false });
 
     const { data, error } = await query;
@@ -29,34 +34,8 @@ export class OrdersRepository extends BaseRepository {
     return data.map(item => new Orders(item));
   }
 
-  // Lấy đơn hàng theo waiter_id (đơn của tôi)
-  async getByWaiterId(waiterId, tenantId) {
-    let query = supabase
-      .from(this.tableName)
-      .select("*")
-      .eq('waiter_id', waiterId)
-      .eq('tenant_id', tenantId)
-      .order('created_at', { ascending: false });
 
-    const { data, error } = await query;
-    if (error) throw new Error(`[Orders] GetByWaiterId failed: ${error.message}`);
-    return data.map(item => new Orders(item));
-  }
 
-  // Lấy đơn hàng chưa có người nhận (waiter_id = null)
-  async getUnassignedOrders(tenantId) {
-    let query = supabase
-      .from(this.tableName)
-      .select("*")
-      .is('waiter_id', null)
-      .eq('status', 'Unsubmit') // Chỉ lấy đơn chưa được xác nhận
-      .eq('tenant_id', tenantId)
-      .order('created_at', { ascending: false });
-
-    const { data, error } = await query;
-    if (error) throw new Error(`[Orders] GetUnassignedOrders failed: ${error.message}`);
-    return data.map(item => new Orders(item));
-  }
 
   // Override create để trả về Model
   async create(data) {

@@ -4,7 +4,6 @@
  */
 
 const BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/orders`;
-const KITCHEN_URL = `${import.meta.env.VITE_BACKEND_URL}/api/kitchen/orders`;
 
 const getHeaders = () => ({
   "Content-Type": "application/json",
@@ -34,12 +33,12 @@ export const fetchOrderDetails = async (orderId) => {
 };
 
 /**
- * Lấy danh sách đơn hàng chưa có người nhận
+ * Lấy danh sách đơn hàng chưa có người nhận (status = Unsubmit)
  * @returns {Promise<Array>} Danh sách đơn hàng chưa có waiter
  */
 export const fetchUnassignedOrders = async () => {
   try {
-    const response = await fetch(`${BASE_URL}/unassigned`, {
+    const response = await fetch(`${BASE_URL}?status=Unsubmit`, {
       headers: getHeaders(),
     });
     const result = await response.json();
@@ -61,7 +60,7 @@ export const fetchUnassignedOrders = async () => {
  */
 export const fetchMyOrders = async (waiterId) => {
   try {
-    const response = await fetch(`${BASE_URL}/my-orders?waiterId=${waiterId}`, {
+    const response = await fetch(`${BASE_URL}?waiterId=${waiterId}`, {
       headers: getHeaders(),
     });
     const result = await response.json();
@@ -77,18 +76,17 @@ export const fetchMyOrders = async (waiterId) => {
 };
 
 /**
- * Nhận đơn hàng
+ * Nhận đơn hàng (gán waiterId qua PUT /api/orders/:id)
  * @param {string|number} orderId - ID đơn hàng
  * @param {string} waiterId - ID waiter
- * @param {boolean} confirmUnconfirmed - Xác nhận chuyển món null sang Pending
  * @returns {Promise<Object>} Kết quả nhận đơn
  */
-export const claimOrder = async (orderId, waiterId, confirmUnconfirmed = false) => {
+export const claimOrder = async (orderId, waiterId) => {
   try {
-    const response = await fetch(`${BASE_URL}/${orderId}/claim`, {
+    const response = await fetch(`${BASE_URL}/${orderId}`, {
       method: "PUT",
       headers: getHeaders(),
-      body: JSON.stringify({ waiterId, confirmUnconfirmed }),
+      body: JSON.stringify({ waiterId }),
     });
     const result = await response.json();
 
@@ -104,6 +102,7 @@ export const claimOrder = async (orderId, waiterId, confirmUnconfirmed = false) 
 
 /**
  * Cập nhật trạng thái món ăn (Cancel, Confirm, Serve)
+ * PATCH /api/orders/:orderId/items/:orderDetailId
  * @param {string|number} orderId - ID đơn hàng
  * @param {string|number} itemId - ID món ăn (orderDetailId)
  * @param {string} status - Trạng thái mới (Cancelled, Pending, Served)
@@ -111,8 +110,8 @@ export const claimOrder = async (orderId, waiterId, confirmUnconfirmed = false) 
  */
 export const updateOrderItemStatus = async (orderId, itemId, status) => {
   try {
-    const response = await fetch(`${KITCHEN_URL}/${orderId}/${itemId}`, {
-      method: "PUT",
+    const response = await fetch(`${BASE_URL}/${orderId}/items/${itemId}`, {
+      method: "PATCH",
       headers: getHeaders(),
       body: JSON.stringify({ status }),
     });
@@ -157,3 +156,4 @@ export const confirmOrderItem = async (orderId, itemId) => {
 export const serveOrderItem = async (orderId, itemId) => {
   return updateOrderItemStatus(orderId, itemId, "Served");
 };
+

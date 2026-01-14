@@ -343,7 +343,37 @@ class OrdersService {
       delete updates.dishes;
     }
 
-    // Kiểm tra logic nghiệp vụ status
+    // === CLAIM ORDER LOGIC ===
+    // Nếu đang gán waiterId lần đầu (từ null) -> Đây là hành động "nhận đơn"
+    if (updates.waiterId && !currentOrder.order.waiterId) {
+      // Kiểm tra nếu đơn đã có waiter khác (phòng trường hợp race condition)
+      const freshOrder = await this.ordersRepo.getById(id);
+      if (freshOrder.waiterId) {
+        throw new Error("Order already claimed by another waiter");
+      }
+
+      // Tự động chuyển status sang Approved
+      updates.status = OrdersStatus.APPROVED;
+
+      // Cập nhật các món chưa xác nhận (status null) -> Pending
+      const unconfirmedItemIds = currentOrder.details
+        .filter(item => !item.status || item.status === null)
+        .map(item => item.id);
+
+      if (unconfirmedItemIds.length > 0) {
+        await this.orderDetailsRepo.updateByIds(unconfirmedItemIds, {
+          status: OrderDetailStatus.PENDING,
+        });
+      }
+    }
+
+    // Kiểm tra nếu gán waiterId cho đơn đã có waiter khác
+    if (updates.waiterId && currentOrder.order.waiterId &&
+      updates.waiterId !== currentOrder.order.waiterId) {
+      throw new Error("Cannot reassign order to different waiter");
+    }
+
+    // === STATUS TRANSITION LOGIC ===
 
     // IF OrderStatus == Pending -> All OrderDetail status = Pending
     if (
@@ -355,24 +385,23 @@ class OrdersService {
       });
     }
 
+
     // IF OrderStatus == Completed
     else if (
       updates.status === OrdersStatus.COMPLETED &&
       currentOrder.order.status !== OrdersStatus.COMPLETED
     ) {
-      // Tự động chuyển các OrderDetail có status Pending/Preparing thành Ready
+      // Tự động chuyển các OrderDetail có status Pending thành Ready
       const allDetails = currentOrder.details;
-      const pendingOrPreparingItems = allDetails.filter(
-        (item) => item.status === OrderDetailStatus.PENDING || item.status === OrderDetailStatus.PREPARING
-      );
+      const pendingItemIds = allDetails
+        .filter((item) => item.status === OrderDetailStatus.PENDING)
+        .map((item) => item.id);
 
-      // Update các items chưa hoàn thành thành Ready
-      if (pendingOrPreparingItems.length > 0) {
-        for (const item of pendingOrPreparingItems) {
-          await this.orderDetailsRepo.update(item.id, {
-            status: OrderDetailStatus.READY,
-          });
-        }
+      // Batch update thay vì loop từng item
+      if (pendingItemIds.length > 0) {
+        await this.orderDetailsRepo.updateByIds(pendingItemIds, {
+          status: OrderDetailStatus.READY,
+        });
       }
 
       updates.completedAt = new Date();
@@ -383,22 +412,24 @@ class OrdersService {
       updates.status === OrdersStatus.SERVED &&
       currentOrder.order.status !== OrdersStatus.SERVED
     ) {
-      // Chuyển tất cả items còn Ready thành Served
+      // Chuyển tất cả items còn Ready hoặc Pending thành Served
       const allDetails = currentOrder.details;
-      const readyItems = allDetails.filter(
-        (item) => item.status === OrderDetailStatus.READY ||
-          item.status === OrderDetailStatus.PENDING ||
-          item.status === OrderDetailStatus.PREPARING
-      );
+      const itemIdsToServe = allDetails
+        .filter(
+          (item) =>
+            item.status === OrderDetailStatus.READY ||
+            item.status === OrderDetailStatus.PENDING
+        )
+        .map((item) => item.id);
 
-      if (readyItems.length > 0) {
-        for (const item of readyItems) {
-          await this.orderDetailsRepo.update(item.id, {
-            status: OrderDetailStatus.SERVED,
-          });
-        }
+      // Batch update thay vì loop từng item
+      if (itemIdsToServe.length > 0) {
+        await this.orderDetailsRepo.updateByIds(itemIdsToServe, {
+          status: OrderDetailStatus.SERVED,
+        });
       }
     }
+
 
     // IF OrderStatus == Cancelled -> All OrderDetail = Cancelled
     else if (
@@ -433,14 +464,48 @@ class OrdersService {
     return await this.ordersRepo.delete(id);
   }
 
-  //GET all orders for kitchen view
+  /**
+   * Lấy danh sách đơn hàng với bộ lọc linh hoạt
+   * @param {string} tenantId - ID tenant (bắt buộc)
+   * @param {Object} filters - Bộ lọc: { status, waiterId, includeTableName }
+   */
   async getAllOrders(tenantId, filters = {}) {
-    //check tenantId
     if (!tenantId) throw new Error("Tenant ID is required");
 
-    // Thêm filter tenantId vào filters
-    filters.tenant_id = tenantId;
-    return await this.ordersRepo.getAll(filters);
+    // Chuẩn bị filters cho Repository
+    const repoFilters = {
+      tenant_id: tenantId,
+    };
+
+    // Lọc theo status (Unsubmit = đơn mới chưa ai nhận)
+    if (filters.status) {
+      repoFilters.status = filters.status;
+    }
+
+    // Lọc theo waiter_id (đơn của tôi)
+    if (filters.waiterId) {
+      repoFilters.waiter_id = filters.waiterId;
+    }
+
+
+    const orders = await this.ordersRepo.getAll(repoFilters);
+
+    // Enrich với tên bàn nếu cần
+    if (orders && orders.length > 0 && filters.includeTableName !== false) {
+      const tableIds = [...new Set(orders.map(o => o.tableId))];
+      const tablesInfo = await this.tablesRepo.getByIds(tableIds);
+      const tableMap = {};
+      tablesInfo.forEach(table => {
+        tableMap[table.id] = table.tableNumber;
+      });
+
+      return orders.map(order => ({
+        ...order,
+        tableNumber: tableMap[order.tableId] || order.tableId
+      }));
+    }
+
+    return orders;
   }
 
   /**
@@ -601,130 +666,7 @@ class OrdersService {
     return updatedItem;
   }
 
-  // === WAITER ORDER METHODS ===
-
-  /**
-   * Nhận đơn - Gán waiter_id vào đơn hàng và chuyển trạng thái sang Pending
-   * @param {number} orderId - ID đơn hàng
-   * @param {string} waiterId - ID nhân viên phục vụ
-   * @param {string} tenantId - ID tenant
-   * @param {boolean} confirmUnconfirmed - Xác nhận cập nhật món null sang Pending
-   */
-  async claimOrder(orderId, waiterId, tenantId, confirmUnconfirmed = false) {
-    // 1. Kiểm tra đơn hàng tồn tại và thuộc tenant
-    const { order, details } = await this.getOrderById(orderId, tenantId);
-
-    // 2. Kiểm tra đơn chưa được nhận
-    if (order.waiterId) {
-      throw new Error("Order already claimed by another waiter");
-    }
-
-    // 3. Kiểm tra và đếm các món chưa xác nhận (status null hoặc không phải Pending/Ready/Served/Cancelled)
-    const unconfirmedItems = details.filter(item =>
-      !item.status ||
-      (item.status !== OrderDetailStatus.PENDING &&
-        item.status !== OrderDetailStatus.READY &&
-        item.status !== OrderDetailStatus.SERVED &&
-        item.status !== OrderDetailStatus.CANCELLED)
-    );
-
-    // 3.1. Nếu có món chưa xác nhận và người dùng chưa confirm -> trả về thông tin để frontend xử lý
-    if (unconfirmedItems.length > 0 && !confirmUnconfirmed) {
-      return {
-        needsConfirmation: true,
-        unconfirmedItems: unconfirmedItems.map(item => ({
-          id: item.id,
-          dishId: item.dishId,
-          name: item.name,
-          quantity: item.quantity,
-          status: item.status
-        })),
-        order: order,
-        details: details
-      };
-    }
-
-    // 4. Gán waiter_id và chuyển trạng thái ĐƠN sang Approved
-    const updatedOrder = await this.ordersRepo.update(orderId, {
-      waiterId: waiterId,
-      status: OrdersStatus.APPROVED,
-    });
-
-    // 5. Chuyển các món chưa xác nhận sang Pending (nếu có và đã được confirm)
-    for (const item of unconfirmedItems) {
-      await this.orderDetailsRepo.update(item.id, {
-        status: OrderDetailStatus.PENDING,
-      });
-    }
-
-    // 6. Trả về order đầy đủ với details và thông tin về số món đã cập nhật
-    const result = await this.getOrderById(orderId, tenantId);
-    return {
-      needsConfirmation: false,
-      ...result,
-      itemsUpdatedToPending: unconfirmedItems.length
-    };
-  }
-
-  /**
-   * Lấy đơn hàng của nhân viên phục vụ (đơn của tôi)
-   * @param {string} waiterId - ID nhân viên
-   * @param {string} tenantId - ID tenant
-   */
-  async getMyOrders(waiterId, tenantId) {
-    if (!tenantId) throw new Error("Tenant ID is required");
-    if (!waiterId) throw new Error("Waiter ID is required");
-
-    console.log(`📋 getMyOrders: waiterId=${waiterId}, tenantId=${tenantId}`);
-    const orders = await this.ordersRepo.getByWaiterId(waiterId, tenantId);
-    console.log(`📋 getMyOrders: Found ${orders.length} orders, statuses:`, orders.map(o => o.status));
-
-    // Enrich with table names
-    if (orders && orders.length > 0) {
-      const tableIds = [...new Set(orders.map(o => o.tableId))];
-      const tablesInfo = await this.tablesRepo.getByIds(tableIds);
-      const tableMap = {};
-      tablesInfo.forEach(table => {
-        tableMap[table.id] = table.tableNumber;
-      });
-
-      // Map table names to orders
-      return orders.map(order => ({
-        ...order,
-        tableNumber: tableMap[order.tableId] || order.tableId
-      }));
-    }
-
-    return orders;
-  }
-
-  /**
-   * Lấy đơn hàng chưa có người nhận
-   * @param {string} tenantId - ID tenant
-   */
-  async getUnassignedOrders(tenantId) {
-    if (!tenantId) throw new Error("Tenant ID is required");
-
-    const orders = await this.ordersRepo.getUnassignedOrders(tenantId);
-
-    // Enrich with table names
-    if (orders && orders.length > 0) {
-      const tableIds = [...new Set(orders.map(o => o.tableId))];
-      const tablesInfo = await this.tablesRepo.getByIds(tableIds);
-      const tableMap = {};
-      tablesInfo.forEach(table => {
-        tableMap[table.id] = table.tableNumber;
-      });
-
-      // Map table names to orders
-      return orders.map(order => ({
-        ...order,
-        tableNumber: tableMap[order.tableId] || order.tableId
-      }));
-    }
-
-    return orders;
-  }
 }
+
 
 export default OrdersService;
