@@ -28,6 +28,11 @@ import {
 import StatCard from "../../components/Dashboard/StatCard";
 import * as reportService from "../../services/reportService";
 import { formatPrice } from "../../utils/orderUtils";
+import {
+  SkeletonCard,
+  SkeletonChart,
+  SkeletonList,
+} from "../../components/Skeleton";
 
 const DashboardContent = () => {
   // State
@@ -200,8 +205,28 @@ const DashboardContent = () => {
 
   if (loading && !summary.totalRevenue) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="p-6 bg-gray-50 min-h-screen">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="h-8 bg-gray-200 rounded w-48 mb-2 animate-pulse"></div>
+          <div className="h-4 bg-gray-200 rounded w-64 animate-pulse"></div>
+        </div>
+
+        {/* Stats Grid Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <SkeletonCard key={index} />
+          ))}
+        </div>
+
+        {/* Charts Grid Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <SkeletonChart />
+          <SkeletonChart />
+        </div>
+
+        {/* Best Sellers Skeleton */}
+        <SkeletonList items={5} />
       </div>
     );
   }

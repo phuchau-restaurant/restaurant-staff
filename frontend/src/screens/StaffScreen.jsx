@@ -10,6 +10,7 @@ import AlertModal from "../components/Modal/AlertModal";
 import ConfirmModal from "../components/Modal/ConfirmModal";
 import Pagination from "../components/SpinnerLoad/Pagination";
 import { useAlert } from "../hooks/useAlert";
+import { SkeletonCard, SkeletonTable } from "../components/Skeleton";
 
 // Context
 import { useSocket } from "../context/SocketContext";
@@ -32,8 +33,6 @@ const StaffScreen = () => {
     onConfirm: null,
     type: "danger",
   });
-
-
 
   // State quản lý dữ liệu
   const [staff, setStaff] = useState([]);
@@ -219,8 +218,9 @@ const StaffScreen = () => {
     setConfirmDialog({
       isOpen: true,
       title: "Xác nhận vô hiệu hóa nhân viên",
-      message: `Bạn có chắc chắn muốn vô hiệu hóa tài khoản "${member.fullName || member.full_name
-        }"?`,
+      message: `Bạn có chắc chắn muốn vô hiệu hóa tài khoản "${
+        member.fullName || member.full_name
+      }"?`,
       onConfirm: () => confirmDelete(member.id),
       type: "danger",
     });
@@ -255,8 +255,9 @@ const StaffScreen = () => {
     setConfirmDialog({
       isOpen: true,
       title: "Xác nhận khôi phục",
-      message: `Bạn có chắc chắn muốn khôi phục tài khoản "${member.fullName || member.full_name
-        }"?`,
+      message: `Bạn có chắc chắn muốn khôi phục tài khoản "${
+        member.fullName || member.full_name
+      }"?`,
       onConfirm: () => confirmRestore(member.id),
       type: "success",
     });
@@ -278,8 +279,9 @@ const StaffScreen = () => {
     setConfirmDialog({
       isOpen: true,
       title: "Xác nhận xóa vĩnh viễn",
-      message: `Bạn có chắc chắn muốn xóa vĩnh viễn tài khoản "${member.fullName || member.full_name
-        }"? Hành động này không thể hoàn tác!`,
+      message: `Bạn có chắc chắn muốn xóa vĩnh viễn tài khoản "${
+        member.fullName || member.full_name
+      }"? Hành động này không thể hoàn tác!`,
       onConfirm: () => confirmDeletePermanent(member.id),
       type: "danger",
     });
@@ -296,8 +298,6 @@ const StaffScreen = () => {
       setConfirmDialog({ ...confirmDialog, isOpen: false });
     }
   };
-
-
 
   const handleFormSubmit = async (formData) => {
     try {
@@ -327,8 +327,6 @@ const StaffScreen = () => {
     setConfirmDialog({ ...confirmDialog, isOpen: false });
   };
 
-
-
   // ==================== PAGINATION ====================
 
   const getPaginatedData = () => {
@@ -348,11 +346,35 @@ const StaffScreen = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <Users className="w-12 h-12 animate-spin mx-auto mb-4 text-blue-500" />
-          <p className="text-gray-600">Đang tải danh sách nhân viên...</p>
+      <div className="min-h-screen bg-gray-50 p-6">
+        {/* Header Skeleton */}
+        <div className="mb-6">
+          <div className="h-8 bg-gray-200 rounded w-64 mb-2 animate-pulse"></div>
+          <div className="h-4 bg-gray-200 rounded w-96 animate-pulse"></div>
         </div>
+
+        {/* Filter Bar Skeleton */}
+        <div className="bg-white rounded-lg p-4 mb-6 shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-10 bg-gray-200 rounded animate-pulse"
+              ></div>
+            ))}
+          </div>
+        </div>
+
+        {/* Content Skeleton */}
+        {viewMode === "grid" ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 12 }).map((_, index) => (
+              <SkeletonCard key={index} />
+            ))}
+          </div>
+        ) : (
+          <SkeletonTable rows={12} columns={5} />
+        )}
       </div>
     );
   }
@@ -430,7 +452,6 @@ const StaffScreen = () => {
                   onToggleStatus={handleToggleStatus}
                   onRestore={handleRestore}
                   onDeletePermanent={handleDeletePermanent}
-
                 />
               </div>
             ) : (
@@ -444,7 +465,6 @@ const StaffScreen = () => {
                     onToggleStatus={handleToggleStatus}
                     onRestore={handleRestore}
                     onDeletePermanent={handleDeletePermanent}
-
                   />
                 ))}
               </div>
@@ -486,8 +506,6 @@ const StaffScreen = () => {
           onClose={handleFormCancel}
         />
       )}
-
-
 
       {/* Alert Modal */}
       {alert.isOpen && (
