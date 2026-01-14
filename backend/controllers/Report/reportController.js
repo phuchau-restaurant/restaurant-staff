@@ -17,7 +17,10 @@ class ReportController {
       const tenantId = req.tenantId;
       const { period = "week" } = req.query;
 
-      const data = await this.reportService.getRevenueByPeriod(tenantId, period);
+      const data = await this.reportService.getRevenueByPeriod(
+        tenantId,
+        period
+      );
 
       return res.status(200).json({
         success: true,
@@ -90,14 +93,19 @@ class ReportController {
   };
 
   /**
-   * GET /api/report/summary
+   * GET /api/report/summary?period=day|week|month|year&from=&to=
    * Lấy thống kê tổng quan cho dashboard
    */
   getSummary = async (req, res, next) => {
     try {
       const tenantId = req.tenantId;
+      const { period, from, to } = req.query;
 
-      const data = await this.reportService.getDashboardSummary(tenantId);
+      const data = await this.reportService.getDashboardSummary(tenantId, {
+        period,
+        from,
+        to,
+      });
 
       return res.status(200).json({
         success: true,

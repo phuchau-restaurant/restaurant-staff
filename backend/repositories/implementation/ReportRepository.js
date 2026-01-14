@@ -23,7 +23,10 @@ export class ReportRepository {
       .lte("created_at", toDate.toISOString())
       .order("created_at", { ascending: true });
 
-    if (error) throw new Error(`[Report] GetRevenueByDateRange failed: ${error.message}`);
+    if (error)
+      throw new Error(
+        `[Report] GetRevenueByDateRange failed: ${error.message}`
+      );
     return data || [];
   }
 
@@ -35,16 +38,23 @@ export class ReportRepository {
    * @param {Date} toDate (optional)
    * @returns {Promise<Array>} [{dish_id, total_quantity}]
    */
-  async getBestSellingItems(tenantId, limit = 10, fromDate = null, toDate = null) {
+  async getBestSellingItems(
+    tenantId,
+    limit = 10,
+    fromDate = null,
+    toDate = null
+  ) {
     // Query order_details với join orders để lọc theo tenant và status
     let query = supabase
       .from("order_details")
-      .select(`
+      .select(
+        `
         dish_id,
         quantity,
         unit_price,
         orders!inner(tenant_id, status, created_at)
-      `)
+      `
+      )
       .eq("orders.tenant_id", tenantId)
       .eq("orders.status", "Completed");
 
@@ -57,7 +67,8 @@ export class ReportRepository {
 
     const { data, error } = await query;
 
-    if (error) throw new Error(`[Report] GetBestSellingItems failed: ${error.message}`);
+    if (error)
+      throw new Error(`[Report] GetBestSellingItems failed: ${error.message}`);
 
     // Aggregate by dish_id
     const dishMap = new Map();
@@ -98,7 +109,8 @@ export class ReportRepository {
       .gte("created_at", today.toISOString())
       .lt("created_at", tomorrow.toISOString());
 
-    if (error) throw new Error(`[Report] GetDashboardSummary failed: ${error.message}`);
+    if (error)
+      throw new Error(`[Report] GetDashboardSummary failed: ${error.message}`);
 
     const orders = todayOrders || [];
     const summary = {
@@ -135,9 +147,73 @@ export class ReportRepository {
       .eq("tenant_id", tenantId)
       .eq("status", "Completed");
 
-    if (error) throw new Error(`[Report] GetTotalRevenue failed: ${error.message}`);
+    if (error)
+      throw new Error(`[Report] GetTotalRevenue failed: ${error.message}`);
 
-    const total = (data || []).reduce((sum, order) => sum + (order.total_amount || 0), 0);
+    const total = (data || []).reduce(
+      (sum, order) => sum + (order.total_amount || 0),
+      0
+    );
+    return total;
+  }
+
+  /**
+   * Lấy số lượng user theo role
+   * @param {string} tenantId
+   * @returns {Promise<Object>} { staffCount, customerCount }
+   */
+  async getUserCountsByRole(tenantId) {
+    // Đếm nhân viên từ bảng users
+    const { count: staffCount, error: staffError } = await supabase
+      .from("users")
+      .select("*", { count: "exact", head: true })
+      .eq("tenant_id", tenantId)
+      .eq("is_active", true);
+
+    if (staffError)
+      throw new Error(`[Report] GetStaffCount failed: ${staffError.message}`);
+
+    // Đếm khách hàng từ bảng customers
+    const { count: customerCount, error: customerError } = await supabase
+      .from("customers")
+      .select("*", { count: "exact", head: true })
+      .eq("tenant_id", tenantId)
+      .eq("is_active", true);
+
+    if (customerError)
+      throw new Error(
+        `[Report] GetCustomerCount failed: ${customerError.message}`
+      );
+
+    return {
+      staffCount: staffCount || 0,
+      customerCount: customerCount || 0,
+    };
+  }
+
+  /**
+   * Lấy doanh thu trong khoảng thời gian
+   * @param {string} tenantId
+   * @param {Date} fromDate
+   * @param {Date} toDate
+   * @returns {Promise<number>}
+   */
+  async getRevenueInRange(tenantId, fromDate, toDate) {
+    const { data, error } = await supabase
+      .from("orders")
+      .select("total_amount")
+      .eq("tenant_id", tenantId)
+      .eq("status", "Completed")
+      .gte("created_at", fromDate.toISOString())
+      .lte("created_at", toDate.toISOString());
+
+    if (error)
+      throw new Error(`[Report] GetRevenueInRange failed: ${error.message}`);
+
+    const total = (data || []).reduce(
+      (sum, order) => sum + (order.total_amount || 0),
+      0
+    );
     return total;
   }
 }

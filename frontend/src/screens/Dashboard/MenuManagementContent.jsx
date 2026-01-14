@@ -21,6 +21,7 @@ import {
   VIEW_MODES,
   PRICE_RANGES,
 } from "../../constants/menuConstants";
+import { SkeletonProductGrid, SkeletonTable } from "../../components/Skeleton";
 
 // Socket hooks for real-time updates
 import { useMenuSocket } from "../../hooks/useMenuSocket";
@@ -664,11 +665,31 @@ const MenuManagementContent = () => {
 
   if (initialLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-          <div className="text-gray-500 font-medium">Đang tải dữ liệu...</div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-6">
+        {/* Header Skeleton */}
+        <div className="mb-6">
+          <div className="h-9 bg-gray-200 rounded w-64 mb-2 animate-pulse"></div>
+          <div className="h-4 bg-gray-200 rounded w-96 animate-pulse"></div>
         </div>
+
+        {/* Filter Bar Skeleton */}
+        <div className="bg-white rounded-lg p-4 mb-6 shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-10 bg-gray-200 rounded animate-pulse"
+              ></div>
+            ))}
+          </div>
+        </div>
+
+        {/* Content Skeleton */}
+        {viewMode === VIEW_MODES.GRID ? (
+          <SkeletonProductGrid items={12} />
+        ) : (
+          <SkeletonTable rows={12} columns={6} />
+        )}
       </div>
     );
   }
