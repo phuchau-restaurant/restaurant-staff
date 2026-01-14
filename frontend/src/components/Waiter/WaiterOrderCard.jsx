@@ -76,7 +76,7 @@ const WaiterOrderCard = ({
       case "Cancelled":
         return { bg: "bg-red-50", border: "border-red-100", text: "text-red-600", badge: "bg-red-100 text-red-700" };
       case "Served":
-        return { bg: "bg-gray-50", border: "border-gray-100", text: "text-gray-500", badge: "bg-gray-100 text-gray-600" };
+        return { bg: "bg-purple-50", border: "border-purple-100", text: "text-purple-600", badge: "bg-purple-100 text-purple-700" };
       case "Ready":
         return { bg: "bg-green-50", border: "border-green-100", text: "text-green-600", badge: "bg-green-100 text-green-700" };
       case "Pending":
@@ -129,7 +129,7 @@ const WaiterOrderCard = ({
           <div className="flex items-start justify-between gap-2 sm:gap-3">
             {/* Table Info - Left */}
             <div className="flex-1 min-w-0">
-              <h2 className="text-lg sm:text-2xl font-black text-gray-900 tracking-tight leading-tight">
+              <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight leading-tight">
                 Bàn {order.tableNumber}
               </h2>
               <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
@@ -137,17 +137,13 @@ const WaiterOrderCard = ({
               </p>
             </div>
 
-            {/* Timer Badge - Right */}
+            {/* Timer Badge - Prep Time Only */}
             <div
-              className={`flex items-center gap-1 sm:gap-1.5 px-2 py-1 sm:px-3 sm:py-2 rounded-lg font-bold text-xs sm:text-sm transition-colors ${isLate
-                ? "bg-red-500 text-white"
-                : "bg-gray-100 text-gray-600"
-                }`}
+              className="flex items-center gap-1 sm:gap-1.5 px-2 py-1 sm:px-3 sm:py-2 rounded-lg font-bold text-xs sm:text-sm transition-colors bg-gray-100 text-gray-600"
             >
               <Clock size={14} className="sm:hidden" strokeWidth={2.5} />
               <Clock size={16} className="hidden sm:block" strokeWidth={2.5} />
-              <span>{elapsed}'{prepTime ? `/${prepTime}'` : ''}</span>
-              {isLate && <AlertCircle size={12} className="sm:w-3.5 sm:h-3.5" />}
+              <span>{prepTime ? `${prepTime}'` : '--'}</span>
             </div>
           </div>
 
@@ -191,12 +187,12 @@ const WaiterOrderCard = ({
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       {/* Item name and quantity */}
-                      <div className="flex items-center gap-1.5 sm:gap-2">
-                        <span className={`font-semibold text-sm sm:text-base text-gray-800 ${item.status === "Cancelled" || item.status === "Served" ? "line-through opacity-60" : ""}`}>
+                      <div className="flex items-center gap-2">
+                        <span className={`font-bold text-[17px] text-gray-800 ${item.status === "Cancelled" || item.status === "Served" ? "line-through opacity-60" : ""}`}>
                           {item.name}
                         </span>
-                        <span className="text-[10px] sm:text-xs font-bold text-white bg-gray-700 px-1.5 py-0.5 rounded">
-                          ×{item.quantity}
+                        <span className="text-[15px] font-black text-orange-600">
+                          x{item.quantity}
                         </span>
                       </div>
 
@@ -223,7 +219,7 @@ const WaiterOrderCard = ({
                     </div>
 
                     {/* Status Badge */}
-                    <span className={`text-[10px] sm:text-xs font-semibold px-1.5 py-0.5 rounded ${style.badge} flex-shrink-0`}>
+                    <span className={`text-[12px] sm:text-[14px] font-semibold px-1.5 py-0.5 rounded ${style.badge} flex-shrink-0`}>
                       {getItemStatusLabel(item)}
                     </span>
                   </div>
@@ -233,13 +229,13 @@ const WaiterOrderCard = ({
                     <div className="flex gap-1.5 sm:gap-2 mt-2">
                       <button
                         onClick={(e) => handleConfirmItem(e, item)}
-                        className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg text-xs font-bold transition-colors"
+                        className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-green-50 hover:bg-green-100 text-green-700 border-2 border-green-600 rounded-lg text-xs font-bold transition-colors"
                       >
                         <Check size={12} className="sm:w-3.5 sm:h-3.5" /> Xác nhận
                       </button>
                       <button
                         onClick={(e) => handleCancelItem(e, item)}
-                        className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-bold transition-colors"
+                        className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border-2 border-red-600 rounded-lg text-xs font-bold transition-colors"
                       >
                         <X size={12} className="sm:w-3.5 sm:h-3.5" /> Hủy
                       </button>
@@ -250,7 +246,7 @@ const WaiterOrderCard = ({
                   {isClaimedOrder && item.status === "Ready" && onServeItem && (
                     <button
                       onClick={(e) => handleServeItem(e, item)}
-                      className="w-full mt-2 flex items-center justify-center gap-1 px-2 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg text-xs sm:text-sm font-semibold transition-colors"
+                      className="w-full mt-2 flex items-center justify-center gap-1 px-2 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border-2 border-purple-600 rounded-lg text-xs sm:text-sm font-semibold transition-colors"
                     >
                       <Utensils size={12} className="sm:w-3.5 sm:h-3.5" />
                       Phục vụ
@@ -283,7 +279,7 @@ const WaiterOrderCard = ({
                 e.stopPropagation();
                 onClaimOrder(order.id);
               }}
-              className="w-full flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 sm:px-4 sm:py-3 rounded-lg font-bold text-sm sm:text-base shadow-sm transition-all hover:shadow-md active:scale-[0.98]"
+              className="w-full flex items-center justify-center gap-2 bg-orange-50 hover:bg-orange-100 text-orange-700 border-2 border-orange-600 px-3 py-2 sm:px-4 sm:py-3 rounded-lg font-bold text-sm sm:text-base shadow-sm transition-all hover:shadow-md active:scale-[0.98]"
             >
               <Check size={16} className="sm:w-5 sm:h-5" strokeWidth={2.5} />
               Nhận đơn
@@ -307,17 +303,17 @@ const WaiterOrderCard = ({
           onClick={() => setShowDetail(false)}
         >
           <div
-            className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
+            className="bg-white rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="bg-gray-50 p-3 sm:p-5 border-b border-gray-200 sticky top-0 z-10">
+            <div className="bg-gray-50 p-6 border-b border-gray-200 sticky top-0 z-10">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl sm:text-2xl font-black text-gray-900">
+                  <h2 className="text-2xl font-black text-gray-900">
                     Bàn {order.tableNumber}
                   </h2>
-                  <p className="text-gray-500 text-xs sm:text-sm mt-1">
+                  <p className="text-gray-500 text-sm mt-1">
                     Đơn #{order.orderNumber} • {elapsed} phút
                   </p>
                 </div>
@@ -329,24 +325,23 @@ const WaiterOrderCard = ({
                 </button>
               </div>
 
-              {/* Timer in modal */}
-              <div className={`inline-flex items-center gap-1.5 sm:gap-2 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg mt-2 sm:mt-3 font-semibold text-xs sm:text-sm ${isLate ? "bg-red-100 text-red-700" : "bg-gray-200 text-gray-700"}`}>
-                <Clock size={14} className="sm:w-4 sm:h-4" />
-                <span>{elapsed}'{prepTime ? ` / ${prepTime}'` : ''}</span>
-                {isLate && <span className="text-red-600 font-bold">• Trễ</span>}
+              {/* Timer in modal - Prep Time Only */}
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg mt-2 font-semibold text-sm bg-gray-200 text-gray-700">
+                <Clock size={16} />
+                <span>{prepTime ? `${prepTime}'` : '--'}</span>
               </div>
             </div>
 
             {/* Modal Content */}
-            <div className="p-3 sm:p-5 overflow-y-auto max-h-[60vh]">
-              <div className="flex items-center justify-between mb-3 sm:mb-4">
-                <h3 className="text-base sm:text-lg font-bold text-gray-800">
+            <div className="p-6 overflow-y-auto max-h-[60vh]">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-base font-bold text-gray-800">
                   Chi tiết món ăn
                 </h3>
-                <div className="text-xs sm:text-sm text-gray-500">
+                <div className="text-sm text-gray-500">
                   {readyCount > 0 && <span className="text-green-600 font-medium">{readyCount} sẵn sàng</span>}
-                  {servedCount > 0 && <span className="ml-1 sm:ml-2 text-gray-600">{servedCount} đã phục vụ</span>}
-                  {cancelledCount > 0 && <span className="ml-1 sm:ml-2 text-red-600">{cancelledCount} đã hủy</span>}
+                  {servedCount > 0 && <span className="ml-2 text-gray-600">{servedCount} đã phục vụ</span>}
+                  {cancelledCount > 0 && <span className="ml-2 text-red-600">{cancelledCount} đã hủy</span>}
                 </div>
               </div>
 
@@ -360,22 +355,22 @@ const WaiterOrderCard = ({
                     >
                       <div className="flex items-start justify-between gap-3 sm:gap-4">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 sm:gap-3 mb-1.5 sm:mb-2 flex-wrap">
-                            <h4 className={`text-base sm:text-lg font-bold text-gray-800 ${item.status === "Cancelled" ? "line-through opacity-60" : ""}`}>
+                          <div className="flex items-center gap-3 mb-2 flex-wrap">
+                            <h4 className={`text-[20px] font-bold text-gray-800 ${item.status === "Cancelled" ? "line-through opacity-60" : ""}`}>
                               {item.name}
                             </h4>
-                            <span className="text-xs sm:text-sm font-bold text-white bg-gray-700 px-1.5 py-0.5 sm:px-2 sm:py-0.5 rounded">
+                            <span className="text-[20px] font-black text-orange-600">
                               ×{item.quantity}
                             </span>
-                            <span className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-[10px] sm:text-xs font-semibold ${style.badge}`}>
+                            <span className={`px-2.5 py-1 rounded-lg text-[13px] font-semibold ${style.badge}`}>
                               {getItemStatusLabel(item)}
                             </span>
                           </div>
 
                           {/* Price */}
-                          <div className="mb-1.5 sm:mb-2">
-                            <span className="text-gray-600 text-xs sm:text-sm">
-                              Đơn giá: <span className="font-bold text-gray-800">{item.unitPrice?.toLocaleString('vi-VN')}đ</span>
+                          <div className="mb-2">
+                            <span className="text-gray-600 text-[15px]">
+                              Đơn giá: <span className="font-bold text-lg text-gray-800">{item.unitPrice?.toLocaleString('vi-VN')}đ</span>
                             </span>
                           </div>
 
@@ -395,7 +390,7 @@ const WaiterOrderCard = ({
 
                           {/* Note */}
                           {item.note && (
-                            <p className="text-amber-700 text-xs sm:text-base font-medium bg-amber-50 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg inline-block">
+                            <p className="text-amber-700 text-sm font-medium bg-amber-50 px-2 py-1 rounded-lg inline-block">
                               📝 {item.note}
                             </p>
                           )}
@@ -407,7 +402,7 @@ const WaiterOrderCard = ({
                           {isClaimedOrder && item.status === "Ready" && onServeItem && (
                             <button
                               onClick={(e) => handleServeItem(e, item)}
-                              className="flex items-center gap-1.5 sm:gap-2 bg-green-500 hover:bg-green-600 text-white px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg text-xs sm:text-base font-semibold transition-colors"
+                              className="flex items-center gap-1.5 sm:gap-2 bg-purple-50 hover:bg-purple-100 text-purple-700 border-2 border-purple-600 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg text-xs sm:text-base font-semibold transition-colors"
                             >
                               <Utensils size={14} className="sm:w-4 sm:h-4" /> Phục vụ
                             </button>
@@ -417,7 +412,7 @@ const WaiterOrderCard = ({
                           {isClaimedOrder && item.status === "Pending" && (
                             <button
                               onClick={(e) => handleCancelItem(e, item)}
-                              className="flex items-center gap-1.5 sm:gap-2 bg-red-500 hover:bg-red-600 text-white px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg text-xs sm:text-base font-semibold transition-colors"
+                              className="flex items-center gap-1.5 sm:gap-2 bg-red-50 hover:bg-red-100 text-red-700 border-2 border-red-600 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg text-xs sm:text-base font-semibold transition-colors"
                             >
                               <X size={14} className="sm:w-4 sm:h-4" /> Hủy món
                             </button>
@@ -428,13 +423,13 @@ const WaiterOrderCard = ({
                             <>
                               <button
                                 onClick={(e) => handleConfirmItem(e, item)}
-                                className="flex items-center gap-1.5 sm:gap-2 bg-green-500 hover:bg-green-600 text-white px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg text-xs sm:text-base font-semibold transition-colors"
+                                className="flex items-center gap-1.5 sm:gap-2 bg-green-50 hover:bg-green-100 text-green-700 border-2 border-green-600 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg text-xs sm:text-base font-semibold transition-colors"
                               >
                                 <Check size={14} className="sm:w-4 sm:h-4" /> Xác nhận
                               </button>
                               <button
                                 onClick={(e) => handleCancelItem(e, item)}
-                                className="flex items-center gap-1.5 sm:gap-2 bg-red-500 hover:bg-red-600 text-white px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg text-xs sm:text-base font-semibold transition-colors"
+                                className="flex items-center gap-1.5 sm:gap-2 bg-red-50 hover:bg-red-100 text-red-700 border-2 border-red-600 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg text-xs sm:text-base font-semibold transition-colors"
                               >
                                 <X size={14} className="sm:w-4 sm:h-4" /> Hủy
                               </button>
@@ -444,8 +439,8 @@ const WaiterOrderCard = ({
                       </div>
 
                       {/* Total Price */}
-                      <div className="flex justify-end pt-2 sm:pt-3 mt-2 sm:mt-3 border-t border-dashed border-gray-200">
-                        <span className="text-green-600 font-bold text-xs sm:text-base">
+                      <div className="flex justify-end pt-2 mt-2 border-t border-dashed border-gray-200">
+                        <span className="text-green-600 font-bold text-lg">
                           Thành tiền: {(
                             ((item.unitPrice || 0) + (item.modifiers || []).reduce((sum, mod) => sum + (mod.price || 0), 0)) * (item.quantity || 1)
                           ).toLocaleString('vi-VN')}đ
@@ -457,10 +452,10 @@ const WaiterOrderCard = ({
               </div>
 
               {/* Total Amount */}
-              <div className="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t-2 border-gray-200">
+              <div className="mt-4 pt-3 border-t-2 border-gray-200">
                 <div className="flex justify-between items-center">
-                  <span className="text-base sm:text-lg font-bold text-gray-700">Tổng cộng:</span>
-                  <span className="text-xl sm:text-2xl font-black text-green-600">
+                  <span className="text-base font-bold text-gray-700">Tổng cộng:</span>
+                  <span className="text-xl font-black text-green-600">
                     {order.items?.reduce((sum, item) => {
                       if (item.status === "Cancelled") return sum;
                       const modifierTotal = (item.modifiers || []).reduce((modSum, mod) => modSum + (mod.price || 0), 0);
@@ -479,7 +474,7 @@ const WaiterOrderCard = ({
                     onClaimOrder(order.id);
                     setShowDetail(false);
                   }}
-                  className="w-full flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-3 sm:px-6 sm:py-4 rounded-xl font-bold text-base sm:text-lg shadow-lg transition-all hover:shadow-xl active:scale-[0.98]"
+                  className="w-full flex items-center justify-center gap-2 bg-orange-50 hover:bg-orange-100 text-orange-700 border-2 border-orange-600 px-4 py-3 sm:px-6 sm:py-4 rounded-xl font-bold text-base sm:text-lg shadow-lg transition-all hover:shadow-xl active:scale-[0.98]"
                 >
                   <Check size={20} className="sm:w-6 sm:h-6" strokeWidth={2.5} />
                   Nhận đơn này

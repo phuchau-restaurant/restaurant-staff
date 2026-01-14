@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ChevronDown, Search, SlidersHorizontal, Grid3x3, List } from "lucide-react";
+import { ChevronDown, Search, SlidersHorizontal, Grid3x3, List, ArrowUpDown } from "lucide-react";
 
 const FilterBar = ({
   filterStation,
@@ -12,9 +12,12 @@ const FilterBar = ({
   categoryOptions = [],
   viewMode,
   setViewMode,
+  sortBy,
+  setSortBy,
 }) => {
   const [showStationDropdown, setShowStationDropdown] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+  const [showSortDropdown, setShowSortDropdown] = useState(false);
 
   const selectedCategory = categoryOptions.find(
     (c) => c.value === filterStation
@@ -22,6 +25,16 @@ const FilterBar = ({
   const selectedStatus = statusOptions.find(
     (s) => s.value === filterStatus
   ) || { value: "all", label: "Tất cả" };
+
+  // Sort options
+  const sortOptions = [
+    { value: "time", label: "Thời gian thực" },
+    { value: "table", label: "Tên bàn" },
+    { value: "order", label: "Số đơn" },
+    { value: "prepTime", label: "TG chuẩn bị" },
+  ];
+
+  const selectedSort = sortOptions.find((s) => s.value === sortBy) || sortOptions[0];
 
   return (
     <div className="flex gap-3 items-center">
@@ -43,6 +56,7 @@ const FilterBar = ({
           onClick={() => {
             setShowStatusDropdown(!showStatusDropdown);
             setShowStationDropdown(false);
+            setShowSortDropdown(false);
           }}
           className="px-4 py-2.5 bg-white border-2 border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors flex items-center gap-2 min-w-[180px]"
         >
@@ -78,6 +92,7 @@ const FilterBar = ({
           onClick={() => {
             setShowStationDropdown(!showStationDropdown);
             setShowStatusDropdown(false);
+            setShowSortDropdown(false);
           }}
           className="px-4 py-2.5 bg-white border-2 border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors flex items-center gap-2 min-w-[180px]"
         >
@@ -106,6 +121,44 @@ const FilterBar = ({
           </div>
         )}
       </div>
+
+      {/* Sort Dropdown */}
+      {sortBy !== undefined && setSortBy && (
+        <div className="relative">
+          <button
+            onClick={() => {
+              setShowSortDropdown(!showSortDropdown);
+              setShowStationDropdown(false);
+              setShowStatusDropdown(false);
+            }}
+            className="px-4 py-2.5 bg-white border-2 border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors flex items-center gap-2 min-w-[180px]"
+          >
+            <ArrowUpDown size={16} className="text-gray-600 shrink-0" />
+            <span className="truncate flex-1 text-left">{selectedSort.label}</span>
+            <ChevronDown size={16} className={`text-gray-500 transition-transform shrink-0 ${showSortDropdown ? 'rotate-180' : ''}`} />
+          </button>
+
+          {showSortDropdown && (
+            <div className="absolute top-full right-0 mt-1 bg-white border-2 border-gray-200 rounded-lg shadow-lg z-50 w-full">
+              {sortOptions.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => {
+                    setSortBy(option.value);
+                    setShowSortDropdown(false);
+                  }}
+                  className={`w-full px-4 py-2.5 text-left text-sm font-medium transition-colors ${sortBy === option.value
+                    ? "bg-blue-50 text-blue-700 border-l-4 border-blue-500"
+                    : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* View Mode Toggle */}
       {viewMode !== undefined && setViewMode && (

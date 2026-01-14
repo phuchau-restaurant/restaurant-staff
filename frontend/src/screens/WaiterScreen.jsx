@@ -3,10 +3,10 @@ import WaiterHeader from "../components/Waiter/WaiterHeader";
 import WaiterOrdersGrid from "../components/Waiter/WaiterOrdersGrid";
 import ConfirmModal from "../components/Modal/ConfirmModal";
 import AlertModal from "../components/Modal/AlertModal"; // Import AlertModal
-import { useOrderSocket } from "../hooks/useOrderSocket";
+import { useOrderSocket, useWaiterSocket } from "../hooks/useOrderSocket";
 import { useAuth } from "../context/AuthContext";
 import { useAlert } from "../hooks/useAlert"; // Import useAlert
-import { Search } from "lucide-react";
+import { Search, Bell, X } from "lucide-react";
 import * as waiterService from "../services/waiterService";
 import {
   mapOrderFromApi,
@@ -33,6 +33,51 @@ const WaiterScreen = () => {
     orderId: null,
     unconfirmedItems: [],
   });
+  const [notification, setNotification] = useState(null);
+  const [isAudioEnabled, setIsAudioEnabled] = useState(false);
+
+  // Khởi tạo audio từ file MP3 trong thư mục public
+  const notificationAudio = useMemo(() => new Audio('/notification.mp3'), []);
+
+  // Hàm phát âm thanh thông báo
+  const playNotificationSound = useCallback(() => {
+    if (notificationAudio) {
+      notificationAudio.currentTime = 0; // Chơi lại từ đầu
+      notificationAudio.play().catch(error => {
+        console.warn("🔇 Không thể tự động phát âm thanh (cần tương tác người dùng):", error);
+      });
+    }
+  }, [notificationAudio]);
+
+  // Cần ít nhất 1 tương tác để trình duyệt cho phép phát audio
+  useEffect(() => {
+    const unlockAudio = async () => {
+      try {
+        // Thử phát âm thanh im lặng để unlock
+        notificationAudio.muted = true;
+        await notificationAudio.play();
+        notificationAudio.pause();
+        notificationAudio.muted = false;
+
+        setIsAudioEnabled(true);
+        console.log("✅ Âm thanh đã được mở khóa (Audio Unlocked)");
+
+        // Gỡ bỏ listener sau khi đã unlock thành công
+        document.removeEventListener('click', unlockAudio);
+        document.removeEventListener('keydown', unlockAudio);
+      } catch (error) {
+        console.warn("🔇 Chờ tương tác người dùng để mở âm thanh...");
+      }
+    };
+
+    document.addEventListener('click', unlockAudio);
+    document.addEventListener('keydown', unlockAudio);
+
+    return () => {
+      document.removeEventListener('click', unlockAudio);
+      document.removeEventListener('keydown', unlockAudio);
+    };
+  }, [notificationAudio]);
 
   // Cập nhật thời gian mỗi giây
   useEffect(() => {
@@ -294,6 +339,31 @@ const WaiterScreen = () => {
     const targetDetailId = String(data.orderDetailId);
     const targetDishId = String(data.dishId);
 
+    // Thông báo khi món ăn đã sẵn sàng (Ready) - chỉ thông báo nếu đơn thuộc về waiter này
+    if (data.status === "Ready") {
+      // Tìm đơn từ myOrders (chỉ có đơn của waiter hiện tại)
+      const order = myOrders.find(o => String(o.id) === targetOrderId);
+
+      // Chỉ thông báo nếu đơn này thuộc về waiter hiện tại
+      if (order) {
+        const item = order?.items?.find(i => String(i.id) === targetDetailId || String(i.dishId) === targetDishId);
+        const itemName = item?.name || "Món ăn";
+        const tableNumber = order?.tableNumber || "";
+
+        setNotification({
+          message: `🍽️ ${itemName} (Bàn ${tableNumber}) đã sẵn sàng!`,
+          orderId: data.orderId,
+          type: "ready",
+        });
+        playNotificationSound();
+
+        // Tự động ẩn sau 5 giây
+        setTimeout(() => setNotification(null), 5000);
+      } else {
+        console.log("⏭️ Skipping Ready notification - order not in myOrders");
+      }
+    }
+
     const updateOrderItems = (ordersList) =>
       ordersList.map((order) => {
         if (String(order.id) === targetOrderId) {
@@ -315,7 +385,7 @@ const WaiterScreen = () => {
       });
     setOrders(updateOrderItems);
     setMyOrders(updateOrderItems);
-  }, []);
+  }, [myOrders, playNotificationSound]);
 
   const handleOrderDeleted = useCallback((data) => {
     console.log("🔔 Order deleted:", data);
@@ -324,12 +394,43 @@ const WaiterScreen = () => {
     setMyOrders((prev) => prev.filter((order) => String(order.id) !== targetId));
   }, []);
 
-  // Socket listeners
+  // Socket listeners - Order events
   useOrderSocket({
     onOrderCreated: handleOrderCreated,
     onOrderUpdated: handleOrderUpdated,
     onOrderDetailUpdated: handleOrderDetailUpdated,
     onOrderDeleted: handleOrderDeleted,
+  });
+
+  // Handler for kitchen calling waiter - only notify if this waiter is assigned to the order
+  const handleWaiterCall = useCallback((data) => {
+    console.log("🔔 Waiter call received:", data);
+
+    // Kiểm tra xem đơn hàng có được gán cho waiter cụ thể không
+    // Nếu có waiterId và không phải user hiện tại → skip
+    // Nếu không có waiterId (null/undefined) → cũng skip (đơn chưa được nhận)
+    const hasAssignedWaiter = data.waiterId !== null && data.waiterId !== undefined;
+    const isMyOrder = hasAssignedWaiter && String(data.waiterId) === String(user?.id);
+
+    if (!isMyOrder) {
+      console.log("⏭️ Skipping notification - not assigned to this order (waiterId:", data.waiterId, ", myId:", user?.id, ")");
+      return;
+    }
+
+    setNotification({
+      message: `📞 ${data.message || `Bàn ${data.tableNumber} - Đơn #${data.orderId} cần phục vụ!`}`,
+      orderId: data.orderId,
+      type: "call",
+    });
+    playNotificationSound();
+
+    // Tự động ẩn sau 8 giây (lâu hơn vì quan trọng)
+    setTimeout(() => setNotification(null), 8000);
+  }, [playNotificationSound, user?.id]);
+
+  // Socket listeners - Waiter specific events
+  useWaiterSocket({
+    onWaiterCall: handleWaiterCall,
   });
 
   // Tính thời gian từ khi order
@@ -366,6 +467,19 @@ const WaiterScreen = () => {
         onUserUpdate={updateUser}
       />
 
+      {/* Audio Enable Prompt */}
+      {!isAudioEnabled && (
+        <div
+          className="bg-amber-100 border-b border-amber-200 px-6 py-2 flex items-center justify-center gap-2 text-amber-800 text-sm animate-pulse cursor-pointer"
+          onClick={() => {
+            notificationAudio.play().then(() => setIsAudioEnabled(true)).catch(() => { });
+          }}
+        >
+          <Bell className="w-4 h-4" />
+          <span>Vui lòng click vào màn hình để kích hoạt âm thanh thông báo.</span>
+        </div>
+      )}
+
       {/* Confirm Modal for Unconfirmed Items */}
       <ConfirmModal
         isOpen={confirmModal.isOpen}
@@ -391,6 +505,41 @@ const WaiterScreen = () => {
         message={alert.message}
         type={alert.type}
       />
+
+      {/* Notification Toast */}
+      {notification && (
+        <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-4 flex items-center justify-between shadow-lg animate-in slide-in-from-top duration-300">
+          <div className="flex items-center gap-3">
+            <Bell className="w-5 h-5 animate-bounce" />
+            <span className="font-semibold text-lg">
+              {notification.message}
+            </span>
+          </div>
+          <button
+            onClick={() => setNotification(null)}
+            className="p-1.5 hover:bg-white/20 rounded-full transition-colors"
+            aria-label="Đóng thông báo"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+
+      {/* Test Audio Button - Fixed position */}
+      <button
+        onClick={() => {
+          console.log('🔊 Testing notification sound...');
+          playNotificationSound();
+        }}
+        className="fixed bottom-4 right-4 z-50 bg-green-500 hover:bg-green-600 text-white p-3 rounded-full shadow-lg transition-all hover:scale-110"
+        title="Test âm thanh thông báo"
+      >
+        <Bell className={`w-5 h-5 ${isAudioEnabled ? 'text-white' : 'text-red-200 animate-pulse'}`} />
+        {!isAudioEnabled && <span className="absolute -top-1 -right-1 flex h-3 w-3">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+        </span>}
+      </button>
 
       {/* Tabs & Search */}
       <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-4">

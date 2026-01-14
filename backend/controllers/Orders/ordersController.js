@@ -204,24 +204,24 @@ class OrdersController {
     }
   };
   // [GET] /api/orders
-  // Query params: status, waiterId
+  // Query params: status, waiterId, pageNumber, pageSize
   getAll = async (req, res, next) => {
     try {
       const tenantId = req.tenantId;
-      const { status, waiterId } = req.query;
+      const { status, waiterId, pageNumber, pageSize } = req.query;
 
-      // Xây dựng filters
+      // Xây dựng filters (bao gồm cả pagination nếu có)
       const filters = {};
       if (status) filters.status = status;
       if (waiterId) filters.waiterId = waiterId;
+      if (pageNumber) filters.pageNumber = pageNumber;
+      if (pageSize) filters.pageSize = pageSize;
 
-      const orders = await this.ordersService.getAllOrders(tenantId, filters);
+      // Gọi service (tự xử lý pagination nếu có)
+      const result = await this.ordersService.getAllOrders(tenantId, filters);
 
-      // Clean response
-      const responseData = orders.map((order) => {
-        const { tenantId: _tid, ...rest } = order;
-        return rest;
-      });
+      // Kiểm tra có pagination hay không
+      const usePagination = pageNumber && pageSize;
 
       // Build message
       let message = "Get orders";
@@ -229,25 +229,47 @@ class OrdersController {
       if (status) message += ` with status ${status}`;
       message += " successfully";
 
-      return res.status(200).json({
-        success: true,
-        message: message,
-        total: orders.length,
-        data: responseData,
-      });
+      if (usePagination) {
+        // Response có pagination
+        const responseData = result.data.map((order) => {
+          const { tenantId: _tid, ...rest } = order;
+          return rest;
+        });
+
+        return res.status(200).json({
+          success: true,
+          message: message,
+          total: result.pagination.totalCount,
+          data: responseData,
+          pagination: result.pagination,
+        });
+      } else {
+        // Response không có pagination
+        const responseData = result.map((order) => {
+          const { tenantId: _tid, ...rest } = order;
+          return rest;
+        });
+
+        return res.status(200).json({
+          success: true,
+          message: message,
+          total: result.length,
+          data: responseData,
+        });
+      }
     } catch (error) {
       if (!error.statusCode) error.statusCode = 400;
       next(error);
     }
   };
 
-  // [GET] /api/kitchen/orders?status= <orderStatus> & categoryId = <Id> & itemStatus = <itemStatus>
+  // [GET] /api/kitchen/orders?status=<orderStatus>&categoryId=<Id>&itemStatus=<itemStatus>&pageNumber=<page>&pageSize=<size>
   getForKitchen = async (req, res, next) => {
     try {
       const tenantId = req.tenantId;
-      const { status, categoryId, itemStatus } = req.query; // Lấy query param
+      const { status, categoryId, itemStatus, pageNumber, pageSize } = req.query;
 
-      const orderStatus = status; //|| OrderStatus.PENDING;
+      const orderStatus = status;
       if (status && !Object.values(OrderStatus).includes(status)) {
         return res.status(400).json({
           success: false,
@@ -255,26 +277,43 @@ class OrdersController {
         });
       }
 
-      const data = await this.ordersService.getKitchenOrders(
+      // Xây dựng pagination object nếu có
+      const pagination = (pageNumber && pageSize) 
+        ? { pageNumber, pageSize } 
+        : null;
+
+      // Gọi service (tự xử lý pagination nếu có)
+      const result = await this.ordersService.getKitchenOrders(
         tenantId,
         orderStatus,
         categoryId,
-        itemStatus
+        itemStatus,
+        pagination
       );
-      // Clean Response
-      // const cleanedData = data.map(order => {
-      //     const { id: _oid, tenantId: _tid, ...orderInfo } = order;
-      // });
+
+      // Build message
       const isOrderStatus = orderStatus ? ` with status ${orderStatus}` : "";
       const isItemStatus = itemStatus ? ` and item status ${itemStatus}` : "";
       const categoryInfo = categoryId ? ` in category Id = ${categoryId}` : "";
       const message = `Get orders${isOrderStatus}${categoryInfo}${isItemStatus} successfully`;
-      return res.status(200).json({
-        success: true,
-        message: message,
-        total: data.length,
-        data: data,
-      });
+
+      // Kiểm tra có pagination hay không
+      if (pagination) {
+        return res.status(200).json({
+          success: true,
+          message: message,
+          total: result.pagination.totalCount,
+          data: result.data,
+          pagination: result.pagination,
+        });
+      } else {
+        return res.status(200).json({
+          success: true,
+          message: message,
+          total: result.length,
+          data: result,
+        });
+      }
     } catch (error) {
       next(error);
     }

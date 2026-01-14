@@ -2,9 +2,11 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import KitchenHeader from "../components/Kitchen/KitchenHeader";
 import OrdersGrid from "../components/Kitchen/OrdersGrid";
 import AlertModal from "../components/Modal/AlertModal";
+import Pagination from "../components/SpinnerLoad/Pagination";
 import { useAlert } from "../hooks/useAlert";
 import { useKitchenSocket, useOrderSocket } from "../hooks/useOrderSocket";
 import { useAuth } from "../context/AuthContext";
+import { useSocket } from "../context/SocketContext";
 import { X, Bell } from "lucide-react";
 import * as kitchenService from "../services/kitchenService";
 import {
@@ -26,11 +28,19 @@ const KitchenScreen = () => {
   const { alert, showSuccess, showError, showWarning, showInfo, closeAlert } =
     useAlert();
   const { user, logout, updateUser } = useAuth();
+  const { socket, isConnected } = useSocket();
   const [viewMode, setViewMode] = useState("card");
   const [filterStation, setFilterStation] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [searchOrderId, setSearchOrderId] = useState("");
+  const [sortBy, setSortBy] = useState("time"); // "time" | "table" | "order" | "prepTime"
   const [orders, setOrders] = useState([]);
+
+  // State quản lý pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(12);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   // State cho confirm dialog khi hoàn thành đơn có món pending
   const [confirmComplete, setConfirmComplete] = useState({
@@ -91,20 +101,32 @@ const KitchenScreen = () => {
     try {
       setIsLoading(true);
 
-      const data = await kitchenService.fetchKitchenOrders({
+      const result = await kitchenService.fetchKitchenOrders({
         status: filterStatus,
         categoryId: filterStation,
+        pageNumber: currentPage,
+        pageSize: itemsPerPage,
       });
 
-      // Map API data to component format
-      const mappedOrders = mapKitchenOrdersFromApi(data);
-      setOrders(mappedOrders);
+      // Kiểm tra nếu có pagination (backend trả về object)
+      if (result.pagination) {
+        const mappedOrders = mapKitchenOrdersFromApi(result.data);
+        setOrders(mappedOrders);
+        setTotalItems(result.pagination.totalCount);
+        setTotalPages(result.pagination.totalPages);
+      } else {
+        // Fallback: không có pagination
+        const mappedOrders = mapKitchenOrdersFromApi(result);
+        setOrders(mappedOrders);
+        setTotalItems(mappedOrders.length);
+        setTotalPages(Math.ceil(mappedOrders.length / itemsPerPage));
+      }
     } catch (error) {
       console.error("Error fetching kitchen orders:", error);
     } finally {
       setIsLoading(false);
     }
-  }, [filterStatus, filterStation]);
+  }, [filterStatus, filterStation, currentPage, itemsPerPage]);
 
   // Fetch orders lần đầu và khi filter thay đổi
   useEffect(() => {
@@ -136,6 +158,7 @@ const KitchenScreen = () => {
         status: orderStatus,
         dbStatus: order.status, // Thêm dbStatus để hiển thị button chính xác
         prepTimeOrder: order.prepTimeOrder, // Thêm prepTimeOrder để đồng bộ với mapKitchenOrderFromApi
+        waiterId: order.waiterId, // Thêm waiterId để dùng cho filter thông báo
         items: orderDetails.map((detail) => ({
           id: detail.dishId,
           order_detail_id: detail.id,
@@ -292,11 +315,38 @@ const KitchenScreen = () => {
     [getElapsedTime]
   );
 
-  // Lọc orders (chỉ filter search vì status và category đã được filter ở API)
-  const filteredOrders = useMemo(() => {
+  // Lọc và sắp xếp orders (local filtering/sorting sau khi có data từ API)
+  const displayOrders = useMemo(() => {
     const filtered = filterOrdersBySearch(orders, searchOrderId);
-    return sortOrdersByTime(filtered, "asc");
-  }, [orders, searchOrderId]);
+
+    // Sort based on sortBy state
+    return [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case "table":
+          // Sort by table number/name
+          const tableA = String(a.tableNumber || "");
+          const tableB = String(b.tableNumber || "");
+          return tableA.localeCompare(tableB, "vi", { numeric: true });
+        case "order":
+          // Sort by order number
+          return (a.orderNumber || a.id) - (b.orderNumber || b.id);
+        case "prepTime":
+          // Sort by prep time (shortest first)
+          const prepA = a.prepTimeOrder || 9999;
+          const prepB = b.prepTimeOrder || 9999;
+          return prepA - prepB;
+        case "time":
+        default:
+          // Sort by order time (newest first - descending)
+          return new Date(b.orderTime) - new Date(a.orderTime);
+      }
+    });
+  }, [orders, searchOrderId, sortBy]);
+
+  // Reset về trang 1 khi filter thay đổi
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterStatus, filterStation, searchOrderId, sortBy]);
 
   // Actions
   // Xác nhận đơn Approved - chuyển sang Pending (Bếp bắt đầu xử lý)
@@ -408,35 +458,26 @@ const KitchenScreen = () => {
     }
   };
 
-  const handleRecall = async (orderId) => {
-    try {
-      const res = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/orders/${orderId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            "x-tenant-id": import.meta.env.VITE_TENANT_ID,
-          },
-          body: JSON.stringify({ status: "Served" }),
-        }
-      );
+  const handleRecall = (orderId) => {
+    // Tìm order để lấy thông tin
+    const order = orders.find(o => String(o.id) === String(orderId));
+    if (!order) {
+      showError("Không tìm thấy đơn hàng");
+      return;
+    }
 
-      const data = await res.json();
-      if (data.success) {
-        showSuccess(`Đã gọi nhân viên phục vụ đến lấy món - Đơn ${orderId}`);
-        // Update local state
-        const targetId = String(orderId);
-        setOrders((prev) =>
-          prev.map((o) => (String(o.id) === targetId ? { ...o, status: "Served", dbStatus: "Served" } : o))
-        );
-      } else {
-        console.error("Failed to update order status:", data.message);
-        showError("Không thể cập nhật trạng thái đơn hàng");
-      }
-    } catch (error) {
-      console.error("Error updating order status:", error);
-      showError("Lỗi khi cập nhật trạng thái đơn hàng");
+    // Emit socket event để gọi nhân viên (không thay đổi status)
+    if (socket && isConnected) {
+      socket.emit("kitchen:call_waiter", {
+        orderId: order.id,
+        tableNumber: order.tableNumber,
+        waiterId: order.waiterId, // Để frontend waiter filter theo user.id
+        message: `Bàn ${order.tableNumber} - Đơn #${order.orderNumber || order.id} cần phục vụ!`,
+      });
+      showSuccess(`Đã gọi nhân viên phục vụ - Đơn #${order.orderNumber || orderId}`);
+    } else {
+      showError("Không thể kết nối. Vui lòng thử lại.");
+      console.error("Socket not connected");
     }
   };
 
@@ -543,6 +584,8 @@ const KitchenScreen = () => {
         setSearchOrderId={setSearchOrderId}
         statusOptions={STATUS_OPTIONS}
         categoryOptions={CATEGORY_OPTIONS}
+        sortBy={sortBy}
+        setSortBy={setSortBy}
         user={user}
         onLogout={logout}
         onUserUpdate={updateUser}
@@ -591,19 +634,37 @@ const KitchenScreen = () => {
             </div>
           </div>
         ) : (
-          <OrdersGrid
-            orders={filteredOrders}
-            currentTime={currentTime}
-            getElapsedTime={getElapsedTime}
-            getOrderStatus={getOrderStatus}
-            handleConfirmOrder={handleConfirmOrder}
-            handleComplete={handleComplete}
-            handleCancel={handleCancel}
-            handleRecall={handleRecall}
-            handleCompleteItem={handleCompleteItem}
-            handleCancelItem={handleCancelItem}
-            viewMode={viewMode}
-          />
+          <>
+            <OrdersGrid
+              orders={displayOrders}
+              currentTime={currentTime}
+              getElapsedTime={getElapsedTime}
+              getOrderStatus={getOrderStatus}
+              handleConfirmOrder={handleConfirmOrder}
+              handleComplete={handleComplete}
+              handleCancel={handleCancel}
+              handleRecall={handleRecall}
+              handleCompleteItem={handleCompleteItem}
+              handleCancelItem={handleCancelItem}
+              viewMode={viewMode}
+            />
+
+            {/* Pagination */}
+            {totalItems > 0 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                pageSize={itemsPerPage}
+                onPageChange={(page) => setCurrentPage(page)}
+                onPageSizeChange={(size) => {
+                  setItemsPerPage(size);
+                  setCurrentPage(1);
+                }}
+                pageSizeOptions={[6, 12, 24, 48]}
+              />
+            )}
+          </>
         )}
       </div>
 

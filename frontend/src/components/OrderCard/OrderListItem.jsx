@@ -57,15 +57,12 @@ const OrderListItem = ({
                         {statusBadge.label}
                     </span>
 
-                    {/* Timer Badge - Red when exceeds prep time */}
+                    {/* Timer Badge - Prep Time Only */}
                     <div
-                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold w-fit shadow-sm ${isLate
-                            ? "bg-red-500 text-white"
-                            : "bg-gray-200 text-gray-700"
-                            }`}
+                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold w-fit shadow-sm bg-gray-200 text-gray-700"
                     >
                         <Clock size={14} strokeWidth={2.5} />
-                        <span>{elapsed}'{prepTime ? `/${prepTime}'` : ''}</span>
+                        <span>{prepTime ? `${prepTime}'` : '--'}</span>
                     </div>
                 </div>
 
@@ -77,7 +74,7 @@ const OrderListItem = ({
                             const itemStatus = item.status || (item.completed ? "Ready" : item.cancelled ? "Cancelled" : "Pending");
                             const isItemCompleted = item.completed || itemStatus === "Ready" || itemStatus === "Served";
                             const isItemCancelled = item.cancelled || itemStatus === "Cancelled";
-                            
+
                             return (
                                 <div
                                     key={item.id || idx}
@@ -135,7 +132,7 @@ const OrderListItem = ({
                                                 <CheckCircle2 size={14} strokeWidth={2.5} />
                                             </button>
                                         )}
-                                        
+
                                         {/* Cancel Button */}
                                         {!isItemCompleted && !isItemCancelled && handleCancelItem && (
                                             <button
@@ -156,7 +153,7 @@ const OrderListItem = ({
                                                 <CheckCircle2 size={14} strokeWidth={2.5} />
                                             </div>
                                         )}
-                                        
+
                                         {/* Cancelled indicator */}
                                         {isItemCancelled && (
                                             <div className="w-7 h-7 rounded-full flex items-center justify-center bg-gray-400 text-white">

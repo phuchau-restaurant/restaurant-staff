@@ -52,15 +52,12 @@ const OrderCard = ({
               </span>
             </div>
 
-            {/* Timer Badge - Red when exceeds prep time */}
+            {/* Timer Badge - Prep Time Only */}
             <div
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-black text-sm ${isLate
-                ? "bg-red-500 text-white shadow-lg"
-                : "bg-gray-200 text-gray-600"
-                }`}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full font-black text-sm bg-gray-200 text-gray-600"
             >
               <Clock size={14} strokeWidth={3} />
-              <span>{elapsed}'{prepTime ? `/${prepTime}'` : ''}</span>
+              <span>{prepTime ? `${prepTime}'` : '--'}</span>
             </div>
           </div>
 
@@ -80,7 +77,7 @@ const OrderCard = ({
               const itemStatus = item.status || (item.completed ? "Ready" : item.cancelled ? "Cancelled" : "Pending");
               const isItemCompleted = item.completed || itemStatus === "Ready" || itemStatus === "Served";
               const isItemCancelled = item.cancelled || itemStatus === "Cancelled";
-              
+
               return (
                 <div
                   key={item.id || idx}
@@ -126,8 +123,8 @@ const OrderCard = ({
 
                   {/* Action Buttons */}
                   <div className="flex items-center gap-1.5 flex-shrink-0 mt-1">
-                    {/* Complete Button */}
-                    {!isItemCompleted && !isItemCancelled && (
+                    {/* Complete Button - Only show when kitchen has claimed the order (not Approved status) */}
+                    {!isItemCompleted && !isItemCancelled && order.dbStatus !== "Approved" && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -139,7 +136,7 @@ const OrderCard = ({
                         <CheckCircle2 size={18} strokeWidth={2.5} />
                       </button>
                     )}
-                    
+
                     {/* Cancel Button */}
                     {!isItemCompleted && !isItemCancelled && handleCancelItem && (
                       <button
@@ -160,7 +157,7 @@ const OrderCard = ({
                         <CheckCircle2 size={18} strokeWidth={2.5} />
                       </div>
                     )}
-                    
+
                     {/* Cancelled indicator */}
                     {isItemCancelled && (
                       <div className="w-9 h-9 rounded-full flex items-center justify-center bg-gray-400 text-white">

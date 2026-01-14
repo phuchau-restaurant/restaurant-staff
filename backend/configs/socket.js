@@ -64,6 +64,19 @@ export const initializeSocket = (httpServer) => {
       console.log(`❌ Client disconnected: ${socket.id}`);
     });
 
+    // Handle kitchen calling waiter (without changing order status)
+    socket.on("kitchen:call_waiter", (data) => {
+      console.log("📞 Kitchen calling waiter:", data);
+      const tenantRoom = `tenant:${socket.tenantId}`;
+      // Broadcast to all users in tenant so waiter can receive
+      io.to(tenantRoom).emit("waiter:call", {
+        orderId: data.orderId,
+        tableNumber: data.tableNumber,
+        waiterId: data.waiterId,
+        message: data.message || `Bàn ${data.tableNumber} - Đơn #${data.orderId} cần phục vụ!`,
+      });
+    });
+
     // Handle errors
     socket.on("error", (error) => {
       console.error(`Socket error for ${socket.id}:`, error);
