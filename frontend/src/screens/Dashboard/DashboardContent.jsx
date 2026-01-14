@@ -10,6 +10,8 @@ import {
   DollarSign,
   Utensils,
   Clock,
+  Users,
+  UserCheck,
 } from "lucide-react";
 import {
   AreaChart,
@@ -38,6 +40,9 @@ const DashboardContent = () => {
     completedOrders: 0,
     cancelledOrders: 0,
     totalRevenue: 0,
+    periodRevenue: 0,
+    staffCount: 0,
+    customerCount: 0,
   });
   const [revenueData, setRevenueData] = useState([]);
   const [bestSellers, setBestSellers] = useState([]);
@@ -55,25 +60,18 @@ const DashboardContent = () => {
 
   // Fetch data
   useEffect(() => {
+    // Nếu là custom period, đợi user bấm "Áp dụng", không fetch tự động
+    if (period === "custom") return;
+
     const fetchData = async () => {
       setLoading(true);
       try {
-        let revenueResult;
-
-        if (period === "custom") {
-          // Fetch custom range
-          revenueResult = await reportService.fetchRevenueByDateRange(
-            customRange.from,
-            customRange.to
-          );
-        } else {
-          // Fetch standard period
-          revenueResult = await reportService.fetchRevenueByPeriod(period);
-        }
+        // Fetch standard period (day, week, month, year)
+        const revenueResult = await reportService.fetchRevenueByPeriod(period);
 
         const [summaryData, bestSellersData, peakHoursResult] =
           await Promise.all([
-            reportService.fetchDashboardSummary(),
+            reportService.fetchDashboardSummary({ period }),
             reportService.fetchBestSellers(5),
             reportService.fetchPeakHours(),
           ]);
@@ -106,7 +104,7 @@ const DashboardContent = () => {
     };
 
     fetchData();
-  }, [period]); // Note: For custom range, we might want to fetch only when user clicks "Apply", but for now simplest is fetching when period changes to other values.
+  }, [period]);
 
   // Separate handler for applying custom range
   const handleApplyCustomRange = async () => {
@@ -135,7 +133,10 @@ const DashboardContent = () => {
       // Also refresh other data when applying custom range
       const [summaryData, bestSellersData, peakHoursResult] = await Promise.all(
         [
-          reportService.fetchDashboardSummary(),
+          reportService.fetchDashboardSummary({
+            from: customRange.from,
+            to: customRange.to,
+          }),
           reportService.fetchBestSellers(5),
           reportService.fetchPeakHours(),
         ]
@@ -157,43 +158,44 @@ const DashboardContent = () => {
     }
   };
 
-  const stats = [
-    {
-      label: "Hôm nay",
-      value: summary.todayOrders,
-      change: "Đơn hàng mới",
-      icon: ShoppingBag,
-      color: "bg-blue-50 text-blue-600",
-    },
-    {
-      label: "Doanh thu hôm nay",
-      value: formatPrice(summary.todayRevenue),
-      change: "Revenue",
-      icon: DollarSign,
-      color: "bg-green-50 text-green-600",
-    },
-    {
-      label: "Đang chờ xử lý",
-      value: summary.pendingOrders,
-      change: "Cần thao tác ngay",
-      icon: MessageSquare,
-      color: "bg-yellow-50 text-yellow-600",
-    },
-    {
-      label: "Tổng doanh thu",
-      value: formatPrice(summary.totalRevenue),
-      change: "All time",
-      icon: BarChart3,
-      color: "bg-purple-50 text-purple-600",
-    },
-  ];
-
   const PERIOD_OPTIONS = [
     { value: "day", label: "Hôm nay" },
     { value: "week", label: "7 ngày qua" },
     { value: "month", label: "30 ngày qua" },
     { value: "year", label: "Năm nay" },
     { value: "custom", label: "Tùy chọn" },
+  ];
+
+  const stats = [
+    {
+      label: "Nhân viên",
+      value: summary.staffCount,
+      change: "Trên hệ thống",
+      icon: UserCheck,
+      color: "bg-blue-50 text-blue-600",
+    },
+    {
+      label: "Khách hàng",
+      value: summary.customerCount,
+      change: "Trên hệ thống",
+      icon: Users,
+      color: "bg-purple-50 text-purple-600",
+    },
+    {
+      label:
+        PERIOD_OPTIONS.find((p) => p.value === period)?.label || "Doanh thu",
+      value: formatPrice(summary.periodRevenue || 0),
+      change: "Doanh thu",
+      icon: DollarSign,
+      color: "bg-green-50 text-green-600",
+    },
+    {
+      label: "Tổng doanh thu",
+      value: formatPrice(summary.totalRevenue),
+      change: "All time",
+      icon: BarChart3,
+      color: "bg-yellow-50 text-yellow-600",
+    },
   ];
 
   if (loading && !summary.totalRevenue) {
