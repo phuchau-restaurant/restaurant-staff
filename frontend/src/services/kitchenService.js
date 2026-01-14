@@ -1,10 +1,9 @@
 /**
  * Kitchen Service - API calls cho màn hình bếp
- * Base: /api/kitchen/orders
+ * Base: /api/orders/kitchen
  */
 
-const BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/kitchen/orders`;
-const ORDER_URL = `${import.meta.env.VITE_BACKEND_URL}/api/orders`;
+const BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/orders`;
 
 const getHeaders = () => ({
   "Content-Type": "application/json",
@@ -13,6 +12,7 @@ const getHeaders = () => ({
 
 /**
  * Lấy danh sách đơn hàng cho bếp
+ * GET /api/orders/kitchen?status=...&categoryId=...&itemStatus=...
  * @param {Object} filters - { status, categoryId, itemStatus }
  * @returns {Promise<Array>} Danh sách đơn hàng
  */
@@ -33,7 +33,7 @@ export const fetchKitchenOrders = async (filters = {}) => {
     }
 
     const queryString = params.toString();
-    const url = `${BASE_URL}${queryString ? `?${queryString}` : ""}`;
+    const url = `${BASE_URL}/kitchen${queryString ? `?${queryString}` : ""}`;
 
     const response = await fetch(url, {
       headers: getHeaders(),
@@ -57,7 +57,7 @@ export const fetchKitchenOrders = async (filters = {}) => {
  */
 export const fetchOrderDetails = async (orderId) => {
   try {
-    const response = await fetch(`${ORDER_URL}/${orderId}`, {
+    const response = await fetch(`${BASE_URL}/${orderId}`, {
       headers: getHeaders(),
     });
     const result = await response.json();
@@ -79,7 +79,7 @@ export const fetchOrderDetails = async (orderId) => {
  */
 export const confirmKitchenOrder = async (orderId) => {
   try {
-    const response = await fetch(`${ORDER_URL}/${orderId}`, {
+    const response = await fetch(`${BASE_URL}/${orderId}`, {
       method: "PUT",
       headers: getHeaders(),
       body: JSON.stringify({ status: "Pending" }),
@@ -103,7 +103,7 @@ export const confirmKitchenOrder = async (orderId) => {
  */
 export const completeOrder = async (orderId) => {
   try {
-    const response = await fetch(`${ORDER_URL}/${orderId}`, {
+    const response = await fetch(`${BASE_URL}/${orderId}`, {
       method: "PUT",
       headers: getHeaders(),
       body: JSON.stringify({ status: "Completed" }),
@@ -127,7 +127,7 @@ export const completeOrder = async (orderId) => {
  */
 export const cancelOrder = async (orderId) => {
   try {
-    const response = await fetch(`${ORDER_URL}/${orderId}`, {
+    const response = await fetch(`${BASE_URL}/${orderId}`, {
       method: "PUT",
       headers: getHeaders(),
       body: JSON.stringify({ status: "Cancelled" }),
@@ -146,6 +146,7 @@ export const cancelOrder = async (orderId) => {
 
 /**
  * Cập nhật trạng thái món ăn
+ * PATCH /api/orders/:orderId/items/:orderDetailId
  * @param {string|number} orderId - ID đơn hàng
  * @param {string|number} orderDetailId - ID chi tiết đơn hàng
  * @param {string} status - Trạng thái mới (Pending, Ready, Served, Cancelled)
@@ -153,8 +154,8 @@ export const cancelOrder = async (orderId) => {
  */
 export const updateOrderItemStatus = async (orderId, orderDetailId, status) => {
   try {
-    const response = await fetch(`${BASE_URL}/${orderId}/${orderDetailId}`, {
-      method: "PUT",
+    const response = await fetch(`${BASE_URL}/${orderId}/items/${orderDetailId}`, {
+      method: "PATCH",
       headers: getHeaders(),
       body: JSON.stringify({ status }),
     });
@@ -189,3 +190,4 @@ export const markItemAsReady = async (orderId, orderDetailId) => {
 export const cancelOrderItem = async (orderId, orderDetailId) => {
   return updateOrderItemStatus(orderId, orderDetailId, "Cancelled");
 };
+

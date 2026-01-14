@@ -7,16 +7,19 @@ const router = express.Router();
 // Bắt buộc có TenantID
 router.use(tenantMiddleware);
 
-// === WAITER ORDER ROUTES (đặt trước routes có :id để tránh conflict) ===
-router.get('/my-orders', ordersController.getMyOrders);        // GET /api/orders/my-orders?waiterId=xxx
-router.get('/unassigned', ordersController.getUnassignedOrders); // GET /api/orders/unassigned
-router.put('/:id/claim', ordersController.claimOrder);         // PUT /api/orders/:id/claim
+// === KITCHEN (đặt trước /:id để tránh conflict) ===
+router.get('/kitchen', ordersController.getForKitchen);  // GET /api/orders/kitchen?status=...
 
-// === STANDARD ORDER ROUTES ===
-router.get('/', ordersController.getAll);
-router.post('/', ordersController.create);
-router.get('/:id', ordersController.getById);
-router.put('/:id', ordersController.update);
-router.delete('/:id', ordersController.delete);
+// === ORDER CRUD ===
+router.get('/', ordersController.getAll);            // GET /api/orders?status=...&waiterId=...
+router.post('/', ordersController.create);           // POST /api/orders
+router.get('/:id', ordersController.getById);        // GET /api/orders/:id
+router.put('/:id', ordersController.update);         // PUT /api/orders/:id (full update + claim via waiterId)
+router.delete('/:id', ordersController.delete);      // DELETE /api/orders/:id
+
+// === ITEM STATUS UPDATE ===
+// PATCH /api/orders/:orderId/items/:orderDetailId - Cập nhật status món ăn
+router.patch('/:orderId/items/:orderDetailId', ordersController.updateOrderDetailStatus);
 
 export default router;
+

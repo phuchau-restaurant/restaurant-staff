@@ -116,29 +116,41 @@ const WaiterScreen = () => {
     loadOrders();
   }, [fetchUnassignedOrders, fetchMyOrders]);
 
-  // Hàm nhận đơn
-  const handleClaimOrder = async (orderId, confirmUnconfirmed = false) => {
+  // Hàm nhận đơn (claim order = gán waiterId qua PUT)
+  // Nếu có món chưa xác nhận (status null), hiển thị modal xác nhận trước
+  const handleClaimOrder = async (orderId, forceConfirm = false) => {
     if (!user?.id) {
       console.error("User not logged in");
       return;
     }
-    try {
-      const result = await waiterService.claimOrder(
-        orderId,
-        user.id,
-        confirmUnconfirmed
-      );
 
-      // Nếu cần xác nhận món null
-      if (result.needsConfirmation) {
-        const unconfirmedItems = result.data.unconfirmedItems;
-        setConfirmModal({
-          isOpen: true,
-          orderId: orderId,
-          unconfirmedItems: unconfirmedItems,
-        });
-        return;
-      }
+    // Tìm order cần claim
+    const orderToClaim = orders.find(o => String(o.id) === String(orderId));
+
+    // Kiểm tra các món chưa xác nhận (status null hoặc undefined)
+    const unconfirmedItems = orderToClaim?.items?.filter(
+      item => !item.status || item.status === null
+    ) || [];
+
+    // Nếu có món chưa xác nhận và chưa được confirm -> Hiển thị modal
+    if (unconfirmedItems.length > 0 && !forceConfirm) {
+      setConfirmModal({
+        isOpen: true,
+        orderId: orderId,
+        unconfirmedItems: unconfirmedItems.map(item => ({
+          id: item.id,
+          dishId: item.dishId,
+          name: item.name,
+          quantity: item.quantity,
+          status: item.status
+        })),
+      });
+      return;
+    }
+
+    // Gọi API nhận đơn
+    try {
+      const result = await waiterService.claimOrder(orderId, user.id);
 
       // Map order from response (now includes orderDetails)
       const claimedOrder = mapOrderFromApi(result.data);
@@ -155,8 +167,10 @@ const WaiterScreen = () => {
       });
       // Switch to my orders tab
       setActiveTab("my");
+      showAlert("Thành công", `Đã nhận đơn #${orderId}`, "success");
     } catch (error) {
       console.error("Error claiming order:", error);
+      showAlert("Lỗi", error.message || "Không thể nhận đơn", "error");
     }
   };
 
@@ -164,9 +178,10 @@ const WaiterScreen = () => {
   const handleConfirmUnconfirmedItems = () => {
     const { orderId } = confirmModal;
     setConfirmModal({ isOpen: false, orderId: null, unconfirmedItems: [] });
-    // Gọi lại API với confirmUnconfirmed = true
+    // Gọi lại hàm claim với forceConfirm = true
     handleClaimOrder(orderId, true);
   };
+
 
   // Hàm hủy món ăn
   const handleCancelItem = async (orderId, itemId) => {

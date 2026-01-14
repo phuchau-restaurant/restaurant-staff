@@ -17,7 +17,6 @@ import usersRoutes from "./routers/users.routes.js";
 import authRoutes from "./routers/auth.routes.js";
 import menusRoutes from "./routers/menus.routes.js";
 import ordersRoutes from "./routers/orders.routes.js";
-import kitchenRoutes from "./routers/kitchen.routes.js";
 import appSettingsRoutes from "./routers/appSettings.routes.js";
 import adminRoutes from "./routers/admin.routes.js";
 import uploadRoutes from "./routers/upload.routes.js";
@@ -76,8 +75,6 @@ app.use("/api/admin/menu/items", menuItemPhotoRoutes);
 app.use("/api/admin/menu", modifiersRoutes);
 app.use("/api/menu-item-modifier-group", menuItemModifierGroupRoutes); // <-- thêm dòng này
 
-//route nghiệp vụ cho kitchen
-app.use("/api/kitchen", kitchenRoutes);
 app.use("/api/report", reportRoutes);
 //Nghiệp vụ cho admin
 app.use("/api/admin", adminRoutes);
