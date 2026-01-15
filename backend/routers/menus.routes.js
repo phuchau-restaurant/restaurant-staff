@@ -10,6 +10,7 @@ router.use(tenantMiddleware);
 
 // Routes cho CUSTOMER - chỉ cần tenant ID (đã verify QR ở trang login)
 router.get("/", menusController.getAll); // GET api/menus?categoryId=<id>&available=true
+router.get("/search/fuzzy", menusController.fuzzySearch); // GET api/menus/search/fuzzy?q=<term>&threshold=0.3
 router.get("/:id", menusController.getById); // GET api/menus/:id
 
 // Routes cho ADMIN - quản lý menu

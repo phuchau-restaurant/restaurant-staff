@@ -30,6 +30,22 @@ class MenusService {
     return await this.menusRepo.getAll(filters, pagination);
   }
 
+  /**
+   * Fuzzy search món ăn - cho phép tìm sai chính tả
+   * @param {string} tenantId - ID của tenant
+   * @param {string} searchTerm - Từ khóa tìm kiếm
+   * @param {number} threshold - Ngưỡng similarity (0.0 - 1.0)
+   * @returns {Promise<Array>} Danh sách món ăn matching
+   */
+  async fuzzySearchMenus(tenantId, searchTerm, threshold = 0.3) {
+    if (!tenantId) throw new Error("Missing tenantId");
+    if (!searchTerm || searchTerm.trim() === "") {
+      return [];
+    }
+
+    return await this.menusRepo.fuzzySearch(tenantId, searchTerm, threshold);
+  }
+
 
   /**
    * Lấy danh sách Menu theo Tenant

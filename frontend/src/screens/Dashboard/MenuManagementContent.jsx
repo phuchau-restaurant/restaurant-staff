@@ -123,17 +123,54 @@ const MenuManagementContent = () => {
     fetchInitialData();
   }, [currentPage, pageSize]);
 
-  // Filter và sort phía client
+  // Fuzzy search khi user gõ vào ô tìm kiếm (với debounce)
   useEffect(() => {
-    const filtered = filterAndSortMenuItems(
-      menuItems,
-      searchTerm,
-      statusFilter,
-      categoryFilter,
-      priceRange,
-      sortBy
-    );
-    setFilteredMenuItems(filtered);
+    const performFuzzySearch = async () => {
+      if (searchTerm && searchTerm.trim() !== "") {
+        try {
+          const results = await menuService.fuzzySearchMenuItems(searchTerm, 0.3);
+          
+          // Apply other filters (status, category, price) on fuzzy search results
+          const filtered = filterAndSortMenuItems(
+            results,
+            "", // Don't filter by searchTerm again
+            statusFilter,
+            categoryFilter,
+            priceRange,
+            sortBy
+          );
+          setFilteredMenuItems(filtered);
+        } catch (error) {
+          console.error("Fuzzy search error:", error);
+          // Fallback to client-side filter
+          const filtered = filterAndSortMenuItems(
+            menuItems,
+            searchTerm,
+            statusFilter,
+            categoryFilter,
+            priceRange,
+            sortBy
+          );
+          setFilteredMenuItems(filtered);
+        }
+      } else {
+        // No search term - use client-side filter
+        const filtered = filterAndSortMenuItems(
+          menuItems,
+          searchTerm,
+          statusFilter,
+          categoryFilter,
+          priceRange,
+          sortBy
+        );
+        setFilteredMenuItems(filtered);
+      }
+    };
+
+    // Debounce: chờ 300ms sau khi user ngừng gõ mới search
+    const timeoutId = setTimeout(performFuzzySearch, 300);
+    
+    return () => clearTimeout(timeoutId);
   }, [menuItems, searchTerm, sortBy, statusFilter, categoryFilter, priceRange]);
 
   // ==================== API CALLS ====================

@@ -85,6 +85,38 @@ export const fetchMenuItems = async (pagination = null) => {
 };
 
 /**
+ * Fuzzy search món ăn - cho phép tìm sai chính tả
+ * @param {string} searchTerm - Từ khóa tìm kiếm
+ * @param {number} threshold - Ngưỡng similarity (0.0 - 1.0), mặc định 0.3
+ * @returns {Promise<Array>} Danh sách món ăn matching
+ */
+export const fuzzySearchMenuItems = async (searchTerm, threshold = 0.3) => {
+  try {
+    if (!searchTerm || searchTerm.trim() === "") {
+      return [];
+    }
+
+    const queryParams = new URLSearchParams();
+    queryParams.append("q", searchTerm.trim());
+    if (threshold) queryParams.append("threshold", threshold);
+
+    const url = `${BASE_URL}/search/fuzzy?${queryParams.toString()}`;
+    const response = await fetch(url, { headers: getHeaders() });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    return result.success ? (result.data || []) : [];
+  } catch (error) {
+    console.error("Fuzzy search error:", error);
+    // Fallback to empty array on error
+    return [];
+  }
+};
+
+/**
  * Lấy chi tiết món ăn theo ID
  * @param {string} menuId - ID món ăn
  * @returns {Promise<Object>} Chi tiết món ăn

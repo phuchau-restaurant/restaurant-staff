@@ -83,6 +83,54 @@ class MenusController {
     }
   };
 
+  // [GET] /api/menus/search/fuzzy?q=<search_term>&threshold=0.3
+  fuzzySearch = async (req, res, next) => {
+    try {
+      const tenantId = req.tenantId;
+      const { q, threshold } = req.query;
+
+      if (!q || q.trim() === "") {
+        return res.status(400).json({
+          success: false,
+          message: "Search term (q) is required",
+          data: []
+        });
+      }
+
+      const searchThreshold = threshold ? parseFloat(threshold) : 0.3;
+      
+      // Validate threshold
+      if (searchThreshold < 0 || searchThreshold > 1) {
+        return res.status(400).json({
+          success: false,
+          message: "Threshold must be between 0 and 1",
+          data: []
+        });
+      }
+
+      const result = await this.menusService.fuzzySearchMenus(
+        tenantId,
+        q.trim(),
+        searchThreshold
+      );
+
+      // Lọc bỏ tenantId từ danh sách
+      const returnData = result.map((item) => {
+        const { tenantId, ...rest } = item;
+        return rest;
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: `Found ${returnData.length} menu items matching "${q}"`,
+        total: returnData.length,
+        data: returnData,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   // [GET] /api/menus/:id
   getById = async (req, res, next) => {
     try {

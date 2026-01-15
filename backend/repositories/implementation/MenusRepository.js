@@ -70,6 +70,40 @@ async update(id, updates) {
     return data.map(item => new Menus(item)) || [];
   }
 
+  /**
+   * Fuzzy search món ăn - cho phép tìm sai chính tả
+   * Sử dụng PostgreSQL pg_trgm (trigram similarity)
+   * @param {string} tenantId - ID của nhà hàng
+   * @param {string} searchTerm - Từ khóa tìm kiếm (có thể sai chính tả)
+   * @param {number} threshold - Ngưỡng similarity (0.0 - 1.0), mặc định 0.3
+   * @returns {Promise<Array>} Danh sách món ăn với similarity score
+   */
+  async fuzzySearch(tenantId, searchTerm, threshold = 0.3) {
+    if (!tenantId) throw new Error("TenantID is required for search");
+    if (!searchTerm || searchTerm.trim() === "") return [];
+
+    try {
+      // Use PostgreSQL function with trigram similarity
+      const { data, error } = await supabase.rpc('fuzzy_search_dishes', {
+        p_tenant_id: tenantId,
+        p_search_term: searchTerm.trim(),
+        p_threshold: threshold
+      });
+
+      if (error) {
+        console.warn('Fuzzy search RPC error:', error.message);
+        throw error;
+      }
+
+      // Map results to Menus model
+      return (data || []).map(item => new Menus(item));
+    } catch (error) {
+      // Fallback to simple ilike search if PostgreSQL function not available
+      console.warn('Fuzzy search not available, falling back to ilike:', error.message);
+      return this.findByName(tenantId, searchTerm);
+    }
+  }
+
 // override thêm getById để trả về Model
 async getById(id) {
     const rawData = await super.getById(id); // Gọi cha lấy raw data
