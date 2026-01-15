@@ -11,6 +11,7 @@ const WaiterOrdersGrid = ({
   onCancelItem,
   onConfirmItem,
   onServeItem,
+  onPayment,
 }) => {
   if (orders.length === 0) {
     return (
@@ -38,6 +39,7 @@ const WaiterOrdersGrid = ({
           onCancelItem={onCancelItem}
           onConfirmItem={onConfirmItem}
           onServeItem={onServeItem}
+          onPayment={onPayment}
         />
       ))}
     </div>

@@ -157,3 +157,32 @@ export const serveOrderItem = async (orderId, itemId) => {
   return updateOrderItemStatus(orderId, itemId, "Served");
 };
 
+/**
+ * Xác nhận thanh toán đơn hàng
+ * POST /api/payments
+ * @param {string|number} orderId - ID đơn hàng
+ * @param {string} paymentMethod - Phương thức thanh toán (Cash, Card, E-Wallet)
+ * @returns {Promise<Object>} Kết quả thanh toán
+ */
+export const confirmPayment = async (orderId, paymentMethod) => {
+  try {
+    const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/payments`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+      },
+      body: JSON.stringify({ orderId, paymentMethod }),
+    });
+    const result = await response.json();
+
+    if (result.success) {
+      return result;
+    }
+    throw new Error(result.message || "Failed to confirm payment");
+  } catch (error) {
+    console.error("Error confirming payment:", error);
+    throw error;
+  }
+};
