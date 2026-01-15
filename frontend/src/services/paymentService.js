@@ -1,9 +1,11 @@
 // frontend/src/services/paymentService.js
+import { getTenantId } from "../utils/auth";
+
 const BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/payments`;
 
 const getHeaders = () => ({
     "Content-Type": "application/json",
-    "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+    "x-tenant-id": getTenantId(),
     Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
 });
 

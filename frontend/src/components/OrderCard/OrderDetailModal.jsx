@@ -305,14 +305,14 @@ const OrderDetailModal = ({
                           {isItemCompleted && (
                             <div className="w-10 h-10 rounded-full flex items-center justify-center bg-green-500 text-white">
                               <CheckCircle2 size={20} strokeWidth={2.5} />
-                            </button>
+                            </div>
                           )}
 
                           {/* Status indicator for cancelled items */}
                           {isItemCancelled && (
                             <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-400 text-white">
                               <XCircle size={20} strokeWidth={2.5} />
-                            </button>
+                            </div>
                           )}
                         </div>
                       </div>

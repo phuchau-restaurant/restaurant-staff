@@ -172,7 +172,7 @@ export const confirmPayment = async (orderId, paymentMethod) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+        "x-tenant-id": getTenantId(),
         Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
       },
       body: JSON.stringify({ orderId, paymentMethod }),

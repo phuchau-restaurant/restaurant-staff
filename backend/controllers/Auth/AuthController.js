@@ -13,7 +13,7 @@ class AuthController {
   login = async (req, res, next) => {
     try {
       const { email, password } = req.body;
-      const tenantId = req.tenantId;
+      const tenantId = req.tenantId || null; // Optional - null nếu không có
 
       // Gọi Service để xác thực
       const result = await this.authService.login(email, password, tenantId);

@@ -9,8 +9,8 @@ const router = express.Router();
 // --- ĐỊNH NGHĨA CÁC ROUTE ---
 
 // [POST] /api/auth/login
-// Cần tenantId để biết đăng nhập vào nhà hàng nào
-router.post("/login", tenantMiddleware, authController.login);
+// Không cần tenantId vì sẽ tự động xác định từ email của user
+router.post("/login", authController.login);
 
 // [POST] /api/auth/refresh
 // Làm mới access token bằng refresh token

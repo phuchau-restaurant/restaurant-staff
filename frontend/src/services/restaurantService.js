@@ -1,11 +1,16 @@
 // frontend/src/services/restaurantService.js
 const BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/restaurant`;
 
-const getHeaders = () => ({
-    "Content-Type": "application/json",
-    "x-tenant-id": import.meta.env.VITE_TENANT_ID,
-    Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-});
+const getHeaders = () => {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const tenantId = user.tenantId;
+    
+    return {
+        "Content-Type": "application/json",
+        "x-tenant-id": tenantId,
+        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+    };
+};
 
 /**
  * Restaurant Service - API calls cho quản lý thông tin nhà hàng
@@ -99,12 +104,13 @@ export const uploadLogo = async (file) => {
         formData.append("image", file);
         formData.append("folder", "restaurant-logos");
 
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
         const response = await fetch(
             `${import.meta.env.VITE_BACKEND_URL}/api/upload`,
             {
                 method: "POST",
                 headers: {
-                    "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+                    "x-tenant-id": user.tenantId,
                 },
                 body: formData,
             }
