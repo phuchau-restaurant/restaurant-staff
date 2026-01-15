@@ -1,3 +1,5 @@
+import { getTenantId } from "../utils/auth";
+
 /**
  * Modifier Service - API calls cho quản lý modifier groups và options
  * Base: /api/admin/menu
@@ -6,7 +8,7 @@
 const BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/admin/menu`;
 const getHeaders = () => ({
   "Content-Type": "application/json",
-  "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+  "x-tenant-id": getTenantId(),
   Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
 });
 

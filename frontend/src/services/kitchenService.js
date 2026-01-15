@@ -1,3 +1,5 @@
+import { getTenantId } from "../utils/auth";
+
 /**
  * Kitchen Service - API calls cho màn hình bếp
  * Base: /api/orders/kitchen
@@ -7,7 +9,7 @@ const BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/orders`;
 
 const getHeaders = () => ({
   "Content-Type": "application/json",
-  "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+  "x-tenant-id": getTenantId(),
 });
 
 /**

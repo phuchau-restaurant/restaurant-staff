@@ -9,6 +9,7 @@ import QRFilterBar from "../components/qr/QRFilterBar";
 import { useAlert } from "../hooks/useAlert";
 import * as tableService from "../services/tableService";
 import { sortByTableNumber } from "../utils/tableUtils";
+import { getTenantId } from "../utils/auth";
 
 // Socket hooks for real-time updates
 import { useQRSocket } from "../hooks/useQRSocket";
@@ -140,7 +141,7 @@ const QRManagementScreen = () => {
         }/api/admin/tables/${tableId}/qr/view`,
         {
           headers: {
-            "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+            "x-tenant-id": getTenantId(),
             Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
           },
         }
@@ -175,7 +176,7 @@ const QRManagementScreen = () => {
         `${import.meta.env.VITE_BACKEND_URL}/api/admin/tables`,
         {
           headers: {
-            "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+            "x-tenant-id": getTenantId(),
           },
         }
       );
@@ -230,7 +231,7 @@ const QRManagementScreen = () => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+            "x-tenant-id": getTenantId(),
             Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
           },
         }
@@ -269,7 +270,7 @@ const QRManagementScreen = () => {
         }/qr/download?format=png`,
         {
           headers: {
-            "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+            "x-tenant-id": getTenantId(),
             Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
           },
         }
@@ -307,7 +308,7 @@ const QRManagementScreen = () => {
         }/qr/download?format=pdf`,
         {
           headers: {
-            "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+            "x-tenant-id": getTenantId(),
             Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
           },
         }
@@ -340,7 +341,7 @@ const QRManagementScreen = () => {
         }/api/admin/tables/qr/download-all?format=${format}`,
         {
           headers: {
-            "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+            "x-tenant-id": getTenantId(),
             Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
           },
         }

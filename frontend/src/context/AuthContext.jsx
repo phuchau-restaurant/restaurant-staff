@@ -99,7 +99,6 @@ export const AuthProvider = ({ children }) => {
         credentials: "include", // Để nhận refresh cookie
         headers: {
           "Content-Type": "application/json",
-          "x-tenant-id": import.meta.env.VITE_TENANT_ID,
         },
         body: JSON.stringify({ email, password }),
       });

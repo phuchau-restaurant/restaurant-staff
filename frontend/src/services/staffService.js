@@ -1,8 +1,10 @@
+import { getTenantId } from "../utils/auth";
+
 const BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/users`;
-const HEADERS = {
+const getHeaders = () => ({
   "Content-Type": "application/json",
-  "x-tenant-id": import.meta.env.VITE_TENANT_ID,
-};
+  "x-tenant-id": getTenantId(),
+});
 
 /**
  * Staff Service - API calls cho quản lý nhân viên
@@ -37,7 +39,7 @@ export const fetchStaff = async (options = {}) => {
     const url = `${BASE_URL}${queryParams.toString() ? `?${queryParams.toString()}` : ""
       }`;
 
-    const response = await fetch(url, { headers: HEADERS });
+    const response = await fetch(url, { headers: getHeaders() });
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -68,7 +70,7 @@ export const fetchStaff = async (options = {}) => {
 export const getStaffById = async (staffId) => {
   try {
     const response = await fetch(`${BASE_URL}/${staffId}`, {
-      headers: HEADERS,
+      headers: getHeaders(),
     });
 
     const result = await response.json();
@@ -92,7 +94,7 @@ export const createStaff = async (staffData) => {
   try {
     const response = await fetch(BASE_URL, {
       method: "POST",
-      headers: HEADERS,
+      headers: getHeaders(),
       body: JSON.stringify(staffData),
     });
 
@@ -118,7 +120,7 @@ export const updateStaff = async (staffId, staffData) => {
   try {
     const response = await fetch(`${BASE_URL}/${staffId}`, {
       method: "PUT",
-      headers: HEADERS,
+      headers: getHeaders(),
       body: JSON.stringify(staffData),
     });
 
@@ -144,7 +146,7 @@ export const updateStaffStatus = async (staffId, isActive) => {
   try {
     const response = await fetch(`${BASE_URL}/${staffId}`, {
       method: "PUT",
-      headers: HEADERS,
+      headers: getHeaders(),
       body: JSON.stringify({ isActive }),
     });
 
@@ -169,7 +171,7 @@ export const deleteStaffPermanent = async (staffId) => {
   try {
     const response = await fetch(`${BASE_URL}/${staffId}`, {
       method: "DELETE",
-      headers: HEADERS,
+      headers: getHeaders(),
     });
 
     const result = await response.json();

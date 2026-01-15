@@ -1,3 +1,5 @@
+import { getTenantId } from "../utils/auth";
+
 /**
  * Table Service - API calls cho quản lý bàn
  */
@@ -5,10 +7,10 @@
 import { fetchLocationOptions as getLocationOptions } from "./appSettingsService";
 
 const BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/admin/tables`;
-const HEADERS = {
+const getHeaders = () => ({
   "Content-Type": "application/json",
-  "x-tenant-id": import.meta.env.VITE_TENANT_ID,
-};
+  "x-tenant-id": getTenantId(),
+});
 
 /**
  * Fetch danh sách bàn từ API
@@ -33,7 +35,7 @@ export const fetchTables = async (statusFilter = "", areaFilter = "", pagination
       queryParams.toString() ? `?${queryParams.toString()}` : ""
     }`;
 
-    const response = await fetch(url, { headers: HEADERS });
+    const response = await fetch(url, { headers: getHeaders() });
     const result = await response.json();
 
     if (result.success) {
@@ -69,7 +71,7 @@ export const updateTableStatus = async (tableId, newStatus) => {
   try {
     const response = await fetch(`${BASE_URL}/${tableId}/status`, {
       method: "PATCH",
-      headers: HEADERS,
+      headers: getHeaders(),
       body: JSON.stringify({ status: newStatus }),
     });
 
@@ -95,7 +97,7 @@ export const createTable = async (tableData) => {
   try {
     const response = await fetch(BASE_URL, {
       method: "POST",
-      headers: HEADERS,
+      headers: getHeaders(),
       body: JSON.stringify(tableData),
     });
 
@@ -122,7 +124,7 @@ export const updateTable = async (tableId, tableData) => {
   try {
     const response = await fetch(`${BASE_URL}/${tableId}`, {
       method: "PUT",
-      headers: HEADERS,
+      headers: getHeaders(),
       body: JSON.stringify(tableData),
     });
 
@@ -147,7 +149,7 @@ export const updateTable = async (tableId, tableData) => {
 export const fetchTableById = async (tableId) => {
   try {
     const response = await fetch(`${BASE_URL}/${tableId}`, {
-      headers: HEADERS,
+      headers: getHeaders(),
     });
 
     const result = await response.json();
@@ -195,7 +197,7 @@ export const deleteTablePermanent = async (tableId) => {
   try {
     const response = await fetch(`${BASE_URL}/${tableId}`, {
       method: "DELETE",
-      headers: HEADERS,
+      headers: getHeaders(),
     });
 
     const result = await response.json();

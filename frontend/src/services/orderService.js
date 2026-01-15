@@ -1,3 +1,5 @@
+import { getTenantId } from "../utils/auth";
+
 /**
  * Order Service - API calls cho quản lý đơn hàng
  * Base: /api/orders
@@ -6,7 +8,7 @@
 const BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/orders`;
 const getHeaders = () => ({
   "Content-Type": "application/json",
-  "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+  "x-tenant-id": getTenantId(),
   Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
 });
 

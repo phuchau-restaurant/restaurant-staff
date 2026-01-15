@@ -1,11 +1,13 @@
+import { getTenantId } from "../utils/auth";
+
 // frontend/src/services/menuItemModifierGroupService.js
 
 const BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/menu-item-modifier-group`;
 
-const HEADERS = {
+const getHeaders = () => ({
   "Content-Type": "application/json",
-  "x-tenant-id": import.meta.env.VITE_TENANT_ID,
-};
+  "x-tenant-id": getTenantId(),
+});
 
 /**
  * Lấy danh sách modifier groups của một món ăn
@@ -15,7 +17,7 @@ const HEADERS = {
 export const fetchModifierGroupsByDishId = async (dishId) => {
   try {
     const response = await fetch(`${BASE_URL}?dishId=${dishId}`, {
-      headers: HEADERS,
+      headers: getHeaders(),
     });
 
     if (!response.ok) {
@@ -43,7 +45,7 @@ export const addModifierGroupLink = async (dishId, groupId) => {
   try {
     const response = await fetch(BASE_URL, {
       method: "POST",
-      headers: HEADERS,
+      headers: getHeaders(),
       body: JSON.stringify({ dishId, groupId }),
     });
 
@@ -69,7 +71,7 @@ export const removeModifierGroupLink = async (dishId, groupId) => {
   try {
     const response = await fetch(BASE_URL, {
       method: "DELETE",
-      headers: HEADERS,
+      headers: getHeaders(),
       body: JSON.stringify({ dishId, groupId }),
     });
 

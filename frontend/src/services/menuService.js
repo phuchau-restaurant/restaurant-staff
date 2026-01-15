@@ -1,3 +1,5 @@
+import { getTenantId } from "../utils/auth";
+
 /**
  * Menu Service - API calls cho quản lý món ăn
  * Base: /api/admin/menu/items
@@ -5,11 +7,11 @@
 
 const BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/menus`;
 const CATEGORIES_URL = `${import.meta.env.VITE_BACKEND_URL}/api/categories`;
-const HEADERS = {
+const getHeaders = () => ({
   "Content-Type": "application/json",
-  "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+  "x-tenant-id": getTenantId(),
   Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-};
+});
 
 /**
  * Fetch danh sách danh mục đang hoạt động (chỉ lấy is_active = true)
@@ -20,7 +22,7 @@ export const fetchActiveCategories = async () => {
   try {
     const url = `${CATEGORIES_URL}?status=active`;
 
-    const response = await fetch(url, { headers: HEADERS });
+    const response = await fetch(url, { headers: getHeaders() });
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -59,7 +61,7 @@ export const fetchMenuItems = async (pagination = null) => {
       queryParams.toString() ? `?${queryParams.toString()}` : ""
     }`;
 
-    const response = await fetch(url, { headers: HEADERS });
+    const response = await fetch(url, { headers: getHeaders() });
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -89,7 +91,7 @@ export const fetchMenuItems = async (pagination = null) => {
  */
 export const fetchMenuItemById = async (menuId) => {
   try {
-    const response = await fetch(`${BASE_URL}/${menuId}`, { headers: HEADERS });
+    const response = await fetch(`${BASE_URL}/${menuId}`, { headers: getHeaders() });
     const result = await response.json();
 
     if (result.success) {
@@ -125,7 +127,7 @@ export const createMenuItem = async (menuData) => {
 
     const response = await fetch(BASE_URL, {
       method: "POST",
-      headers: HEADERS,
+      headers: getHeaders(),
       body: JSON.stringify(payload),
     });
 
@@ -160,7 +162,7 @@ export const updateMenuItem = async (menuId, menuData) => {
 
     const response = await fetch(`${BASE_URL}/${menuId}`, {
       method: "PUT",
-      headers: HEADERS,
+      headers: getHeaders(),
       body: JSON.stringify(payload),
     });
 
@@ -185,7 +187,7 @@ export const deleteMenuItem = async (menuId) => {
   try {
     const response = await fetch(`${BASE_URL}/${menuId}`, {
       method: "DELETE",
-      headers: HEADERS,
+      headers: getHeaders(),
     });
 
     const result = await response.json();
@@ -230,7 +232,7 @@ export const uploadMenuImage = async (dishId, files) => {
     const response = await fetch(`${ADMIN_BASE_URL}/photos`, {
       method: "POST",
       headers: {
-        "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+        "x-tenant-id": getTenantId(),
         Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
       },
       body: formData,
@@ -263,7 +265,7 @@ export const deleteMenuImage = async (photoId) => {
     const response = await fetch(`${ADMIN_BASE_URL}/photos/${photoId}`, {
       method: "DELETE",
       headers: {
-        "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+        "x-tenant-id": getTenantId(),
         Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
       },
     });
@@ -294,7 +296,7 @@ export const setPrimaryImage = async (photoId) => {
     const response = await fetch(`${ADMIN_BASE_URL}/photos/${photoId}`, {
       method: "PATCH",
       headers: {
-        "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+        "x-tenant-id": getTenantId(),
         Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
       },
     });
@@ -328,7 +330,7 @@ export const getPrimaryImageFromAPI = async (dishId) => {
       {
         method: "GET",
         headers: {
-          "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+          "x-tenant-id": getTenantId(),
           Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
         },
       }
@@ -357,7 +359,7 @@ export const attachModifierGroups = async (menuId, modifierGroupIds) => {
   try {
     const response = await fetch(`${BASE_URL}/${menuId}/modifier-groups`, {
       method: "POST",
-      headers: HEADERS,
+      headers: getHeaders(),
       body: JSON.stringify({ modifierGroupIds }),
     });
 
@@ -383,7 +385,7 @@ export const updateMenuItemStatus = async (menuId, isAvailable) => {
   try {
     const response = await fetch(`${BASE_URL}/${menuId}`, {
       method: "PUT",
-      headers: HEADERS,
+      headers: getHeaders(),
       body: JSON.stringify({ isAvailable }),
     });
 
@@ -408,7 +410,7 @@ export const deleteMenuItemPermanent = async (menuId) => {
   try {
     const response = await fetch(`${BASE_URL}/${menuId}`, {
       method: "DELETE",
-      headers: HEADERS,
+      headers: getHeaders(),
     });
 
     const result = await response.json();
@@ -439,7 +441,7 @@ export const getPhotosByDishId = async (dishId) => {
     const response = await fetch(`${ADMIN_BASE_URL}/photos?dishId=${dishId}`, {
       method: "GET",
       headers: {
-        "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+        "x-tenant-id": getTenantId(),
         Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
       },
     });

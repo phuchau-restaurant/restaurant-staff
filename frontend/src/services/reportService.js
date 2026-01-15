@@ -1,14 +1,16 @@
+import { getTenantId } from "../utils/auth";
+
 /**
  * Report Service - API calls cho báo cáo thống kê
  * Base: /api/report
  */
 
 const BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/report`;
-const HEADERS = {
+const getHeaders = () => ({
   "Content-Type": "application/json",
-  "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+  "x-tenant-id": getTenantId(),
   Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-};
+});
 
 // ==================== MOCK DATA GENERATORS ====================
 // Sử dụng mock data để test UI khi backend chưa có đủ dữ liệu
@@ -158,7 +160,7 @@ export const fetchDashboardSummary = async (options = {}) => {
     const url = `${BASE_URL}/summary${
       queryParams.toString() ? `?${queryParams.toString()}` : ""
     }`;
-    const response = await fetch(url, { headers: HEADERS });
+    const response = await fetch(url, { headers: getHeaders() });
     const result = await response.json();
     if (result.success) return result.data;
     throw new Error(result.message);
@@ -180,7 +182,7 @@ export const fetchRevenueByPeriod = async (period = "week") => {
     );
   try {
     const response = await fetch(`${BASE_URL}/revenue?period=${period}`, {
-      headers: HEADERS,
+      headers: getHeaders(),
     });
     const result = await response.json();
     if (result.success) return result.data;
@@ -205,7 +207,7 @@ export const fetchRevenueByDateRange = async (from, to) => {
   try {
     const response = await fetch(
       `${BASE_URL}/revenue/range?from=${from}&to=${to}`,
-      { headers: HEADERS }
+      { headers: getHeaders() }
     );
     const result = await response.json();
     if (result.success) return result.data;
@@ -228,7 +230,7 @@ export const fetchBestSellers = async (limit = 5) => {
     );
   try {
     const response = await fetch(`${BASE_URL}/best-sellers?limit=${limit}`, {
-      headers: HEADERS,
+      headers: getHeaders(),
     });
     const result = await response.json();
     if (result.success) return result.data;
@@ -250,7 +252,7 @@ export const fetchPeakHours = async () => {
     );
   try {
     const response = await fetch(`${BASE_URL}/peak-hours`, {
-      headers: HEADERS,
+      headers: getHeaders(),
     });
     const result = await response.json();
     if (result.success) return result.data;
