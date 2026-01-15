@@ -18,7 +18,7 @@ export class ReportRepository {
       .from("orders")
       .select("created_at, total_amount, status")
       .eq("tenant_id", tenantId)
-      .eq("status", "Completed")
+      .eq("status", "Paid")
       .gte("created_at", fromDate.toISOString())
       .lte("created_at", toDate.toISOString())
       .order("created_at", { ascending: true });
@@ -56,7 +56,7 @@ export class ReportRepository {
       `
       )
       .eq("orders.tenant_id", tenantId)
-      .eq("orders.status", "Completed");
+      .eq("orders.status", "Paid");
 
     if (fromDate) {
       query = query.gte("orders.created_at", fromDate.toISOString());
@@ -122,7 +122,7 @@ export class ReportRepository {
     };
 
     orders.forEach((order) => {
-      if (order.status === "Completed") {
+      if (order.status === "Paid") {
         summary.completedOrders++;
         summary.todayRevenue += order.total_amount || 0;
       } else if (order.status === "Pending") {
@@ -145,7 +145,7 @@ export class ReportRepository {
       .from("orders")
       .select("total_amount")
       .eq("tenant_id", tenantId)
-      .eq("status", "Completed");
+      .eq("status", "Paid");
 
     if (error)
       throw new Error(`[Report] GetTotalRevenue failed: ${error.message}`);
@@ -203,7 +203,7 @@ export class ReportRepository {
       .from("orders")
       .select("total_amount")
       .eq("tenant_id", tenantId)
-      .eq("status", "Completed")
+      .eq("status", "Paid")
       .gte("created_at", fromDate.toISOString())
       .lte("created_at", toDate.toISOString());
 
