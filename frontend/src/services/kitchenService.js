@@ -12,9 +12,9 @@ const getHeaders = () => ({
 
 /**
  * Lấy danh sách đơn hàng cho bếp
- * GET /api/orders/kitchen?status=...&categoryId=...&itemStatus=...
- * @param {Object} filters - { status, categoryId, itemStatus }
- * @returns {Promise<Array>} Danh sách đơn hàng
+ * GET /api/orders/kitchen?status=...&categoryId=...&itemStatus=...&pageNumber=...&pageSize=...
+ * @param {Object} filters - { status, categoryId, itemStatus, pageNumber, pageSize }
+ * @returns {Promise<Array|Object>} Danh sách đơn hàng hoặc object có pagination
  */
 export const fetchKitchenOrders = async (filters = {}) => {
   try {
@@ -32,6 +32,12 @@ export const fetchKitchenOrders = async (filters = {}) => {
       params.append("itemStatus", filters.itemStatus);
     }
 
+    // Thêm pagination params nếu có
+    if (filters.pageNumber && filters.pageSize) {
+      params.append("pageNumber", filters.pageNumber);
+      params.append("pageSize", filters.pageSize);
+    }
+
     const queryString = params.toString();
     const url = `${BASE_URL}/kitchen${queryString ? `?${queryString}` : ""}`;
 
@@ -41,12 +47,19 @@ export const fetchKitchenOrders = async (filters = {}) => {
     const result = await response.json();
 
     if (result.success) {
+      // Nếu có pagination trong response, trả về cả data và pagination
+      if (result.pagination) {
+        return {
+          data: result.data || [],
+          pagination: result.pagination
+        };
+      }
       return result.data || [];
     }
-    return [];
+    return filters.pageNumber ? { data: [], pagination: null } : [];
   } catch (error) {
     console.error("Error fetching kitchen orders:", error);
-    return [];
+    return filters.pageNumber ? { data: [], pagination: null } : [];
   }
 };
 

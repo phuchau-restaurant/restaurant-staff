@@ -34,6 +34,16 @@ export const emitOrderUpdated = (tenantId, orderData) => {
       emitToKitchen(tenantId, "kitchen:new_order", orderData);
     }
 
+    // Gọi nhân viên phục vụ khi đơn chuyển sang Served
+    if (orderData.status === "Served") {
+      emitWaiterCall(tenantId, {
+        orderId: orderData.orderId,
+        tableNumber: orderData.tableNumber,
+        waiterId: orderData.waiterId, // Include waiterId for targeted notification
+        message: `Bàn ${orderData.tableNumber} - Đơn #${orderData.orderId} đã sẵn sàng!`,
+      });
+    }
+
     // If order is completed or cancelled, notify admins
     if (orderData.status === "Completed" || orderData.status === "Cancelled") {
       emitToAdmin(tenantId, "admin:order_status_changed", orderData);
@@ -42,6 +52,23 @@ export const emitOrderUpdated = (tenantId, orderData) => {
     console.log(`📡 Emitted order:updated for order ${orderData.orderId} (status: ${orderData.status})`);
   } catch (error) {
     console.error("Failed to emit order:updated event:", error);
+  }
+};
+
+/**
+ * Emit waiter call event (when kitchen calls waiter for pickup)
+ * Only the waiter assigned to this order should receive the notification
+ */
+export const emitWaiterCall = (tenantId, callData) => {
+  try {
+    // Include waiterId so frontend can filter to only notify the assigned waiter
+    emitToTenant(tenantId, "waiter:call", {
+      ...callData,
+      waiterId: callData.waiterId, // Ensure waiterId is included
+    });
+    console.log(`📡 Emitted waiter:call for order ${callData.orderId} (waiter: ${callData.waiterId})`);
+  } catch (error) {
+    console.error("Failed to emit waiter:call event:", error);
   }
 };
 

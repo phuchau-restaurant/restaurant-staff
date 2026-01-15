@@ -144,3 +144,32 @@ export const useAdminSocket = (callbacks = {}) => {
 
   return { isConnected };
 };
+
+/**
+ * Custom hook to listen for waiter-specific socket events
+ */
+export const useWaiterSocket = (callbacks = {}) => {
+  const { socket, isConnected } = useSocket();
+
+  const { onWaiterCall } = callbacks;
+
+  useEffect(() => {
+    if (!socket || !isConnected) return;
+
+    console.log("👂 Setting up waiter socket listeners");
+
+    if (onWaiterCall) {
+      socket.on("waiter:call", (data) => {
+        console.log("📨 Received waiter:call event:", data);
+        onWaiterCall(data);
+      });
+    }
+
+    return () => {
+      console.log("🧹 Cleaning up waiter socket listeners");
+      socket.off("waiter:call");
+    };
+  }, [socket, isConnected, onWaiterCall]);
+
+  return { isConnected };
+};

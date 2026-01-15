@@ -8,7 +8,6 @@ import OrderListView from "../../components/orders/OrderListView";
 import OrderForm from "../../components/orders/OrderForm";
 import OrderDetailViewModal from "../../components/orders/OrderDetailViewModal";
 import AlertModal from "../../components/Modal/AlertModal";
-import ConfirmModal from "../../components/Modal/ConfirmModal";
 import LoadingOverlay from "../../components/SpinnerLoad/LoadingOverlay";
 import Pagination from "../../components/SpinnerLoad/Pagination";
 
@@ -85,8 +84,9 @@ const OrderManagementContent = () => {
     title: "",
     message: "",
     onConfirm: null,
-    type: "danger",
+    type: "warning",
     confirmText: "Xác nhận",
+    items: [], // Danh sách items để hiển thị
   });
 
   // Prep time configuration (có thể lấy từ API settings sau)
@@ -164,19 +164,55 @@ const OrderManagementContent = () => {
     fetchInitialData();
   }, []);
 
-  // Filter và sort phía client
+  // Fetch orders khi pagination thay đổi
+  useEffect(() => {
+    fetchOrdersWithPagination();
+  }, [currentPage, itemsPerPage, statusFilter]);
+
+  // Filter và sort phía client (chỉ áp dụng cho search và sort)
   useEffect(() => {
     const filtered = filterAndSortOrders(
       orders,
       searchTerm,
-      statusFilter,
+      "",  // Bỏ statusFilter vì đã filter ở backend
       sortBy
     );
     setFilteredOrders(filtered);
-    setCurrentPage(1); // Reset to first page when filter changes
-  }, [orders, searchTerm, sortBy, statusFilter]);
+  }, [orders, searchTerm, sortBy]);
 
   // ==================== API CALLS ====================
+
+  /**
+   * Fetch orders với pagination
+   */
+  const fetchOrdersWithPagination = async () => {
+    try {
+      const result = await orderService.fetchOrders({
+        status: statusFilter,
+        pageNumber: currentPage,
+        pageSize: itemsPerPage,
+      });
+
+      // Kiểm tra nếu có pagination (backend trả về object)
+      if (result.pagination) {
+        const ordersWithDetails = result.data.map((order) => ({
+          ...order,
+          items: order.items || [],
+        }));
+        setOrders(ordersWithDetails);
+        // Pagination info đã có trong result.pagination
+      } else {
+        // Fallback: không có pagination
+        const ordersWithDetails = result.map((order) => ({
+          ...order,
+          items: order.items || [],
+        }));
+        setOrders(ordersWithDetails);
+      }
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    }
+  };
 
   /**
    * Fetch tất cả dữ liệu ban đầu
@@ -184,32 +220,23 @@ const OrderManagementContent = () => {
   const fetchInitialData = async () => {
     try {
       setInitialLoading(true);
-      const [ordersData, tablesData, menuData, modifierData] =
-        await Promise.all([
-          orderService.fetchOrders(),
-          tableService.fetchTables(),
-          menuService.fetchMenuItems(),
-          modifierService.fetchModifierGroups(),
-        ]);
+      const [tablesData, menuData, modifierData] = await Promise.all([
+        tableService.fetchTables(),
+        menuService.fetchMenuItems(),
+        modifierService.fetchModifierGroups(),
+      ]);
 
-      // Process orders - chỉ lấy thông tin cơ bản (không load dishName)
-      // Khi click vào order để edit thì mới load đầy đủ thông tin
-      const ordersWithDetails = ordersData.map((order) => ({
-        ...order,
-        items: order.items || [],
-      }));
-
-      setOrders(ordersWithDetails);
-      setTables(Array.isArray(tablesData) ? tablesData : tablesData.data || []);
-
-      // Process menu items
-      const menuList = Array.isArray(menuData) ? menuData : menuData.data || [];
-      setMenuItems(menuList);
-
-      setModifierGroups(modifierData.data || modifierData || []);
+      // Orders sẽ được fetch riêng với pagination
+      setTables(tablesData);
+      setMenuItems(menuData);
+      setModifierGroups(modifierData);
     } catch (error) {
-      console.error("Fetch initial data error:", error);
-      showAlert("Lỗi", MESSAGES.FETCH_ERROR, "error");
+      console.error("Error fetching initial data:", error);
+      showAlert(
+        "error",
+        "Lỗi tải dữ liệu",
+        "Không thể tải dữ liệu ban đầu. Vui lòng thử lại."
+      );
     } finally {
       setInitialLoading(false);
     }
@@ -337,7 +364,7 @@ const OrderManagementContent = () => {
    */
   const handleStatusChange = async (order, newStatus) => {
     const items = order.items || [];
-
+    
     // Xác định logic kiểm tra dựa trên trạng thái mới
     let unfinishedItems = [];
     let targetItemStatus = "";
@@ -389,25 +416,17 @@ const OrderManagementContent = () => {
     }
 
     if (unfinishedItems.length > 0) {
-      // Tạo danh sách món để hiển thị
-      const itemsText = unfinishedItems
-        .map((item) => `- ${item.dishName} (x${item.quantity})`)
-        .join("\n");
-
       // Hiển confirm modal với thông tin chi tiết
       setConfirmDialog({
         isOpen: true,
         title: "Xác nhận chuyển trạng thái",
-        message: `${warningMessage}\n\n${itemsText}\n\nCác món này sẽ được ${actionDescription} khi chuyển đơn hàng sang ${ORDER_STATUS_LABELS[newStatus]}.\n\nBạn có chắc chắn muốn tiếp tục?`,
+        message: `${warningMessage}\n\nCác món này sẽ được ${actionDescription} khi chuyển đơn hàng sang ${ORDER_STATUS_LABELS[newStatus]}.\n\nBạn có chắc chắn muốn tiếp tục?`,
         type: "warning",
         confirmText: "Xác nhận",
+        items: unfinishedItems,
         onConfirm: async () => {
-          await executeStatusChange(
-            order,
-            newStatus,
-            unfinishedItems,
-            targetItemStatus
-          );
+          setConfirmDialog({ isOpen: false, title: "", message: "", onConfirm: null, items: [] });
+          await executeStatusChange(order, newStatus, unfinishedItems, targetItemStatus);
         },
       });
     } else {
@@ -423,12 +442,7 @@ const OrderManagementContent = () => {
    * @param {Array|null} itemsToUpdate - Danh sách items cần update (null nếu không cần)
    * @param {string|null} targetItemStatus - Trạng thái đích của items (null nếu không cần)
    */
-  const executeStatusChange = async (
-    order,
-    newStatus,
-    itemsToUpdate,
-    targetItemStatus
-  ) => {
+  const executeStatusChange = async (order, newStatus, itemsToUpdate, targetItemStatus) => {
     try {
       // Nếu cần update items trước
       if (itemsToUpdate && itemsToUpdate.length > 0 && targetItemStatus) {
@@ -492,9 +506,7 @@ const OrderManagementContent = () => {
     setIsLoadingForm(true);
     try {
       // API trả về { ...order, items } trực tiếp với items đã bao gồm modifiers
-      const orderWithDetails = await orderService.fetchOrderByIdWithDetails(
-        order.id
-      );
+      const orderWithDetails = await orderService.fetchOrderByIdWithDetails(order.id);
 
       setViewingOrder(orderWithDetails);
       setShowDetailModal(true);
@@ -515,10 +527,11 @@ const OrderManagementContent = () => {
       isOpen: true,
       title: "Xác nhận hủy đơn hàng",
       message: `Bạn có chắc chắn muốn hủy (vô hiệu hóa) đơn hàng #${order.id}?`,
-      type: "danger",
+      items: [],
       confirmText: "Xác nhận hủy",
       onConfirm: () => {
         handleDeleteOrder(order.id);
+        setConfirmDialog({ isOpen: false, title: "", message: "", onConfirm: null, items: [] });
       },
     });
   };
@@ -531,10 +544,11 @@ const OrderManagementContent = () => {
       isOpen: true,
       title: "Xác nhận khôi phục",
       message: `Bạn có chắc chắn muốn khôi phục đơn hàng #${order.id}?`,
-      type: "info",
+      items: [],
       confirmText: "Khôi phục",
       onConfirm: () => {
         handleRestoreOrder(order.id);
+        setConfirmDialog({ isOpen: false, title: "", message: "", onConfirm: null, items: [] });
       },
     });
   };
@@ -546,11 +560,12 @@ const OrderManagementContent = () => {
     setConfirmDialog({
       isOpen: true,
       title: "Xác nhận xóa vĩnh viễn",
-      message: `Bạn có chắc chắn muốn xóa vĩnh viễn đơn hàng #${order.id}?\n\nHành động này không thể hoàn tác!`,
-      type: "danger",
+      message: `Bạn có chắc chắn muốn xóa vĩnh viễn đơn hàng #${order.id}? Hành động này không thể hoàn tác!`,
+      items: [],
       confirmText: "Xóa vĩnh viễn",
       onConfirm: () => {
         handleDeleteOrderPermanent(order.id);
+        setConfirmDialog({ isOpen: false, title: "", message: "", onConfirm: null, items: [] });
       },
     });
   };
@@ -636,16 +651,14 @@ const OrderManagementContent = () => {
                 / {Math.ceil(filteredOrders.length / itemsPerPage) || 1}
                 {/* Socket connection indicator */}
                 <span
-                  className={`ml-3 inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${
-                    socketConnected
+                  className={`ml-3 inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${socketConnected
                       ? "bg-green-100 text-green-700"
                       : "bg-red-100 text-red-700"
-                  }`}
+                    }`}
                 >
                   <span
-                    className={`w-2 h-2 rounded-full ${
-                      socketConnected ? "bg-green-500" : "bg-red-500"
-                    }`}
+                    className={`w-2 h-2 rounded-full ${socketConnected ? "bg-green-500" : "bg-red-500"
+                      }`}
                   ></span>
                   {socketConnected ? "Live" : "Offline"}
                 </span>
@@ -845,16 +858,61 @@ const OrderManagementContent = () => {
           type={alertModal.type}
         />
 
-        {/* Confirm Modal */}
-        <ConfirmModal
-          isOpen={confirmDialog.isOpen}
-          onClose={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
-          onConfirm={confirmDialog.onConfirm}
-          title={confirmDialog.title}
-          message={confirmDialog.message}
-          type={confirmDialog.type}
-          confirmText={confirmDialog.confirmText}
-        />
+        {/* Confirm Modal với danh sách items */}
+        {confirmDialog.isOpen && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+            <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden">
+              {/* Header */}
+              <div className="bg-amber-50 border-b border-amber-200 p-5">
+                <h3 className="text-xl font-bold text-amber-800 flex items-center gap-2">
+                  <AlertTriangle className="w-6 h-6 text-amber-600" />
+                  {confirmDialog.title}
+                </h3>
+              </div>
+
+              {/* Content */}
+              <div className="p-5">
+                {/* Hiển thị danh sách items nếu có */}
+                {confirmDialog.items && confirmDialog.items.length > 0 && (
+                  <>
+                    <p className="text-gray-700 mb-4">
+                      Đơn hàng có <span className="font-bold text-red-600">{confirmDialog.items.length} món</span> cần xử lý:
+                    </p>
+
+                    <div className="bg-gray-50 rounded-lg p-3 mb-4 max-h-40 overflow-y-auto">
+                      {confirmDialog.items.map((item, idx) => (
+                        <div key={item.id || idx} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                          <span className="font-medium text-gray-800">{item.name || item.dishName}</span>
+                          <span className="text-orange-600 font-bold">x{item.quantity}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                <p className="text-gray-600 text-sm whitespace-pre-line">
+                  {confirmDialog.message}
+                </p>
+              </div>
+
+              {/* Actions */}
+              <div className="p-5 bg-gray-50 border-t border-gray-200 flex gap-3">
+                <button
+                  onClick={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
+                  className="flex-1 py-2.5 px-4 rounded-lg font-semibold border-2 border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  onClick={confirmDialog.onConfirm}
+                  className="flex-1 py-2.5 px-4 rounded-lg font-semibold bg-amber-500 text-white hover:bg-amber-600 transition-colors"
+                >
+                  {confirmDialog.confirmText || "Xác nhận"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -465,9 +465,10 @@ class OrdersService {
   }
 
   /**
-   * Lấy danh sách đơn hàng với bộ lọc linh hoạt
+   * Lấy danh sách đơn hàng với bộ lọc linh hoạt (hỗ trợ phân trang optional)
    * @param {string} tenantId - ID tenant (bắt buộc)
-   * @param {Object} filters - Bộ lọc: { status, waiterId, includeTableName }
+   * @param {Object} filters - Bộ lọc: { status, waiterId, includeTableName, pageNumber, pageSize }
+   * @returns {Promise<Array|Object>} Mảng orders hoặc { data, pagination } nếu có phân trang
    */
   async getAllOrders(tenantId, filters = {}) {
     if (!tenantId) throw new Error("Tenant ID is required");
@@ -487,8 +488,28 @@ class OrdersService {
       repoFilters.waiter_id = filters.waiterId;
     }
 
+    // Kiểm tra có yêu cầu pagination không
+    const usePagination = filters.pageNumber && filters.pageSize;
+    
+    let orders;
+    let paginationInfo = null;
 
-    const orders = await this.ordersRepo.getAll(repoFilters);
+    if (usePagination) {
+      const result = await this.ordersRepo.getAllWithPagination(
+        repoFilters, 
+        parseInt(filters.pageNumber), 
+        parseInt(filters.pageSize)
+      );
+      orders = result.data;
+      paginationInfo = {
+        totalCount: result.totalCount,
+        totalPages: result.totalPages,
+        currentPage: result.currentPage,
+        pageSize: result.pageSize
+      };
+    } else {
+      orders = await this.ordersRepo.getAll(repoFilters);
+    }
 
     // Enrich với tên bàn nếu cần
     if (orders && orders.length > 0 && filters.includeTableName !== false) {
@@ -499,35 +520,67 @@ class OrdersService {
         tableMap[table.id] = table.tableNumber;
       });
 
-      return orders.map(order => ({
+      orders = orders.map(order => ({
         ...order,
         tableNumber: tableMap[order.tableId] || order.tableId
       }));
+    }
+
+    // Trả về format khác nhau tùy theo có pagination hay không
+    if (usePagination) {
+      return {
+        data: orders,
+        pagination: paginationInfo
+      };
     }
 
     return orders;
   }
 
   /**
-   * API cho Bếp/Bar
+   * API cho Bếp/Bar (hỗ trợ phân trang optional)
    * @param {string} tenantId
    * @param {string} orderStatus - Trạng thái đơn (VD: pending)
+   * @param {string} categoryId - Lọc theo categoryId
    * @param {string} itemStatus - (Optional) Trạng thái món (VD: pending, ready)
+   * @param {Object} pagination - { pageNumber, pageSize } (optional)
+   * @returns {Promise<Array|Object>} Mảng orders hoặc { data, pagination } nếu có phân trang
    */
   async getKitchenOrders(
     tenantId,
     orderStatus,
     categoryId = null,
-    itemStatus = null
+    itemStatus = null,
+    pagination = null
   ) {
-    // Lấy tất cả đơn TRỪ Unsubmit (Kitchen chỉ thấy đơn đã được waiter xác nhận)
-    let orders = await this.ordersRepo.getAll({
-      tenant_id: tenantId,
-      status: orderStatus, //filter order by status
-    });
+    // Kiểm tra có yêu cầu pagination không
+    const usePagination = pagination && pagination.pageNumber && pagination.pageSize;
+    
+    let orders;
+    let paginationInfo = null;
 
-    // Kitchen LUÔN lọc bỏ đơn Unsubmit (không giống waiter)
-    // Bếp chỉ thấy đơn đã được waiter xác nhận gửi
+    if (usePagination) {
+      const result = await this.ordersRepo.getAllWithPagination(
+        { tenant_id: tenantId, status: orderStatus },
+        parseInt(pagination.pageNumber),
+        parseInt(pagination.pageSize)
+      );
+      orders = result.data;
+      paginationInfo = {
+        totalCount: result.totalCount,
+        totalPages: result.totalPages,
+        currentPage: result.currentPage,
+        pageSize: result.pageSize
+      };
+    } else {
+      // Lấy tất cả đơn TRỪ Unsubmit (Kitchen chỉ thấy đơn đã được waiter xác nhận)
+      orders = await this.ordersRepo.getAll({
+        tenant_id: tenantId,
+        status: orderStatus,
+      });
+    }
+
+    // Kitchen LUÔN lọc bỏ đơn Unsubmit
     orders = orders.filter(o => o.status !== OrdersStatus.UNSUBMIT);
 
     if (!orders || orders.length === 0) return [];
@@ -620,10 +673,19 @@ class OrdersService {
           note: order.note || "...",
           createdAt: order.createdAt,
           prepTimeOrder: order.prepTimeOrder, // Thời gian chuẩn bị đơn hàng (phút)
+          waiterId: order.waiterId, // ID nhân viên phục vụ để filter thông báo
           dishes: visibleDishes, // Chỉ trả về các món đã lọc
         };
       })
       .filter((item) => item !== null); // Loại bỏ các đơn rỗng
+
+    // Trả về format khác nhau tùy theo có pagination hay không
+    if (usePagination) {
+      return {
+        data: result,
+        pagination: paginationInfo
+      };
+    }
 
     return result;
   }

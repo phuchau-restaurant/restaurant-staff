@@ -20,7 +20,7 @@ const OrderDetailModal = ({
   // Get database status badge for the order
   const dbStatus = order.dbStatus || order.status || "Pending";
   const orderStatusBadge = STATUS_BADGE[dbStatus] || STATUS_BADGE["Pending"];
-  
+
   // Get prep time from order
   const prepTime = order.prepTimeOrder || order.prepTime;
   const isLate = prepTime ? elapsed >= prepTime : false;
@@ -109,7 +109,7 @@ const OrderDetailModal = ({
 
   return (
     <div
-      className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4"
+      className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-40 p-4"
       onClick={onClose}
     >
       <div
@@ -135,7 +135,7 @@ const OrderDetailModal = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header - Draggable */}
-        <div 
+        <div
           className="cursor-move bg-white border-b border-gray-100 p-6 flex items-center justify-between shrink-0"
           onMouseDown={onDragStart}
           style={{ userSelect: "none" }}
@@ -162,11 +162,7 @@ const OrderDetailModal = ({
               <div className="flex items-center gap-4 text-gray-500 font-medium">
                 <div className="flex items-center gap-1.5">
                   <Clock size={16} />
-                  <span
-                    className={isLate ? "text-red-500 font-bold" : ""}
-                  >
-                    {elapsed}'{prepTime ? `/${prepTime}'` : ''}
-                  </span>
+                  <span>{prepTime ? `${prepTime}'` : '--'}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <User size={16} />
@@ -258,72 +254,69 @@ const OrderDetailModal = ({
                             </span>
                           </div>
                         </div>
-                        
+
                         {/* Action Buttons */}
                         <div className="flex items-center gap-2 flex-shrink-0">
-                          {/* Action Buttons for Individual Item */}
-                          {!isItemCompleted && !isItemCancelled && (
-                            <>
-                              {/* Complete Button */}
-                              <button
-                                onClick={() => handleCompleteItem(order.id, item.id)}
-                                className="w-10 h-10 rounded-full flex items-center justify-center transition-all bg-green-50 border-2 border-green-500 text-green-600 hover:bg-green-100 scale-100 hover:scale-110 active:scale-95"
-                                title="Hoàn thành món"
-                              >
-                                <CheckCircle2 size={20} strokeWidth={2.5} />
-                              </button>
-
-                              {/* Cancel Button */}
-                              {handleCancelItem && (
-                                <button
-                                  onClick={() => handleCancelItem(order.id, item.id)}
-                                  className="w-10 h-10 rounded-full flex items-center justify-center transition-all bg-red-50 border-2 border-red-500 text-red-600 hover:bg-red-100 scale-100 hover:scale-110 active:scale-95"
-                                  title="Hủy món"
-                                >
-                                  <XCircle size={20} strokeWidth={2.5} />
-                                </button>
-                              )}
-                            </>
-                          )}
-
-                          {/* Status indicator for completed items */}
-                          {isItemCompleted && (
-                            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-green-500 text-white">
-                              <CheckCircle2 size={20} strokeWidth={2.5} />
-                            </div>
-                          )}
-                          
-                          {/* Status indicator for cancelled items */}
-                          {isItemCancelled && (
-                            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-400 text-white">
-                              <XCircle size={20} strokeWidth={2.5} />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Modifiers Grid - matching card/list view style */}
-                      {item.modifiers && item.modifiers.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mb-2">
-                          {item.modifiers.map((mod, idx) => (
-                            <span
-                              key={idx}
-                              className="text-xs font-semibold text-green-700 bg-green-100 px-2 py-1 rounded-md"
+                          {/* Complete Button - Only show when kitchen has claimed the order (not Approved status) */}
+                          {!isItemCompleted && !isItemCancelled && order.dbStatus !== "Approved" && (
+                            <button
+                              onClick={() => handleCompleteItem(order.id, item.id)}
+                              className="w-10 h-10 rounded-full flex items-center justify-center transition-all bg-green-50 border-2 border-green-500 text-green-600 hover:bg-green-100 scale-100 hover:scale-110 active:scale-95"
+                              title="Hoàn thành món"
                             >
-                              + {mod.optionName}
-                            </span>
-                          ))}
-                        </div>
-                      )}
+                              <CheckCircle2 size={20} strokeWidth={2.5} />
+                            </button>
+                          )}
 
-                      {/* Notes - Yellow with StickyNote icon */}
-                      {item.note && (
-                        <div className="text-sm font-semibold text-amber-700 bg-amber-100 px-2 py-1 rounded-md inline-flex items-center gap-1.5">
-                          <StickyNote size={14} />
-                          {item.note}
+                          {/* Cancel Button - Always show when item is not complete/cancelled */}
+                          {!isItemCompleted && !isItemCancelled && handleCancelItem && (
+                            <button
+                              onClick={() => handleCancelItem(order.id, item.id)}
+                              className="w-10 h-10 rounded-full flex items-center justify-center transition-all bg-red-50 border-2 border-red-500 text-red-600 hover:bg-red-100 scale-100 hover:scale-110 active:scale-95"
+                              title="Hủy món"
+                            >
+                              <XCircle size={20} strokeWidth={2.5} />
+                            </button>
+                          )}
                         </div>
-                      )}
+
+                        {/* Status indicator for completed items */}
+                        {isItemCompleted && (
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center bg-green-500 text-white">
+                            <CheckCircle2 size={20} strokeWidth={2.5} />
+                          </div>
+                        )}
+
+                        {/* Status indicator for cancelled items */}
+                        {isItemCancelled && (
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-400 text-white">
+                            <XCircle size={20} strokeWidth={2.5} />
+                          </div>
+                        )}
+                      </div>
                     </div>
+
+                    {/* Modifiers Grid - matching card/list view style */}
+                    {item.modifiers && item.modifiers.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mb-2">
+                        {item.modifiers.map((mod, idx) => (
+                          <span
+                            key={idx}
+                            className="text-xs font-semibold text-green-700 bg-green-100 px-2 py-1 rounded-md"
+                          >
+                            + {mod.optionName}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Notes - Yellow with StickyNote icon */}
+                    {item.note && (
+                      <div className="text-sm font-semibold text-amber-700 bg-amber-100 px-2 py-1 rounded-md inline-flex items-center gap-1.5">
+                        <StickyNote size={14} />
+                        {item.note}
+                      </div>
+                    )}
                   </div>
                 );
               })}

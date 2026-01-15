@@ -15,6 +15,8 @@ const KitchenHeader = ({
   setSearchOrderId,
   statusOptions,
   categoryOptions,
+  sortBy,
+  setSortBy,
   user,
   onLogout,
   onUserUpdate,
@@ -35,8 +37,8 @@ const KitchenHeader = ({
             </div>
           </div>
 
-          {/* Filters + View Mode Toggle */}
-          <div className="flex-1 max-w-[800px]">
+          {/* Filters + View Mode Toggle + Sort */}
+          <div className="flex-1 max-w-[1000px]">
             <FilterBar
               filterStation={filterStation}
               setFilterStation={setFilterStation}
@@ -48,6 +50,8 @@ const KitchenHeader = ({
               categoryOptions={categoryOptions}
               viewMode={viewMode}
               setViewMode={setViewMode}
+              sortBy={sortBy}
+              setSortBy={setSortBy}
             />
           </div>
 
@@ -64,4 +68,3 @@ const KitchenHeader = ({
 };
 
 export default KitchenHeader;
-

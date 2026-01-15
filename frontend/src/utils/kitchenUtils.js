@@ -21,6 +21,7 @@ export const mapKitchenOrderFromApi = (order) => {
     status: dbStatus, // Dùng trực tiếp DB status để đồng bộ với filter
     dbStatus: dbStatus, // Giữ dbStatus riêng cho button logic
     prepTimeOrder: order.prepTimeOrder,
+    waiterId: order.waiterId, // Thêm waiterId để dùng cho filter thông báo
     items: allDishes.map((dish) => ({
       id: dish.order_detail_id, // ✅ SỬA: Dùng order_detail_id làm ID (unique), KHÔNG dùng dishId (có thể trùng)
       order_detail_id: dish.order_detail_id,

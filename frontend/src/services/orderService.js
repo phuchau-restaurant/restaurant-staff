@@ -12,8 +12,8 @@ const getHeaders = () => ({
 
 /**
  * Fetch danh sách tất cả đơn hàng
- * @param {Object} filters - { status } (optional)
- * @returns {Promise<Array>} Danh sách đơn hàng
+ * @param {Object} filters - { status, pageNumber, pageSize } (optional)
+ * @returns {Promise<Array|Object>} Danh sách đơn hàng hoặc object có pagination
  */
 export const fetchOrders = async (filters = {}) => {
   try {
@@ -21,6 +21,12 @@ export const fetchOrders = async (filters = {}) => {
 
     if (filters.status) {
       queryParams.append("status", filters.status);
+    }
+
+    // Thêm pagination params nếu có
+    if (filters.pageNumber && filters.pageSize) {
+      queryParams.append("pageNumber", filters.pageNumber);
+      queryParams.append("pageSize", filters.pageSize);
     }
 
     const url = `${BASE_URL}${queryParams.toString() ? `?${queryParams.toString()}` : ""
@@ -33,12 +39,19 @@ export const fetchOrders = async (filters = {}) => {
     const result = await response.json();
 
     if (result.success) {
+      // Nếu có pagination trong response, trả về cả data và pagination
+      if (result.pagination) {
+        return {
+          data: result.data || [],
+          pagination: result.pagination
+        };
+      }
       return result.data || [];
     }
-    return [];
+    return filters.pageNumber ? { data: [], pagination: null } : [];
   } catch (error) {
     console.error("Fetch orders error:", error);
-    return [];
+    return filters.pageNumber ? { data: [], pagination: null } : [];
   }
 };
 
@@ -143,6 +156,20 @@ export const deleteOrder = async (orderId) => {
       method: "DELETE",
       headers: getHeaders(),
     });
+
+    // Handle server errors (5xx)
+    if (response.status >= 500) {
+      throw new Error("Lỗi server. Vui lòng thử lại sau.");
+    }
+
+    // Check content-type to avoid parsing HTML as JSON
+    const contentType = response.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      if (!response.ok) {
+        throw new Error("Lỗi server. Vui lòng thử lại sau.");
+      }
+      return; // Success but no JSON response
+    }
 
     const result = await response.json();
 
@@ -284,6 +311,20 @@ export const deleteOrderPermanent = async (orderId) => {
       method: "DELETE",
       headers: getHeaders(),
     });
+
+    // Handle server errors (5xx)
+    if (response.status >= 500) {
+      throw new Error("Lỗi server. Vui lòng thử lại sau.");
+    }
+
+    // Check content-type to avoid parsing HTML as JSON
+    const contentType = response.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      if (!response.ok) {
+        throw new Error("Lỗi server. Vui lòng thử lại sau.");
+      }
+      return; // Success but no JSON response
+    }
 
     const result = await response.json();
 

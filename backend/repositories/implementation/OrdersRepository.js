@@ -34,6 +34,65 @@ export class OrdersRepository extends BaseRepository {
     return data.map(item => new Orders(item));
   }
 
+  /**
+   * Lấy danh sách đơn hàng có phân trang
+   * @param {Object} filters - { status, tenant_id, waiter_id }
+   * @param {number} pageNumber - Số trang (bắt đầu từ 1)
+   * @param {number} pageSize - Số items mỗi trang
+   * @returns {Promise<Object>} { data, totalCount, totalPages, currentPage, pageSize }
+   */
+  async getAllWithPagination(filters = {}, pageNumber = 1, pageSize = 10) {
+    // Query cho count
+    let countQuery = supabase.from(this.tableName).select("*", { count: "exact", head: true });
+
+    // Query cho data
+    let dataQuery = supabase.from(this.tableName).select("*");
+
+    // Apply filters cho cả 2 queries
+    const applyFilters = (query) => {
+      if (filters.status) {
+        query = query.eq('status', filters.status);
+      }
+      if (filters.tenant_id) {
+        query = query.eq('tenant_id', filters.tenant_id);
+      }
+      if (filters.waiter_id) {
+        query = query.eq('waiter_id', filters.waiter_id);
+      }
+      return query;
+    };
+
+    countQuery = applyFilters(countQuery);
+    dataQuery = applyFilters(dataQuery);
+
+    // Order và pagination
+    const from = (pageNumber - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    dataQuery = dataQuery
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    // Execute queries
+    const [{ count, error: countError }, { data, error: dataError }] = await Promise.all([
+      countQuery,
+      dataQuery
+    ]);
+
+    if (countError) throw new Error(`[Orders] Count failed: ${countError.message}`);
+    if (dataError) throw new Error(`[Orders] GetAll with pagination failed: ${dataError.message}`);
+
+    const totalPages = Math.ceil(count / pageSize);
+
+    return {
+      data: data.map(item => new Orders(item)),
+      totalCount: count,
+      totalPages,
+      currentPage: pageNumber,
+      pageSize
+    };
+  }
+
 
 
 
