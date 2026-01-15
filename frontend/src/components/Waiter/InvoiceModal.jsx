@@ -326,11 +326,11 @@ const InvoiceModal = ({
             document.body.removeChild(pdfContainer);
 
             const imgData = canvas.toDataURL('image/png');
-            
+
             // Tính toán kích thước PDF
             const imgWidth = 80; // mm
             const imgHeight = (canvas.height * imgWidth) / canvas.width;
-            
+
             const doc = new jsPDF({
                 orientation: "portrait",
                 unit: "mm",
@@ -510,7 +510,7 @@ const InvoiceModal = ({
                             <button
                                 onClick={handleConfirm}
                                 disabled={isConfirming}
-                                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 font-medium"
+                                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-50 hover:bg-green-100 text-green-700 border-2 border-green-600 rounded-lg transition-colors disabled:opacity-50 font-bold"
                             >
                                 {isConfirming ? (
                                     <>

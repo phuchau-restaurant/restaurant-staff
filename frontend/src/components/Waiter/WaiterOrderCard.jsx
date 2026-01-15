@@ -305,7 +305,7 @@ const WaiterOrderCard = ({
                 e.stopPropagation();
                 onPayment(order.id);
               }}
-              className="w-full flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white px-3 py-2 sm:px-4 sm:py-3 rounded-lg font-bold text-sm sm:text-base shadow-sm transition-all hover:shadow-md active:scale-[0.98]"
+              className="w-full flex items-center justify-center gap-2 bg-green-50 hover:bg-green-100 text-green-700 border-2 border-green-600 px-3 py-2 sm:px-4 sm:py-3 rounded-lg font-bold text-sm sm:text-base shadow-sm transition-all hover:shadow-md active:scale-[0.98]"
             >
               <CreditCard size={16} className="sm:w-5 sm:h-5" strokeWidth={2.5} />
               Thanh toán
