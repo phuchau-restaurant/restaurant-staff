@@ -78,7 +78,7 @@ const WaiterOrderCard = ({
       case "Cancelled":
         return { bg: "bg-red-50", border: "border-red-100", text: "text-red-600", badge: "bg-red-100 text-red-700" };
       case "Served":
-        return { bg: "bg-gray-50", border: "border-gray-100", text: "text-gray-500", badge: "bg-gray-100 text-gray-600" };
+        return { bg: "bg-purple-50", border: "border-purple-100", text: "text-purple-600", badge: "bg-purple-100 text-purple-700" };
       case "Ready":
         return { bg: "bg-green-50", border: "border-green-100", text: "text-green-600", badge: "bg-green-100 text-green-700" };
       case "Pending":

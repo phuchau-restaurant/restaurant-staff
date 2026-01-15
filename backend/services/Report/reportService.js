@@ -134,13 +134,79 @@ class ReportService {
   /**
    * Lấy thống kê tổng quan cho dashboard
    */
-  async getDashboardSummary(tenantId) {
-    const summary = await this.reportRepo.getDashboardSummary(tenantId);
-    const totalRevenue = await this.reportRepo.getTotalRevenue(tenantId);
+  async getDashboardSummary(tenantId, options = {}) {
+    const { period, from, to } = options;
+
+    // Tính toán dateRange dựa vào period hoặc from/to
+    let fromDate, toDate;
+    const now = new Date();
+
+    if (from && to) {
+      // Custom range
+      fromDate = new Date(from);
+      fromDate.setHours(0, 0, 0, 0);
+      toDate = new Date(to);
+      toDate.setHours(23, 59, 59, 999);
+    } else if (period) {
+      // Standard period
+      switch (period) {
+        case "day":
+          fromDate = new Date(now);
+          fromDate.setHours(0, 0, 0, 0);
+          toDate = new Date(now);
+          toDate.setHours(23, 59, 59, 999);
+          break;
+        case "week":
+          fromDate = new Date(now);
+          fromDate.setDate(now.getDate() - 6);
+          fromDate.setHours(0, 0, 0, 0);
+          toDate = new Date(now);
+          toDate.setHours(23, 59, 59, 999);
+          break;
+        case "month":
+          fromDate = new Date(now);
+          fromDate.setDate(now.getDate() - 29);
+          fromDate.setHours(0, 0, 0, 0);
+          toDate = new Date(now);
+          toDate.setHours(23, 59, 59, 999);
+          break;
+        case "year":
+          fromDate = new Date(now);
+          fromDate.setMonth(now.getMonth() - 11);
+          fromDate.setDate(1);
+          fromDate.setHours(0, 0, 0, 0);
+          toDate = new Date(now);
+          toDate.setHours(23, 59, 59, 999);
+          break;
+        default:
+          // Mặc định là hôm nay
+          fromDate = new Date(now);
+          fromDate.setHours(0, 0, 0, 0);
+          toDate = new Date(now);
+          toDate.setHours(23, 59, 59, 999);
+      }
+    } else {
+      // Không có period, mặc định hôm nay
+      fromDate = new Date(now);
+      fromDate.setHours(0, 0, 0, 0);
+      toDate = new Date(now);
+      toDate.setHours(23, 59, 59, 999);
+    }
+
+    const [summary, totalRevenue, userCounts, periodRevenue] =
+      await Promise.all([
+        this.reportRepo.getDashboardSummary(tenantId),
+        this.reportRepo.getTotalRevenue(tenantId),
+        this.reportRepo.getUserCountsByRole(tenantId),
+        this.reportRepo.getRevenueInRange(tenantId, fromDate, toDate),
+      ]);
 
     return {
       ...summary,
       totalRevenue,
+      periodRevenue, // Doanh thu trong khoảng thời gian chọn
+      staffCount: userCounts.staffCount,
+      customerCount: userCounts.customerCount,
     };
   }
 
@@ -193,8 +259,18 @@ class ReportService {
 
   _getYearLabels(fromDate) {
     const months = [
-      "T1", "T2", "T3", "T4", "T5", "T6",
-      "T7", "T8", "T9", "T10", "T11", "T12",
+      "T1",
+      "T2",
+      "T3",
+      "T4",
+      "T5",
+      "T6",
+      "T7",
+      "T8",
+      "T9",
+      "T10",
+      "T11",
+      "T12",
     ];
     const labels = [];
     for (let i = 0; i < 12; i++) {
@@ -218,9 +294,7 @@ class ReportService {
           break;
         case "day":
           // Số ngày từ fromDate
-          index = Math.floor(
-            (orderDate - fromDate) / (1000 * 60 * 60 * 24)
-          );
+          index = Math.floor((orderDate - fromDate) / (1000 * 60 * 60 * 24));
           break;
         case "month":
           // Số tháng từ fromDate
@@ -247,9 +321,9 @@ class ReportService {
       const d = new Date(order.created_at);
       const h = d.getHours();
       if (h >= 0 && h < 24) {
-        // Có thể đếm số đơn (orders) hoặc doanh thu. 
+        // Có thể đếm số đơn (orders) hoặc doanh thu.
         // Peak hours thường nói về lượng khách/đơn hàng.
-        values[h] += 1; 
+        values[h] += 1;
       }
     });
 

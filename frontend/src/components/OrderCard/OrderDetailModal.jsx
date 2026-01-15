@@ -305,18 +305,40 @@ const OrderDetailModal = ({
                           {isItemCompleted && (
                             <div className="w-10 h-10 rounded-full flex items-center justify-center bg-green-500 text-white">
                               <CheckCircle2 size={20} strokeWidth={2.5} />
-                            </div>
+                            </button>
                           )}
 
                           {/* Status indicator for cancelled items */}
                           {isItemCancelled && (
                             <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-400 text-white">
                               <XCircle size={20} strokeWidth={2.5} />
-                            </div>
+                            </button>
                           )}
                         </div>
                       </div>
                     </div>
+
+                    {/* Modifiers Grid - matching card/list view style */}
+                    {item.modifiers && item.modifiers.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mb-2">
+                        {item.modifiers.map((mod, idx) => (
+                          <span
+                            key={idx}
+                            className="text-xs font-semibold text-green-700 bg-green-100 px-2 py-1 rounded-md"
+                          >
+                            + {mod.optionName}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Notes - Yellow with StickyNote icon */}
+                    {item.note && (
+                      <div className="text-sm font-semibold text-amber-700 bg-amber-100 px-2 py-1 rounded-md inline-flex items-center gap-1.5">
+                        <StickyNote size={14} />
+                        {item.note}
+                      </div>
+                    )}
                   </div>
                 );
               })}

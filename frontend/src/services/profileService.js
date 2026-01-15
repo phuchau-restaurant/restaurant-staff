@@ -1,9 +1,11 @@
+import { getTenantId } from "../utils/auth";
+
 // frontend/src/services/profileService.js
 const BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/users`;
-const HEADERS = {
+const getHeaders = () => ({
     "Content-Type": "application/json",
-    "x-tenant-id": import.meta.env.VITE_TENANT_ID,
-};
+    "x-tenant-id": getTenantId(),
+});
 
 /**
  * Profile Service - API calls cho quản lý thông tin cá nhân
@@ -17,7 +19,7 @@ const HEADERS = {
 export const getProfile = async (userId) => {
     try {
         const response = await fetch(`${BASE_URL}/${userId}`, {
-            headers: HEADERS,
+            headers: getHeaders(),
         });
 
         const result = await response.json();
@@ -42,7 +44,7 @@ export const updateProfile = async (userId, profileData) => {
     try {
         const response = await fetch(`${BASE_URL}/${userId}`, {
             method: "PUT",
-            headers: HEADERS,
+            headers: getHeaders(),
             body: JSON.stringify(profileData),
         });
 
@@ -74,7 +76,7 @@ export const uploadAvatar = async (file) => {
             {
                 method: "POST",
                 headers: {
-                    "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+                    "x-tenant-id": getTenantId(),
                 },
                 body: formData,
             }

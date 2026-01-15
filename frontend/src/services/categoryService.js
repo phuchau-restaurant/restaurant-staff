@@ -1,8 +1,10 @@
+import { getTenantId } from "../utils/auth";
+
 const BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/categories`;
-const HEADERS = {
+const getHeaders = () => ({
   "Content-Type": "application/json",
-  "x-tenant-id": import.meta.env.VITE_TENANT_ID,
-};
+  "x-tenant-id": getTenantId(),
+});
 
 /**
  * Xóa vĩnh viễn danh mục (Hard Delete)
@@ -13,7 +15,7 @@ export const deleteCategoryPermanent = async (categoryId) => {
   try {
     const response = await fetch(`${BASE_URL}/${categoryId}/permanent`, {
       method: "DELETE",
-      headers: HEADERS,
+      headers: getHeaders(),
     });
 
     const result = await response.json();
@@ -55,7 +57,7 @@ export const fetchCategories = async (searchTerm = "", pagination = null, status
       queryParams.toString() ? `?${queryParams.toString()}` : ""
     }`;
 
-    const response = await fetch(url, { headers: HEADERS });
+    const response = await fetch(url, { headers: getHeaders() });
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -88,7 +90,7 @@ export const createCategory = async (categoryData) => {
   try {
     const response = await fetch(BASE_URL, {
       method: "POST",
-      headers: HEADERS,
+      headers: getHeaders(),
       body: JSON.stringify(categoryData),
     });
 
@@ -114,7 +116,7 @@ export const updateCategory = async (categoryId, categoryData) => {
   try {
     const response = await fetch(`${BASE_URL}/${categoryId}`, {
       method: "PUT",
-      headers: HEADERS,
+      headers: getHeaders(),
       body: JSON.stringify(categoryData),
     });
 
@@ -145,7 +147,7 @@ export const deleteCategory = async (categoryId) => {
   try {
     const response = await fetch(`${BASE_URL}/${categoryId}`, {
       method: "DELETE",
-      headers: HEADERS,
+      headers: getHeaders(),
     });
 
     const result = await response.json();
@@ -171,7 +173,7 @@ export const updateCategoryStatus = async (categoryId, isActive) => {
   try {
     const response = await fetch(`${BASE_URL}/${categoryId}`, {
       method: "PUT",
-      headers: HEADERS,
+      headers: getHeaders(),
       body: JSON.stringify({ is_active: isActive }),
     });
 
