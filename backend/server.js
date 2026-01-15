@@ -24,6 +24,8 @@ import menuItemPhotoRoutes from "./routers/menuItemPhoto.routes.js";
 import modifiersRoutes from "./routers/modifiers.routes.js";
 import menuItemModifierGroupRoutes from "./routers/menuItemModifierGroup.routes.js";
 import reportRoutes from "./routers/report.routes.js";
+import restaurantInfoRoutes from "./routers/restaurantInfo.routes.js";
+import paymentRoutes from "./routers/payment.routes.js";
 
 //Import middlewares
 import { errorMiddleware } from "./middlewares/errorMiddleware.js";
@@ -76,6 +78,8 @@ app.use("/api/admin/menu", modifiersRoutes);
 app.use("/api/menu-item-modifier-group", menuItemModifierGroupRoutes); // <-- thêm dòng này
 
 app.use("/api/report", reportRoutes);
+app.use("/api/restaurant", restaurantInfoRoutes);
+app.use("/api/payments", paymentRoutes);
 //Nghiệp vụ cho admin
 app.use("/api/admin", adminRoutes);
 

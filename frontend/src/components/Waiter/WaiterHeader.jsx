@@ -1,5 +1,6 @@
 import React from "react";
 import ProfileDropdown from "../Kitchen/ProfileDropdown";
+import { useRestaurant } from "../../context/RestaurantContext";
 
 const WaiterHeader = ({
   currentTime,
@@ -7,13 +8,19 @@ const WaiterHeader = ({
   onLogout,
   onUserUpdate
 }) => {
+  const { restaurantInfo } = useRestaurant();
+
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
       <div className="max-w-[1920px] mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo và tiêu đề */}
           <div className="flex items-center gap-3">
-            <img src="/images/logo.png" alt="Logo" className="h-10 w-auto" />
+            <img
+              src={restaurantInfo.logoUrl || "/images/logo.png"}
+              alt="Logo"
+              className="h-10 w-auto object-contain"
+            />
             <div>
               <h1 className="text-lg font-bold text-gray-800">
                 Waiter

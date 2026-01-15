@@ -7,6 +7,7 @@ import {
   Check,
   Utensils,
   ChevronRight,
+  CreditCard,
 } from "lucide-react";
 import { STATUS_BADGE } from "../../constants/orderConstants";
 import AlertModal from "../Modal/AlertModal";
@@ -22,6 +23,7 @@ const WaiterOrderCard = ({
   onCancelItem,
   onConfirmItem,
   onServeItem, // Handler để đánh dấu đã phục vụ
+  onPayment, // Handler để thanh toán
 }) => {
   const { alert, showSuccess, showWarning, closeAlert } = useAlert();
   const [showDetail, setShowDetail] = useState(false);
@@ -288,10 +290,26 @@ const WaiterOrderCard = ({
         )}
 
         {/* View detail footer for claimed orders */}
-        {isClaimedOrder && (
+        {isClaimedOrder && order.status !== "Served" && (
           <div className="px-3 py-2 sm:px-4 sm:py-3 border-t border-gray-100 flex items-center justify-between text-xs sm:text-sm text-gray-500 hover:bg-gray-50 transition-colors">
             <span>Xem chi tiết</span>
             <ChevronRight size={14} className="sm:w-4 sm:h-4" />
+          </div>
+        )}
+
+        {/* Payment button for Served orders */}
+        {isClaimedOrder && order.status === "Served" && onPayment && (
+          <div className="p-2 sm:p-3 border-t border-gray-100">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onPayment(order.id);
+              }}
+              className="w-full flex items-center justify-center gap-2 bg-green-50 hover:bg-green-100 text-green-700 border-2 border-green-600 px-3 py-2 sm:px-4 sm:py-3 rounded-lg font-bold text-sm sm:text-base shadow-sm transition-all hover:shadow-md active:scale-[0.98]"
+            >
+              <CreditCard size={16} className="sm:w-5 sm:h-5" strokeWidth={2.5} />
+              Thanh toán
+            </button>
           </div>
         )}
       </div>
@@ -450,20 +468,6 @@ const WaiterOrderCard = ({
                   );
                 })}
               </div>
-
-              {/* Total Amount */}
-              <div className="mt-4 pt-3 border-t-2 border-gray-200">
-                <div className="flex justify-between items-center">
-                  <span className="text-base font-bold text-gray-700">Tổng cộng:</span>
-                  <span className="text-xl font-black text-green-600">
-                    {order.items?.reduce((sum, item) => {
-                      if (item.status === "Cancelled") return sum;
-                      const modifierTotal = (item.modifiers || []).reduce((modSum, mod) => modSum + (mod.price || 0), 0);
-                      return sum + ((item.unitPrice || 0) + modifierTotal) * (item.quantity || 1);
-                    }, 0).toLocaleString('vi-VN')}đ
-                  </span>
-                </div>
-              </div>
             </div>
 
             {/* Modal Footer - Claim button */}
@@ -498,3 +502,4 @@ const WaiterOrderCard = ({
 };
 
 export default WaiterOrderCard;
+

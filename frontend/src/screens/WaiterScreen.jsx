@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import WaiterHeader from "../components/Waiter/WaiterHeader";
 import WaiterOrdersGrid from "../components/Waiter/WaiterOrdersGrid";
+import InvoiceModal from "../components/Waiter/InvoiceModal";
 import ConfirmModal from "../components/Modal/ConfirmModal";
 import AlertModal from "../components/Modal/AlertModal"; // Import AlertModal
 import { useOrderSocket, useWaiterSocket } from "../hooks/useOrderSocket";
@@ -35,6 +36,13 @@ const WaiterScreen = () => {
   });
   const [notification, setNotification] = useState(null);
   const [isAudioEnabled, setIsAudioEnabled] = useState(false);
+  
+  // Invoice modal state
+  const [invoiceModal, setInvoiceModal] = useState({
+    isOpen: false,
+    order: null,
+    isConfirming: false,
+  });
 
   // Khởi tạo audio từ file MP3 trong thư mục public
   const notificationAudio = useMemo(() => new Audio('/notification.mp3'), []);
@@ -306,6 +314,70 @@ const WaiterScreen = () => {
       }
     } catch (error) {
       console.error("Error serving item:", error);
+    }
+  };
+
+  // Hàm mở modal thanh toán
+  const handlePayment = async (orderId) => {
+    // Lấy order từ state (myOrders hoặc orders)
+    let orderData = myOrders.find(o => String(o.id) === String(orderId));
+    if (!orderData) {
+      orderData = orders.find(o => String(o.id) === String(orderId));
+    }
+
+    if (orderData) {
+      setInvoiceModal({
+        isOpen: true,
+        order: orderData,
+        isConfirming: false,
+      });
+    } else {
+      // Nếu không tìm thấy trong state, gọi API lấy chi tiết
+      try {
+        const freshOrder = await fetchOrderDetails(orderId);
+        if (freshOrder) {
+          setInvoiceModal({
+            isOpen: true,
+            order: freshOrder,
+            isConfirming: false,
+          });
+        } else {
+          showAlert("Lỗi", "Không tìm thấy đơn hàng", "error");
+        }
+      } catch (error) {
+        console.error("Error getting order:", error);
+        showAlert("Lỗi", error.message || "Không thể lấy thông tin đơn hàng", "error");
+      }
+    }
+  };
+
+  // Hàm xác nhận thanh toán
+  const handleConfirmPayment = async (orderId, paymentMethod) => {
+    setInvoiceModal(prev => ({ ...prev, isConfirming: true }));
+    
+    try {
+      const response = await waiterService.confirmPayment(orderId, paymentMethod);
+      
+      if (response.success) {
+        // Đóng modal
+        setInvoiceModal({ isOpen: false, order: null, isConfirming: false });
+        
+        // Cập nhật local state - chuyển đơn sang Paid
+        const updateOrders = (ordersList) =>
+          ordersList.map(order => 
+            order.id === orderId 
+              ? { ...order, status: "Paid" }
+              : order
+          );
+        setOrders(updateOrders);
+        setMyOrders(updateOrders);
+        
+        showAlert("Thành công", "Đã xác nhận thanh toán thành công!", "success");
+      }
+    } catch (error) {
+      console.error("Error confirming payment:", error);
+      setInvoiceModal(prev => ({ ...prev, isConfirming: false }));
+      showAlert("Lỗi", error.message || "Không thể xác nhận thanh toán", "error");
     }
   };
 
@@ -604,9 +676,19 @@ const WaiterScreen = () => {
             onCancelItem={handleCancelItem}
             onConfirmItem={handleConfirmItem}
             onServeItem={handleServeItem}
+            onPayment={handlePayment}
           />
         )}
       </div>
+
+      {/* Invoice Modal */}
+      <InvoiceModal
+        isOpen={invoiceModal.isOpen}
+        onClose={() => setInvoiceModal({ isOpen: false, order: null, isConfirming: false })}
+        order={invoiceModal.order}
+        onConfirmPayment={handleConfirmPayment}
+        isConfirming={invoiceModal.isConfirming}
+      />
     </div>
   );
 };

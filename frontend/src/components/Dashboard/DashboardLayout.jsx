@@ -7,6 +7,7 @@ import OrderManagementContent from "../../screens/Dashboard/OrderManagementConte
 import CategoryManagementContent from "../../screens/Dashboard/CategoryManagementContent";
 import MenuManagementContent from "../../screens/Dashboard/MenuManagementContent";
 import ModifierManagementContent from "../../screens/Dashboard/ModifierManagementContent";
+import RestaurantSettingsContent from "../../screens/Dashboard/RestaurantSettingsContent";
 import TablesScreen from "../../screens/TablesScreen";
 import StaffScreen from "../../screens/StaffScreen";
 
@@ -41,6 +42,8 @@ const DashboardLayout = () => {
         return <ModifierManagementContent />;
       case "staff":
         return <StaffScreen />;
+      case "restaurant":
+        return <RestaurantSettingsContent />;
       default:
         return <DashboardContent />;
     }

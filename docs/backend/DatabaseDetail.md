@@ -155,13 +155,21 @@ _(Tên cũ: order_items)_
 
 ### 11. Bảng `payments` (Thanh toán)
 
-| Tên trường         | Kiểu dữ liệu + Ràng buộc      | Mô tả ngắn                           |
-| :----------------- | :---------------------------- | :----------------------------------- |
-| **id**             | `INTEGER` (PK, Serial)        | ID giao dịch.                        |
-| **tenant_id**      | `UUID` (FK) NOT NULL          | Thuộc nhà hàng nào.                  |
-| **order_id**       | `BIGINT` (FK, UNIQUE)         | Thanh toán cho đơn hàng nào (1-1).   |
-| **amount**         | `NUMERIC` NOT NULL            | Số tiền thực tế thanh toán.          |
-| **payment_method** | `VARCHAR`                     | Phương thức (Cash, Transfer, QR...). |
-| **payment_status** | `VARCHAR` DEFAULT `'pending'` | Trạng thái thanh toán.               |
-| **transaction_id** | `VARCHAR`                     | Mã giao dịch tham chiếu (nếu có).    |
-| **paid_at**        | `TIMESTAMPTZ`                 | Thời gian xác nhận thanh toán.       |
+| Tên trường                | Kiểu dữ liệu + Ràng buộc                            | Mô tả ngắn                                 |
+| :------------------------ | :-------------------------------------------------- | :----------------------------------------- |
+| **id**                    | `INTEGER` (PK, Serial)                              | ID giao dịch.                              |
+| **tenant_id**             | `UUID` (FK) NOT NULL                                | Thuộc nhà hàng nào.                        |
+| **order_id**              | `BIGINT` (FK, UNIQUE)                               | Thanh toán cho đơn hàng nào (1-1).         |
+| **payment_method**        | `USER-DEFINED` DEFAULT `'Cash'`                     | Phương thức (`Cash`, `Card`, `E-Wallet`).  |
+| **is_paid**               | `BOOLEAN` DEFAULT `false`                           | Đã thanh toán hay chưa.                    |
+| **subtotal**              | `NUMERIC` DEFAULT 0                                 | Tổng tiền món ăn gốc (chưa thuế, phí).     |
+| **tax_rate**              | `DECIMAL(5,2)` DEFAULT 0                            | Phần trăm thuế VAT áp dụng.                |
+| **tax_amount**            | `NUMERIC` DEFAULT 0                                 | Số tiền thuế VAT.                          |
+| **service_charge_rate**   | `DECIMAL(5,2)` DEFAULT 0                            | Phần trăm phí dịch vụ.                     |
+| **service_charge_amount** | `NUMERIC` DEFAULT 0                                 | Số tiền phí dịch vụ.                       |
+| **discount_percent**      | `DECIMAL(5,2)` DEFAULT 0                            | Phần trăm giảm giá.                        |
+| **discount_amount**       | `NUMERIC` DEFAULT 0                                 | Số tiền giảm giá.                          |
+| **amount**                | `NUMERIC` NOT NULL                                  | Số tiền thực tế thanh toán (tổng cuối).    |
+| **transaction_id**        | `VARCHAR`                                           | Mã giao dịch tham chiếu (nếu có).          |
+| **paid_at**               | `TIMESTAMPTZ`                                       | Thời gian xác nhận thanh toán.             |
+
