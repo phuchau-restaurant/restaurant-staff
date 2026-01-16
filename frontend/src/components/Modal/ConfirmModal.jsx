@@ -11,6 +11,7 @@ const ConfirmModal = ({
   confirmText = "Xác nhận",
   cancelText = "Hủy",
   type = "danger", // danger, warning, info
+  items = [], // Optional: list of items to display
 }) => {
   const getColors = () => {
     switch (type) {
@@ -18,16 +19,25 @@ const ConfirmModal = ({
         return {
           icon: "text-red-500",
           confirmButton: "bg-red-500 hover:bg-red-600",
+          headerBg: "bg-red-50",
+          headerBorder: "border-red-200",
+          headerText: "text-red-800",
         };
       case "warning":
         return {
           icon: "text-yellow-500",
           confirmButton: "bg-yellow-500 hover:bg-yellow-600",
+          headerBg: "bg-amber-50",
+          headerBorder: "border-amber-200",
+          headerText: "text-amber-800",
         };
       default:
         return {
           icon: "text-blue-500",
           confirmButton: "bg-blue-500 hover:bg-blue-600",
+          headerBg: "bg-blue-50",
+          headerBorder: "border-blue-200",
+          headerText: "text-blue-800",
         };
     }
   };
@@ -43,7 +53,7 @@ const ConfirmModal = ({
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-60 flex items-center justify-center p-4 backdrop-blur-sm bg-white/30"
+          className="fixed inset-0 z-60 flex items-center justify-center p-4 backdrop-blur-sm bg-black/60"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -57,7 +67,7 @@ const ConfirmModal = ({
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="p-6 relative flex flex-col items-center bg-white">
+            <div className={`p-6 relative flex flex-col items-center ${colors.headerBg} border-b ${colors.headerBorder}`}>
               <button
                 onClick={onClose}
                 className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 hover:scale-110 transition-transform"
@@ -74,14 +84,32 @@ const ConfirmModal = ({
               </motion.div>
 
               {title && (
-                <h3 className="mt-4 text-2xl font-bold text-gray-800 text-center">
+                <h3 className={`mt-4 text-2xl font-bold ${colors.headerText} text-center`}>
                   {title}
                 </h3>
               )}
             </div>
 
             {/* Body */}
-            <div className="p-6 text-center">
+            <div className="p-6">
+              {/* Display items list if provided */}
+              {items && items.length > 0 && (
+                <>
+                  <p className="text-gray-700 mb-4">
+                    Đơn hàng có <span className="font-bold text-red-600">{items.length} món</span> cần xử lý:
+                  </p>
+
+                  <div className="bg-gray-50 rounded-lg p-3 mb-4 max-h-40 overflow-y-auto">
+                    {items.map((item, idx) => (
+                      <div key={item.id || idx} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                        <span className="font-medium text-gray-800">{item.name || item.dishName}</span>
+                        <span className="text-orange-600 font-bold">x{item.quantity}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -115,3 +143,4 @@ const ConfirmModal = ({
 };
 
 export default ConfirmModal;
+

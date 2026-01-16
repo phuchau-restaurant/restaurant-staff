@@ -394,10 +394,22 @@ const WaiterScreen = () => {
           console.log("⚠️ Order already exists in list, skipping:", newOrder.id);
           return prev;
         }
+        
+        // Phát âm thanh và hiển thị thông báo khi có đơn mới
+        playNotificationSound();
+        setNotification({
+          message: `Đơn hàng mới #${newOrder.orderNumber} - Bàn ${newOrder.tableNumber}`,
+          orderId: newOrder.id,
+          type: "new",
+        });
+        
+        // Tự động ẩn sau 5 giây
+        setTimeout(() => setNotification(null), 5000);
+        
         return [newOrder, ...prev];
       });
     }
-  }, [fetchOrderDetails]);
+  }, [fetchOrderDetails, playNotificationSound]);
 
   const handleOrderUpdated = useCallback((data) => {
     console.log("🔔 Order updated:", data);
@@ -604,7 +616,13 @@ const WaiterScreen = () => {
 
       {/* Notification Toast */}
       {notification && (
-        <div className={`${notification.type === "cancelled" ? "bg-gradient-to-r from-red-500 to-red-600" : "bg-gradient-to-r from-green-500 to-green-600"} text-white px-6 py-4 flex items-center justify-between shadow-lg animate-in slide-in-from-top duration-300`}>
+        <div className={`${
+          notification.type === "cancelled" 
+            ? "bg-gradient-to-r from-red-500 to-red-600" 
+            : notification.type === "new"
+            ? "bg-gradient-to-r from-blue-500 to-blue-600"
+            : "bg-gradient-to-r from-green-500 to-green-600"
+        } text-white px-6 py-4 flex items-center justify-between shadow-lg animate-in slide-in-from-top duration-300`}>
           <div className="flex items-center gap-3">
             <Bell className="w-5 h-5 animate-bounce" />
             <span className="font-semibold text-lg">
