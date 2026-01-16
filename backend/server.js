@@ -27,6 +27,7 @@ import reportRoutes from "./routers/report.routes.js";
 import tenantsRoutes from "./routers/tenants.routes.js";
 import paymentRoutes from "./routers/payment.routes.js";
 import customerRoutes from "./routers/customer.routes.js";
+import platformUsersRoutes from "./routers/platformUsers.routes.js";
 
 //Import middlewares
 import { errorMiddleware } from "./middlewares/errorMiddleware.js";
@@ -91,6 +92,7 @@ app.use("/api/report", reportRoutes);
 app.use("/api/tenants", tenantsRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/customer", customerRoutes);
+app.use("/api/platform", platformUsersRoutes);
 //Nghiệp vụ cho admin
 app.use("/api/admin", adminRoutes);
 

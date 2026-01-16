@@ -490,14 +490,14 @@ class OrdersService {
 
     // Kiểm tra có yêu cầu pagination không
     const usePagination = filters.pageNumber && filters.pageSize;
-    
+
     let orders;
     let paginationInfo = null;
 
     if (usePagination) {
       const result = await this.ordersRepo.getAllWithPagination(
-        repoFilters, 
-        parseInt(filters.pageNumber), 
+        repoFilters,
+        parseInt(filters.pageNumber),
         parseInt(filters.pageSize)
       );
       orders = result.data;
@@ -555,7 +555,7 @@ class OrdersService {
   ) {
     // Kiểm tra có yêu cầu pagination không
     const usePagination = pagination && pagination.pageNumber && pagination.pageSize;
-    
+
     let orders;
     let paginationInfo = null;
 
@@ -705,23 +705,65 @@ class OrdersService {
       throw new Error("Order detail not found or update failed");
     }
 
-    // --- LOGIC MỞ RỘNG (OPTIONAL) ---
-    // Ví dụ: Nếu trạng thái là 'served' (đã phục vụ), kiểm tra xem cả đơn đã xong chưa?
+    // Nếu trạng thái là 'ready', kiểm tra xem tất cả món (trừ cancelled) đã ready chưa?
+    if (newStatus === OrderDetailStatus.READY) {
+      const allItems = await this.orderDetailsRepo.getByOrderId(orderId);
+      // Lọc các món không bị cancelled
+      const nonCancelledItems = allItems.filter(
+        (item) => item.status !== OrderDetailStatus.CANCELLED
+      );
 
+      // Kiểm tra nếu tất cả món non-cancelled đều là Ready
+      const allReady = nonCancelledItems.length > 0 && nonCancelledItems.every(
+        (item) => item.status === OrderDetailStatus.READY
+      );
+
+      if (allReady) {
+        // Tự động update trạng thái đơn hàng cha thành 'Completed'
+        await this.ordersRepo.update(orderId, {
+          status: OrdersStatus.COMPLETED,
+          completedAt: new Date(),
+        });
+      }
+    }
+
+    // Nếu trạng thái là 'served', kiểm tra xem tất cả món (trừ cancelled) đã served chưa?
     if (newStatus === OrderDetailStatus.SERVED) {
       const allItems = await this.orderDetailsRepo.getByOrderId(orderId);
-      const allServed = allItems.every(
-        (item) =>
-          item.status === OrderDetailStatus.SERVED ||
-          item.status === OrderDetailStatus.CANCELLED
+      // Lọc các món không bị cancelled
+      const nonCancelledItems = allItems.filter(
+        (item) => item.status !== OrderDetailStatus.CANCELLED
+      );
+
+      // Kiểm tra nếu tất cả món non-cancelled đều là Served
+      const allServed = nonCancelledItems.length > 0 && nonCancelledItems.every(
+        (item) => item.status === OrderDetailStatus.SERVED
       );
 
       if (allServed) {
-        // Tự động update trạng thái đơn hàng cha thành 'Served' (Đã phục vụ)
+        // Tự động update trạng thái đơn hàng cha thành 'Served'
         await this.ordersRepo.update(orderId, {
           status: OrdersStatus.SERVED,
           completedAt: new Date(),
         });
+      }
+    }
+
+    // Nếu trạng thái là 'cancelled', kiểm tra xem tất cả món đều đã bị hủy chưa?
+    if (newStatus === OrderDetailStatus.CANCELLED) {
+      const allItems = await this.orderDetailsRepo.getByOrderId(orderId);
+      const allCancelled = allItems.every(
+        (item) => item.status === OrderDetailStatus.CANCELLED
+      );
+
+      if (allCancelled && allItems.length > 0) {
+        // Tự động update trạng thái đơn hàng cha thành 'Cancelled'
+        await this.ordersRepo.update(orderId, {
+          status: OrdersStatus.CANCELLED,
+        });
+
+        // Clear current_order_id của bàn (đánh dấu bàn trống)
+        await this.tablesRepo.clearCurrentOrderByOrderId(orderId);
       }
     }
 

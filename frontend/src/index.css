@@ -8,3 +8,22 @@
   --font-assistant: 'Assistant', sans-serif;
   --font-smooch-sans: 'Smooch Sans', sans-serif;
 }
+
+/* Chặn chọn/copy text trên toàn bộ app */
+body {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Cho phép select text ở input/textarea */
+input,
+textarea,
+[contenteditable="true"],
+.allow-select {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}

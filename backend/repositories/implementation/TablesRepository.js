@@ -166,4 +166,22 @@ export class TablesRepository extends BaseRepository {
     }
     return data ? data.map((row) => new Tables(row)) : [];
   }
+
+  /**
+   * Clear current_order_id cho bàn có orderId tương ứng (khi đơn bị hủy hoặc thanh toán xong)
+   * @param {string|number} orderId - ID đơn hàng
+   * @returns {Promise<Tables|null>} Bàn đã được cập nhật
+   */
+  async clearCurrentOrderByOrderId(orderId) {
+    const { data, error } = await supabase
+      .from(this.tableName)
+      .update({ current_order_id: null })
+      .eq("current_order_id", orderId)
+      .select();
+
+    if (error) {
+      throw new Error(`[Tables] ClearCurrentOrder failed: ${error.message}`);
+    }
+    return data?.[0] ? new Tables(data[0]) : null;
+  }
 }

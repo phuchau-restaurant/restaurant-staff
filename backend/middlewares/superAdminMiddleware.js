@@ -1,11 +1,13 @@
 // Middleware to check if user is a super admin
-import { verifyToken } from "../utils/jwt.js";
+import jwt from "jsonwebtoken";
+
+const JWT_SECRET = process.env.JWT_SECRET || "super-admin-secret-key";
 
 export const superAdminMiddleware = (req, res, next) => {
   try {
     // Get token from Authorization header
     const authHeader = req.headers.authorization;
-    
+
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       const error = new Error("No token provided");
       error.statusCode = 401;
@@ -13,13 +15,12 @@ export const superAdminMiddleware = (req, res, next) => {
     }
 
     const token = authHeader.split(" ")[1];
-    
-    // Verify token
-    const decoded = verifyToken(token);
-    
+
+    // Verify token with super admin secret
+    const decoded = jwt.verify(token, JWT_SECRET);
+
     // Check if user is super admin
-    // Super admins don't have tenantId and have role 'super_admin'
-    if (decoded.role !== "super_admin") {
+    if (decoded.role !== "super_admin" || decoded.type !== "platform_admin") {
       const error = new Error("Super admin privileges required");
       error.statusCode = 403;
       throw error;
@@ -34,7 +35,10 @@ export const superAdminMiddleware = (req, res, next) => {
 
     next();
   } catch (error) {
-    if (!error.statusCode) {
+    if (error.name === "TokenExpiredError") {
+      error.message = "Token đã hết hạn";
+      error.statusCode = 401;
+    } else if (!error.statusCode) {
       error.statusCode = 401;
     }
     next(error);
