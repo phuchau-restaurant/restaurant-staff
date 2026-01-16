@@ -1,22 +1,22 @@
-// backend/services/RestaurantInfo/RestaurantInfoService.js
+// backend/services/Tenants/tenantsService.js
 
-class RestaurantInfoService {
-    constructor(restaurantInfoRepository) {
-        this.restaurantInfoRepo = restaurantInfoRepository;
+class TenantsService {
+    constructor(tenantsRepository) {
+        this.tenantsRepo = tenantsRepository;
     }
 
     /**
-     * Get restaurant info by tenant
+     * Get tenant info by ID
      */
-    async getRestaurantInfo(tenantId) {
+    async getTenantInfo(tenantId) {
         if (!tenantId) throw new Error("Tenant ID is required");
-        return await this.restaurantInfoRepo.getByTenantId(tenantId);
+        return await this.tenantsRepo.getById(tenantId);
     }
 
     /**
-     * Update or create restaurant info
+     * Update tenant info
      */
-    async updateRestaurantInfo(tenantId, data) {
+    async updateTenantInfo(tenantId, data) {
         if (!tenantId) throw new Error("Tenant ID is required");
 
         // Validate required field
@@ -29,7 +29,7 @@ class RestaurantInfoService {
             throw new Error("Invalid email format");
         }
 
-        // Validate phone format if provided (basic validation)
+        // Validate phone format if provided
         if (data.phone && !this.isValidPhone(data.phone)) {
             throw new Error("Invalid phone number format");
         }
@@ -40,9 +40,13 @@ class RestaurantInfoService {
             address: data.address?.trim() || null,
             email: data.email?.trim() || null,
             phone: data.phone?.trim() || null,
+            taxRate: data.taxRate,
+            serviceCharge: data.serviceCharge,
+            discountRules: data.discountRules,
+            qrPayment: data.qrPayment || null,
         };
 
-        return await this.restaurantInfoRepo.upsert(tenantId, updateData);
+        return await this.tenantsRepo.updateById(tenantId, updateData);
     }
 
     /**
@@ -51,12 +55,12 @@ class RestaurantInfoService {
     async updateLogo(tenantId, logoUrl) {
         if (!tenantId) throw new Error("Tenant ID is required");
 
-        const existing = await this.restaurantInfoRepo.getByTenantId(tenantId);
+        const existing = await this.tenantsRepo.getById(tenantId);
         if (!existing) {
-            throw new Error("Restaurant info not found. Please create it first.");
+            throw new Error("Tenant not found");
         }
 
-        return await this.restaurantInfoRepo.updateByTenantId(tenantId, { logoUrl });
+        return await this.tenantsRepo.updateById(tenantId, { logoUrl });
     }
 
     // Helper: Email validation
@@ -65,11 +69,11 @@ class RestaurantInfoService {
         return emailRegex.test(email);
     }
 
-    // Helper: Phone validation (accepts various formats)
+    // Helper: Phone validation
     isValidPhone(phone) {
         const phoneRegex = /^[\d\s\-\+\(\)]{8,20}$/;
         return phoneRegex.test(phone);
     }
 }
 
-export default RestaurantInfoService;
+export default TenantsService;

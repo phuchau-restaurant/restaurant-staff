@@ -352,7 +352,7 @@ const InvoiceModal = ({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b bg-gray-50">
                     <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
@@ -505,6 +505,26 @@ const InvoiceModal = ({
                                     })}
                                 </div>
                             </div>
+
+                            {/* QR Payment Image - Show when E-Wallet selected */}
+                            {selectedMethod === "E-Wallet" && (
+                                restaurantInfo?.qrPayment ? (
+                                    <div className="flex flex-col items-center p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                        <p className="text-sm text-gray-600 mb-3 font-medium">Quét mã QR để thanh toán:</p>
+                                        <img
+                                            src={restaurantInfo.qrPayment}
+                                            alt="QR thanh toán"
+                                            className="w-48 h-48 object-contain rounded-lg border-2 border-gray-300"
+                                        />
+                                        <p className="text-xs text-gray-500 mt-2">Vui lòng quét mã và xác nhận sau khi chuyển khoản</p>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center p-4 bg-amber-50 rounded-lg border border-amber-200">
+                                        <p className="text-sm text-amber-700 font-medium">⚠️ Chưa cài đặt mã QR thanh toán</p>
+                                        <p className="text-xs text-amber-600 mt-1">Vui lòng thêm mã QR trong phần Cài đặt nhà hàng</p>
+                                    </div>
+                                )
+                            )}
 
                             {/* Confirm button */}
                             <button

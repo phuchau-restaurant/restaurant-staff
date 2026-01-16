@@ -1,30 +1,30 @@
-// backend/controllers/RestaurantInfo/RestaurantInfoController.js
+// backend/controllers/Tenants/TenantsController.js
 
-class RestaurantInfoController {
-    constructor(restaurantInfoService) {
-        this.restaurantInfoService = restaurantInfoService;
+class TenantsController {
+    constructor(tenantsService) {
+        this.tenantsService = tenantsService;
     }
 
-    // [GET] /api/restaurant
+    // [GET] /api/tenants
     get = async (req, res, next) => {
         try {
             const tenantId = req.tenantId;
-            const data = await this.restaurantInfoService.getRestaurantInfo(tenantId);
+            const data = await this.tenantsService.getTenantInfo(tenantId);
 
             if (!data) {
                 return res.status(404).json({
                     success: false,
-                    message: "Restaurant info not found",
+                    message: "Tenant info not found",
                     data: null,
                 });
             }
 
-            // Clean response - remove internal IDs
-            const { id, tenantId: _tid, ...returnData } = data;
+            // Clean response - remove slug and status (internal fields)
+            const { slug, status, ...returnData } = data;
 
             return res.status(200).json({
                 success: true,
-                message: "Restaurant info fetched successfully",
+                message: "Tenant info fetched successfully",
                 data: returnData,
             });
         } catch (error) {
@@ -32,20 +32,20 @@ class RestaurantInfoController {
         }
     };
 
-    // [PUT] /api/restaurant
+    // [PUT] /api/tenants
     update = async (req, res, next) => {
         try {
             const tenantId = req.tenantId;
-            const updatedInfo = await this.restaurantInfoService.updateRestaurantInfo(
+            const updatedInfo = await this.tenantsService.updateTenantInfo(
                 tenantId,
                 req.body
             );
 
-            const { id, tenantId: _tid, ...returnData } = updatedInfo;
+            const { slug, status, ...returnData } = updatedInfo;
 
             return res.status(200).json({
                 success: true,
-                message: "Restaurant info updated successfully",
+                message: "Tenant info updated successfully",
                 data: returnData,
             });
         } catch (error) {
@@ -56,7 +56,7 @@ class RestaurantInfoController {
         }
     };
 
-    // [PATCH] /api/restaurant/logo
+    // [PATCH] /api/tenants/logo
     updateLogo = async (req, res, next) => {
         try {
             const tenantId = req.tenantId;
@@ -69,12 +69,12 @@ class RestaurantInfoController {
                 });
             }
 
-            const updatedInfo = await this.restaurantInfoService.updateLogo(
+            const updatedInfo = await this.tenantsService.updateLogo(
                 tenantId,
                 logoUrl
             );
 
-            const { id, tenantId: _tid, ...returnData } = updatedInfo;
+            const { slug, status, ...returnData } = updatedInfo;
 
             return res.status(200).json({
                 success: true,
@@ -90,4 +90,4 @@ class RestaurantInfoController {
     };
 }
 
-export default RestaurantInfoController;
+export default TenantsController;

@@ -132,7 +132,7 @@ const WaiterOrderCard = ({
             {/* Table Info - Left */}
             <div className="flex-1 min-w-0">
               <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight leading-tight">
-                Bàn {order.tableNumber}
+                {order.tableNumber}
               </h2>
               <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
                 Đơn #{order.orderNumber}
@@ -329,7 +329,7 @@ const WaiterOrderCard = ({
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-2xl font-black text-gray-900">
-                    Bàn {order.tableNumber}
+                    {order.tableNumber}
                   </h2>
                   <p className="text-gray-500 text-sm mt-1">
                     Đơn #{order.orderNumber} • {elapsed} phút

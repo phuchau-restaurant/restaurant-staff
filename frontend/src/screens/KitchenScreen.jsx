@@ -9,6 +9,7 @@ import { useAuth } from "../context/AuthContext";
 import { useSocket } from "../context/SocketContext";
 import { X, Bell } from "lucide-react";
 import * as kitchenService from "../services/kitchenService";
+import { SkeletonOrderCard } from "../components/Skeleton";
 import {
   mapKitchenOrdersFromApi,
   calculateElapsedTime,
@@ -627,11 +628,10 @@ const KitchenScreen = () => {
 
       <div className="flex-1 p-6 overflow-y-auto">
         {isLoading ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Đang tải đơn hàng...</p>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {[...Array(8)].map((_, i) => (
+              <SkeletonOrderCard key={i} variant="kitchen" />
+            ))}
           </div>
         ) : (
           <>
