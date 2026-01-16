@@ -22,7 +22,7 @@ class AuthController {
       res.cookie("refreshToken", result.refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production", // Chỉ dùng HTTPS trong production
-        sameSite: "strict",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // "none" cho cross-origin trong production
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày
       });
 
@@ -114,6 +114,10 @@ class AuthController {
   refresh = async (req, res, next) => {
     try {
       const refreshToken = req.cookies?.refreshToken;
+      
+      console.log("🔄 Refresh request received");
+      console.log("📦 Cookies:", req.cookies);
+      console.log("🎫 Refresh token present:", !!refreshToken);
 
       if (!refreshToken) {
         const error = new Error("Refresh token not found");

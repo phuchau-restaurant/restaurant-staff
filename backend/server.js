@@ -42,7 +42,16 @@ const httpServer = createServer(app);
 const PORT = process.env.PORT || 3000;
 
 // --- MIDDLEWARE ---
-const allowedOrigins = ["http://localhost:5173", "http://localhost:5174"];
+// Allowed origins: localhost (dev) + production URLs from env
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  process.env.FRONTEND_URL,
+  process.env.CUSTOMER_URL,
+].filter(Boolean); // Remove undefined values
+
+console.log("🌐 CORS Allowed Origins:", allowedOrigins);
+console.log("🔧 NODE_ENV:", process.env.NODE_ENV);
 
 app.use(
   cors({

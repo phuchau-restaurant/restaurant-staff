@@ -9,11 +9,25 @@ let io;
  * @param {import('http').Server} httpServer - HTTP server instance
  */
 export const initializeSocket = (httpServer) => {
+  // Allowed origins for Socket.IO (same as Express CORS)
+  const allowedOrigins = [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    process.env.FRONTEND_URL,
+    process.env.CUSTOMER_URL,
+  ].filter(Boolean);
+
   io = new Server(httpServer, {
     cors: {
-      origin: ["http://localhost:5173", "http://localhost:5174"],
+      origin: allowedOrigins,
       credentials: true,
+      methods: ["GET", "POST"],
     },
+    // Ensure WebSocket transport works on Render
+    transports: ["websocket", "polling"],
+    // Increase timeout for production
+    pingTimeout: 60000,
+    pingInterval: 25000,
   });
 
   // Authentication middleware
