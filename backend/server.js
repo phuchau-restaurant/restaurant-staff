@@ -49,6 +49,9 @@ const allowedOrigins = [
   process.env.CUSTOMER_URL,
 ].filter(Boolean); // Remove undefined values
 
+console.log("🌐 CORS Allowed Origins:", allowedOrigins);
+console.log("🔧 NODE_ENV:", process.env.NODE_ENV);
+
 app.use(
   cors({
     origin: (origin, callback) => {
