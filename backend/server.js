@@ -25,7 +25,8 @@ import modifiersRoutes from "./routers/modifiers.routes.js";
 import menuItemModifierGroupRoutes from "./routers/menuItemModifierGroup.routes.js";
 import reportRoutes from "./routers/report.routes.js";
 import tenantsRoutes from "./routers/tenants.routes.js";
-import paymentRoutes from "./routers/payment.routes.js";;
+import paymentRoutes from "./routers/payment.routes.js";
+import customerRoutes from "./routers/customer.routes.js";
 
 //Import middlewares
 import { errorMiddleware } from "./middlewares/errorMiddleware.js";
@@ -80,6 +81,7 @@ app.use("/api/menu-item-modifier-group", menuItemModifierGroupRoutes); // <-- th
 app.use("/api/report", reportRoutes);
 app.use("/api/tenants", tenantsRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/customer", customerRoutes);
 //Nghiệp vụ cho admin
 app.use("/api/admin", adminRoutes);
 

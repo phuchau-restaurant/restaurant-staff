@@ -77,6 +77,22 @@ export const initializeSocket = (httpServer) => {
       });
     });
 
+    // Handle customer calling staff (for payment or service request)
+    socket.on("customer:call_staff", (data) => {
+      console.log("🔔 Customer calling staff:", data);
+      const tenantRoom = `tenant:${socket.tenantId}`;
+      
+      // Broadcast to all staff members in the tenant
+      io.to(tenantRoom).emit("staff:customer_call", {
+        tableNumber: data.tableNumber,
+        tableId: data.tableId,
+        orderId: data.orderId,
+        requestType: data.requestType || "payment", // "payment", "service", "help"
+        message: data.message || `Bàn ${data.tableNumber} cần hỗ trợ thanh toán!`,
+        timestamp: new Date().toISOString(),
+      });
+    });
+
     // Handle errors
     socket.on("error", (error) => {
       console.error(`Socket error for ${socket.id}:`, error);

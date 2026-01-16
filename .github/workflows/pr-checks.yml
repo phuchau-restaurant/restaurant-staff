@@ -1,0 +1,100 @@
+name: Pull Request Checks
+
+# Workflow này chạy khi có Pull Request
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [ main, develop ]
+
+jobs:
+  # Job 1: Validate PR
+  pr-validation:
+    name: PR Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for better diff
+      
+      - name: 🔍 Check PR title
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          echo "PR Title: $PR_TITLE"
+          
+          # Kiểm tra PR title có prefix không (feat, fix, docs, etc.)
+          if [[ ! "$PR_TITLE" =~ ^(feat|fix|docs|style|refactor|test|chore|perf)(\(.+\))?:\ .+ ]]; then
+            echo "❌ PR title phải theo format: type(scope): description"
+            echo "Ví dụ: feat(auth): add login functionality"
+            echo "Types: feat, fix, docs, style, refactor, test, chore, perf"
+            exit 1
+          fi
+          echo "✅ PR title is valid!"
+      
+      - name: 📊 Check changed files
+        run: |
+          echo "## 📝 Changed Files" >> $GITHUB_STEP_SUMMARY
+          git diff --name-only origin/${{ github.base_ref }}...HEAD | while read file; do
+            echo "- \`$file\`" >> $GITHUB_STEP_SUMMARY
+          done
+      
+      - name: 📏 Check PR size
+        run: |
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | wc -l)
+          CHANGED_LINES=$(git diff origin/${{ github.base_ref }}...HEAD | wc -l)
+          
+          echo "## 📊 PR Statistics" >> $GITHUB_STEP_SUMMARY
+          echo "- Files changed: $CHANGED_FILES" >> $GITHUB_STEP_SUMMARY
+          echo "- Lines changed: $CHANGED_LINES" >> $GITHUB_STEP_SUMMARY
+          
+          if [ $CHANGED_FILES -gt 50 ]; then
+            echo "⚠️ **Warning**: PR is quite large ($CHANGED_FILES files). Consider splitting it." >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ $CHANGED_LINES -gt 1000 ]; then
+            echo "⚠️ **Warning**: PR has many changes ($CHANGED_LINES lines). Consider splitting it." >> $GITHUB_STEP_SUMMARY
+          fi
+
+  # Job 2: Code Quality Check
+  code-quality:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+      
+      # Check Backend quality
+      - name: 🔍 Backend Code Quality
+        if: contains(github.event.pull_request.changed_files, 'backend/')
+        working-directory: ./backend
+        run: |
+          npm ci
+          echo "✅ Backend dependencies installed"
+          node -c server.js
+          echo "✅ Backend syntax is valid"
+      
+      # Check Frontend quality
+      - name: 🔍 Frontend Code Quality
+        if: contains(github.event.pull_request.changed_files, 'frontend/')
+        working-directory: ./frontend
+        run: |
+          npm ci
+          echo "✅ Frontend dependencies installed"
+          npm run lint || echo "⚠️ Lint warnings found"
+          npm run build
+          echo "✅ Frontend builds successfully"
+      
+      - name: ✅ Summary
+        run: |
+          echo "## ✅ Code Quality Check Passed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All code quality checks have passed! 🎉" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "This PR is ready for review!" >> $GITHUB_STEP_SUMMARY

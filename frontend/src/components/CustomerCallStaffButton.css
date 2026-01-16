@@ -1,0 +1,164 @@
+.customer-call-staff-container {
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.call-staff-button {
+  width: 100%;
+  padding: 16px 24px;
+  font-size: 18px;
+  font-weight: 600;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Default style (payment) */
+.call-staff-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.call-staff-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.call-staff-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Service type */
+.call-staff-button.service {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+/* Help type */
+.call-staff-button.help {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+/* Calling state */
+.call-staff-button.calling {
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+  color: #333;
+  cursor: not-allowed;
+  animation: pulse-button 1.5s infinite;
+}
+
+@keyframes pulse-button {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+/* Disabled state */
+.call-staff-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Ripple effect */
+.call-staff-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.call-staff-button:active:not(:disabled)::before {
+  width: 300px;
+  height: 300px;
+}
+
+/* Success message */
+.call-success-message {
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 14px;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Connection warning */
+.connection-warning {
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeaa7;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 14px;
+  animation: slideDown 0.3s ease;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .call-staff-button {
+    padding: 14px 20px;
+    font-size: 16px;
+  }
+}
+
+/* Accessibility */
+.call-staff-button:focus {
+  outline: 3px solid rgba(102, 126, 234, 0.5);
+  outline-offset: 2px;
+}
+
+/* Loading animation for calling state */
+.call-staff-button.calling::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
