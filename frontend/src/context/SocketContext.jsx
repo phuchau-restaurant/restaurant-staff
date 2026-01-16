@@ -49,6 +49,12 @@ export const SocketProvider = ({ children }) => {
             token: accessToken,
           },
           autoConnect: true,
+          // Ensure WebSocket transport works on production
+          transports: ["websocket", "polling"],
+          // Reconnection settings
+          reconnection: true,
+          reconnectionDelay: 1000,
+          reconnectionAttempts: 5,
         }
       );
 
@@ -97,6 +103,10 @@ export const SocketProvider = ({ children }) => {
         {
           auth: { token: accessToken },
           autoConnect: true,
+          transports: ["websocket", "polling"],
+          reconnection: true,
+          reconnectionDelay: 1000,
+          reconnectionAttempts: 5,
         }
       );
 
