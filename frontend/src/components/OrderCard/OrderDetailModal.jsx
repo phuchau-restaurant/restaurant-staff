@@ -150,7 +150,7 @@ const OrderDetailModal = ({
             <div>
               <div className="flex items-center gap-3 mb-1">
                 <h2 className="text-2xl font-bold text-gray-900">
-                  Bàn {order.tableNumber}
+                  {order.tableNumber}
                 </h2>
                 {/* Order Status Badge from Database */}
                 <span
@@ -317,36 +317,12 @@ const OrderDetailModal = ({
                         </div>
                       </div>
                     </div>
-
-                    {/* Modifiers Grid - matching card/list view style */}
-                    {item.modifiers && item.modifiers.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mb-2">
-                        {item.modifiers.map((mod, idx) => (
-                          <span
-                            key={idx}
-                            className="text-xs font-semibold text-green-700 bg-green-100 px-2 py-1 rounded-md"
-                          >
-                            + {mod.optionName}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Notes - Yellow with StickyNote icon */}
-                    {item.note && (
-                      <div className="text-sm font-semibold text-amber-700 bg-amber-100 px-2 py-1 rounded-md inline-flex items-center gap-1.5">
-                        <StickyNote size={14} />
-                        {item.note}
-                      </div>
-                    )}
                   </div>
                 );
               })}
             </div>
           </div>
         </div>
-
-        {/* Modal Footer - Actions */}
         <div className="p-6 bg-white border-t border-gray-100 shrink-0">
           <OrderActions
             status={status}

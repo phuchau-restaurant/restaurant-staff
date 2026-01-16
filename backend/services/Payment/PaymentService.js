@@ -2,9 +2,9 @@
 import { supabase } from "../../configs/database.js";
 
 class PaymentService {
-    constructor(paymentRepository, restaurantInfoRepository) {
+    constructor(paymentRepository, tenantsRepository) {
         this.paymentRepo = paymentRepository;
-        this.restaurantInfoRepo = restaurantInfoRepository;
+        this.tenantsRepo = tenantsRepository;
     }
 
     /**
@@ -34,7 +34,7 @@ class PaymentService {
         if (!order) throw new Error("Order not found");
 
         // Get restaurant info for tax/discount settings
-        const restaurantInfo = await this.restaurantInfoRepo.getByTenantId(tenantId);
+        const restaurantInfo = await this.tenantsRepo.getById(tenantId);
 
         // Calculate invoice amounts
         const invoice = this.calculateInvoice(order.items, restaurantInfo);
@@ -68,7 +68,7 @@ class PaymentService {
         if (!payment) throw new Error("Payment not found");
 
         const order = await this.getOrderWithDetails(payment.orderId, tenantId);
-        const restaurantInfo = await this.restaurantInfoRepo.getByTenantId(tenantId);
+        const restaurantInfo = await this.tenantsRepo.getById(tenantId);
 
         return {
             payment,

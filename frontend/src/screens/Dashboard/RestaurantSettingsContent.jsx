@@ -31,6 +31,7 @@ const RestaurantSettingsContent = () => {
         taxRate: 10.0,
         serviceCharge: 0.0,
         discountRules: [],
+        qrPayment: "",
     });
 
     // UI states
@@ -42,6 +43,8 @@ const RestaurantSettingsContent = () => {
     const [originalData, setOriginalData] = useState(null);
 
     const fileInputRef = useRef(null);
+    const qrPaymentInputRef = useRef(null);
+    const [uploadingQr, setUploadingQr] = useState(false);
 
     // Fetch restaurant info on mount
     useEffect(() => {
@@ -70,6 +73,7 @@ const RestaurantSettingsContent = () => {
                     taxRate: response.data.taxRate ?? 10.0,
                     serviceCharge: response.data.serviceCharge ?? 0.0,
                     discountRules: response.data.discountRules || [],
+                    qrPayment: response.data.qrPayment || "",
                 };
                 setFormData(data);
                 setOriginalData(data);
@@ -125,6 +129,38 @@ const RestaurantSettingsContent = () => {
 
     const handleRemoveLogo = () => {
         setFormData((prev) => ({ ...prev, logoUrl: "" }));
+    };
+
+    // QR Payment upload handlers
+    const handleQrPaymentUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (!file.type.startsWith("image/")) {
+            setMessage({ type: "error", text: "Vui lòng chọn file hình ảnh" });
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            setMessage({ type: "error", text: "File không được vượt quá 5MB" });
+            return;
+        }
+
+        try {
+            setUploadingQr(true);
+            const qrPayment = await restaurantService.uploadQrPayment(file); // Use separate QR folder
+            setFormData((prev) => ({ ...prev, qrPayment }));
+            setMessage({ type: "success", text: "QR thanh toán đã được tải lên!" });
+        } catch (error) {
+            console.error("Error uploading QR payment:", error);
+            setMessage({ type: "error", text: "Không thể tải lên QR thanh toán" });
+        } finally {
+            setUploadingQr(false);
+        }
+    };
+
+    const handleRemoveQrPayment = () => {
+        setFormData((prev) => ({ ...prev, qrPayment: "" }));
     };
 
     // Discount Rules handlers
@@ -209,8 +245,8 @@ const RestaurantSettingsContent = () => {
             {message.text && (
                 <div
                     className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${message.type === "success"
-                            ? "bg-green-50 text-green-700 border border-green-200"
-                            : "bg-red-50 text-red-700 border border-red-200"
+                        ? "bg-green-50 text-green-700 border border-green-200"
+                        : "bg-red-50 text-red-700 border border-red-200"
                         }`}
                 >
                     {message.type === "success" ? (
@@ -366,6 +402,7 @@ const RestaurantSettingsContent = () => {
                                         name="taxRate"
                                         value={formData.taxRate}
                                         onChange={handleInputChange}
+                                        onFocus={(e) => e.target.select()}
                                         min="0"
                                         max="100"
                                         step="0.1"
@@ -383,6 +420,7 @@ const RestaurantSettingsContent = () => {
                                         name="serviceCharge"
                                         value={formData.serviceCharge}
                                         onChange={handleInputChange}
+                                        onFocus={(e) => e.target.select()}
                                         min="0"
                                         max="100"
                                         step="0.1"
@@ -420,6 +458,7 @@ const RestaurantSettingsContent = () => {
                                                         type="number"
                                                         value={rule.min_order}
                                                         onChange={(e) => handleUpdateDiscountRule(index, 'min_order', e.target.value)}
+                                                        onFocus={(e) => e.target.select()}
                                                         min="0"
                                                         step="10000"
                                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
@@ -431,6 +470,7 @@ const RestaurantSettingsContent = () => {
                                                         type="number"
                                                         value={rule.discount_percent}
                                                         onChange={(e) => handleUpdateDiscountRule(index, 'discount_percent', e.target.value)}
+                                                        onFocus={(e) => e.target.select()}
                                                         min="0"
                                                         max="100"
                                                         step="1"
@@ -451,6 +491,65 @@ const RestaurantSettingsContent = () => {
                                 <p className="text-xs text-gray-500 mt-2">
                                     Giảm giá sẽ áp dụng theo mức hóa đơn cao nhất đạt được.
                                 </p>
+                            </div>
+                        </div>
+
+                        {/* QR Payment Section */}
+                        <div className="mt-6 pt-6 border-t border-gray-200">
+                            <h3 className="text-sm font-medium text-gray-700 mb-3">QR Thanh toán (Ví điện tử)</h3>
+                            <div className="flex items-start gap-6">
+                                <div className="relative">
+                                    {formData.qrPayment ? (
+                                        <div className="relative group">
+                                            <img
+                                                src={formData.qrPayment}
+                                                alt="QR thanh toán"
+                                                className="w-40 h-40 object-cover rounded-xl border-2 border-gray-200"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={handleRemoveQrPayment}
+                                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="w-40 h-40 bg-gray-100 rounded-xl flex items-center justify-center border-2 border-dashed border-gray-300">
+                                            <Image className="w-10 h-10 text-gray-400" />
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="flex-1">
+                                    <input
+                                        type="file"
+                                        ref={qrPaymentInputRef}
+                                        onChange={handleQrPaymentUpload}
+                                        accept="image/*"
+                                        className="hidden"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => qrPaymentInputRef.current?.click()}
+                                        disabled={uploadingQr}
+                                        className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors disabled:opacity-50"
+                                    >
+                                        {uploadingQr ? (
+                                            <>
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                Đang tải...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Upload className="w-4 h-4" />
+                                                Tải lên mã QR
+                                            </>
+                                        )}
+                                    </button>
+                                    <p className="text-sm text-gray-500 mt-2">
+                                        Ảnh QR sẽ hiển thị khi thanh toán qua Ví điện tử.
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>

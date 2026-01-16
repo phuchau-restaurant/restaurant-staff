@@ -48,7 +48,7 @@ const OrderCard = ({
               </span>
               <span className="text-gray-300">|</span>
               <span className="font-bold text-gray-700 text-lg">
-                Bàn {order.tableNumber}
+                {order.tableNumber}
               </span>
             </div>
 
@@ -69,8 +69,8 @@ const OrderCard = ({
           </div>
         </div>
 
-        {/* Items List - Better contrast */}
-        <div className="flex-1 px-3 py-2 overflow-y-auto bg-white min-h-[160px]">
+        {/* Items List - Max 3 visible with scroll for more */}
+        <div className="flex-1 px-3 py-2 overflow-y-auto bg-white max-h-[260px]">
           <div className="space-y-0.5">
             {order.items.map((item, idx) => {
               // Determine item status

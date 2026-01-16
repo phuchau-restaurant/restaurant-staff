@@ -15,6 +15,7 @@ export const RestaurantProvider = ({ children }) => {
         taxRate: 10.0,
         serviceCharge: 0.0,
         discountRules: [],
+        qrPayment: null,
     });
     const [loading, setLoading] = useState(true);
 
@@ -33,6 +34,7 @@ export const RestaurantProvider = ({ children }) => {
                         taxRate: response.data.taxRate ?? 10.0,
                         serviceCharge: response.data.serviceCharge ?? 0.0,
                         discountRules: response.data.discountRules || [],
+                        qrPayment: response.data.qrPayment || null,
                     });
                 }
             } catch (error) {
@@ -86,6 +88,7 @@ export const RestaurantProvider = ({ children }) => {
                     taxRate: response.data.taxRate ?? 10.0,
                     serviceCharge: response.data.serviceCharge ?? 0.0,
                     discountRules: response.data.discountRules || [],
+                    qrPayment: response.data.qrPayment || null,
                 });
             }
         } catch (error) {

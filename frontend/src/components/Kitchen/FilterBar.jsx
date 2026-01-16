@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ChevronDown, Search, SlidersHorizontal, Grid3x3, List, ArrowUpDown } from "lucide-react";
+import { ChevronDown, Search, SlidersHorizontal, ArrowUpDown } from "lucide-react";
 
 const FilterBar = ({
   filterStation,
@@ -37,7 +37,7 @@ const FilterBar = ({
   const selectedSort = sortOptions.find((s) => s.value === sortBy) || sortOptions[0];
 
   return (
-    <div className="flex gap-3 items-center">
+    <div className="flex flex-wrap gap-2 md:gap-3 items-center">
       {/* Search */}
       <div className="relative flex-1">
         <input
@@ -58,7 +58,7 @@ const FilterBar = ({
             setShowStationDropdown(false);
             setShowSortDropdown(false);
           }}
-          className="px-4 py-2.5 bg-white border-2 border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors flex items-center gap-2 min-w-[180px]"
+          className="px-3 md:px-4 py-2 md:py-2.5 bg-white border-2 border-gray-300 rounded-lg text-xs md:text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors flex items-center gap-1.5 md:gap-2 min-w-[130px] md:min-w-[160px]"
         >
           <SlidersHorizontal size={16} className="text-gray-600 shrink-0" />
           <span className="truncate flex-1 text-left">{selectedStatus.label}</span>
@@ -94,7 +94,7 @@ const FilterBar = ({
             setShowStatusDropdown(false);
             setShowSortDropdown(false);
           }}
-          className="px-4 py-2.5 bg-white border-2 border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors flex items-center gap-2 min-w-[180px]"
+          className="px-3 md:px-4 py-2 md:py-2.5 bg-white border-2 border-gray-300 rounded-lg text-xs md:text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors flex items-center gap-1.5 md:gap-2 min-w-[130px] md:min-w-[160px]"
         >
           <SlidersHorizontal size={16} className="text-gray-600 shrink-0" />
           <span className="truncate flex-1 text-left">{selectedCategory.label}</span>
@@ -131,7 +131,7 @@ const FilterBar = ({
               setShowStationDropdown(false);
               setShowStatusDropdown(false);
             }}
-            className="px-4 py-2.5 bg-white border-2 border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors flex items-center gap-2 min-w-[180px]"
+            className="px-3 md:px-4 py-2 md:py-2.5 bg-white border-2 border-gray-300 rounded-lg text-xs md:text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors flex items-center gap-1.5 md:gap-2 min-w-[130px] md:min-w-[160px]"
           >
             <ArrowUpDown size={16} className="text-gray-600 shrink-0" />
             <span className="truncate flex-1 text-left">{selectedSort.label}</span>
@@ -160,31 +160,6 @@ const FilterBar = ({
         </div>
       )}
 
-      {/* View Mode Toggle */}
-      {viewMode !== undefined && setViewMode && (
-        <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
-          <button
-            onClick={() => setViewMode("card")}
-            className={`p-2 rounded-md transition-colors ${viewMode === "card"
-              ? "bg-white text-gray-800 shadow-sm"
-              : "text-gray-500 hover:text-gray-700"
-              }`}
-            title="Chế độ lưới"
-          >
-            <Grid3x3 size={18} />
-          </button>
-          <button
-            onClick={() => setViewMode("list")}
-            className={`p-2 rounded-md transition-colors ${viewMode === "list"
-              ? "bg-white text-gray-800 shadow-sm"
-              : "text-gray-500 hover:text-gray-700"
-              }`}
-            title="Chế độ danh sách"
-          >
-            <List size={18} />
-          </button>
-        </div>
-      )}
     </div>
   );
 };

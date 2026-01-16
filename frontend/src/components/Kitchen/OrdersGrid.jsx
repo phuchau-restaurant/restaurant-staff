@@ -1,7 +1,6 @@
 import React from 'react';
 import { CheckCircle } from 'lucide-react';
 import OrderCard from '../OrderCard/OrderCard';
-import OrderListItem from '../OrderCard/OrderListItem';
 
 const OrdersGrid = ({
   orders,
@@ -14,7 +13,6 @@ const OrdersGrid = ({
   handleRecall,
   handleCompleteItem,
   handleCancelItem,
-  viewMode
 }) => {
   if (orders.length === 0) {
     return (
@@ -26,46 +24,24 @@ const OrdersGrid = ({
   }
 
   return (
-    <div className={
-      viewMode === 'card'
-        ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
-        : 'space-y-4'
-    }>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {orders.map(order => (
-        viewMode === 'list' ? (
-          <OrderListItem
-            key={order.id}
-            order={order}
-            getElapsedTime={getElapsedTime}
-            getOrderStatus={getOrderStatus}
-            handleConfirmOrder={handleConfirmOrder}
-            handleComplete={handleComplete}
-            handleCancel={handleCancel}
-            handleRecall={handleRecall}
-            handleCompleteItem={handleCompleteItem}
-            handleCancelItem={handleCancelItem}
-            viewMode={viewMode}
-          />
-        ) : (
-          <OrderCard
-            key={order.id}
-            order={order}
-            currentTime={currentTime}
-            getElapsedTime={getElapsedTime}
-            getOrderStatus={getOrderStatus}
-            handleConfirmOrder={handleConfirmOrder}
-            handleComplete={handleComplete}
-            handleCancel={handleCancel}
-            handleRecall={handleRecall}
-            handleCompleteItem={handleCompleteItem}
-            handleCancelItem={handleCancelItem}
-            viewMode={viewMode}
-          />
-        )
+        <OrderCard
+          key={order.id}
+          order={order}
+          currentTime={currentTime}
+          getElapsedTime={getElapsedTime}
+          getOrderStatus={getOrderStatus}
+          handleConfirmOrder={handleConfirmOrder}
+          handleComplete={handleComplete}
+          handleCancel={handleCancel}
+          handleRecall={handleRecall}
+          handleCompleteItem={handleCompleteItem}
+          handleCancelItem={handleCancelItem}
+        />
       ))}
     </div>
   );
 };
 
 export default OrdersGrid;
-
