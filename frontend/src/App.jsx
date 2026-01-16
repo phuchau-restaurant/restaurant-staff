@@ -10,6 +10,13 @@ import WaiterScreen from "./screens/WaiterScreen";
 import OnboardingScreen from "./screens/OnboardingScreen";
 import TablesScreen from "./screens/TablesScreen";
 
+// Super Admin Screens
+import SuperAdminLoginScreen from "./screens/SuperAdmin/SuperAdminLoginScreen";
+import SuperAdminDashboard from "./screens/SuperAdmin/SuperAdminDashboard";
+import TenantManagement from "./screens/SuperAdmin/TenantManagement";
+import SuperAdminManagement from "./screens/SuperAdmin/SuperAdminManagement";
+import SuperAdminSettings from "./screens/SuperAdmin/SuperAdminSettings";
+
 function App() {
   return (
     <BrowserRouter>
@@ -48,6 +55,15 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* Super Admin Routes */}
+          <Route path="/super-admin/login" element={<SuperAdminLoginScreen />} />
+          <Route path="/super-admin/dashboard" element={<SuperAdminDashboard />}>
+            <Route index element={<TenantManagement />} />
+            <Route path="tenants" element={<TenantManagement />} />
+            <Route path="admins" element={<SuperAdminManagement />} />
+            <Route path="settings" element={<SuperAdminSettings />} />
+          </Route>
 
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>

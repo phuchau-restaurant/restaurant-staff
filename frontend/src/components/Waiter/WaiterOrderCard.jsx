@@ -233,13 +233,13 @@ const WaiterOrderCard = ({
                         onClick={(e) => handleConfirmItem(e, item)}
                         className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-green-50 hover:bg-green-100 text-green-700 border-2 border-green-600 rounded-lg text-xs font-bold transition-colors"
                       >
-                        <Check size={12} className="sm:w-3.5 sm:h-3.5" /> Xác nhận
+                        Xác nhận
                       </button>
                       <button
                         onClick={(e) => handleCancelItem(e, item)}
                         className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border-2 border-red-600 rounded-lg text-xs font-bold transition-colors"
                       >
-                        <X size={12} className="sm:w-3.5 sm:h-3.5" /> Hủy
+                        Hủy
                       </button>
                     </div>
                   )}
@@ -250,7 +250,6 @@ const WaiterOrderCard = ({
                       onClick={(e) => handleServeItem(e, item)}
                       className="w-full mt-2 flex items-center justify-center gap-1 px-2 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border-2 border-purple-600 rounded-lg text-xs sm:text-sm font-semibold transition-colors"
                     >
-                      <Utensils size={12} className="sm:w-3.5 sm:h-3.5" />
                       Phục vụ
                     </button>
                   )}
@@ -283,7 +282,6 @@ const WaiterOrderCard = ({
               }}
               className="w-full flex items-center justify-center gap-2 bg-orange-50 hover:bg-orange-100 text-orange-700 border-2 border-orange-600 px-3 py-2 sm:px-4 sm:py-3 rounded-lg font-bold text-sm sm:text-base shadow-sm transition-all hover:shadow-md active:scale-[0.98]"
             >
-              <Check size={16} className="sm:w-5 sm:h-5" strokeWidth={2.5} />
               Nhận đơn
             </button>
           </div>
@@ -307,7 +305,6 @@ const WaiterOrderCard = ({
               }}
               className="w-full flex items-center justify-center gap-2 bg-green-50 hover:bg-green-100 text-green-700 border-2 border-green-600 px-3 py-2 sm:px-4 sm:py-3 rounded-lg font-bold text-sm sm:text-base shadow-sm transition-all hover:shadow-md active:scale-[0.98]"
             >
-              <CreditCard size={16} className="sm:w-5 sm:h-5" strokeWidth={2.5} />
               Thanh toán
             </button>
           </div>
@@ -422,7 +419,7 @@ const WaiterOrderCard = ({
                               onClick={(e) => handleServeItem(e, item)}
                               className="flex items-center gap-1.5 sm:gap-2 bg-purple-50 hover:bg-purple-100 text-purple-700 border-2 border-purple-600 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg text-xs sm:text-base font-semibold transition-colors"
                             >
-                              <Utensils size={14} className="sm:w-4 sm:h-4" /> Phục vụ
+                              Phục vụ
                             </button>
                           )}
 
@@ -432,7 +429,7 @@ const WaiterOrderCard = ({
                               onClick={(e) => handleCancelItem(e, item)}
                               className="flex items-center gap-1.5 sm:gap-2 bg-red-50 hover:bg-red-100 text-red-700 border-2 border-red-600 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg text-xs sm:text-base font-semibold transition-colors"
                             >
-                              <X size={14} className="sm:w-4 sm:h-4" /> Hủy món
+                              Hủy món
                             </button>
                           )}
 
@@ -443,13 +440,13 @@ const WaiterOrderCard = ({
                                 onClick={(e) => handleConfirmItem(e, item)}
                                 className="flex items-center gap-1.5 sm:gap-2 bg-green-50 hover:bg-green-100 text-green-700 border-2 border-green-600 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg text-xs sm:text-base font-semibold transition-colors"
                               >
-                                <Check size={14} className="sm:w-4 sm:h-4" /> Xác nhận
+                                Xác nhận
                               </button>
                               <button
                                 onClick={(e) => handleCancelItem(e, item)}
-                                className="flex items-center gap-1.5 sm:gap-2 bg-red-50 hover:bg-red-100 text-red-700 border-2 border-red-600 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg text-xs sm:text-base font-semibold transition-colors"
+                                className="flex items-center justify-center gap-1.5 sm:gap-2 bg-red-50 hover:bg-red-100 text-red-700 border-2 border-red-600 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg text-xs sm:text-base font-semibold transition-colors"
                               >
-                                <X size={14} className="sm:w-4 sm:h-4" /> Hủy
+                                Hủy
                               </button>
                             </>
                           )}
@@ -480,7 +477,6 @@ const WaiterOrderCard = ({
                   }}
                   className="w-full flex items-center justify-center gap-2 bg-orange-50 hover:bg-orange-100 text-orange-700 border-2 border-orange-600 px-4 py-3 sm:px-6 sm:py-4 rounded-xl font-bold text-base sm:text-lg shadow-lg transition-all hover:shadow-xl active:scale-[0.98]"
                 >
-                  <Check size={20} className="sm:w-6 sm:h-6" strokeWidth={2.5} />
                   Nhận đơn này
                 </button>
               </div>

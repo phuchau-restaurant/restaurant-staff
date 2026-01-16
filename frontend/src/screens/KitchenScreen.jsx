@@ -546,13 +546,33 @@ const KitchenScreen = () => {
       await kitchenService.cancelOrderItem(orderId, item.order_detail_id);
       showWarning(`Đã hủy món: ${item.name}`);
 
-      // Update local state
-      setOrders((prev) =>
-        updateOrderItemInList(prev, orderId, item.order_detail_id, {
-          cancelled: true,
-          status: "Cancelled",
-        })
-      );
+      // Fetch updated order to check if all items are cancelled
+      const updatedOrderData = await kitchenService.fetchOrderDetails(orderId);
+
+      if (updatedOrderData) {
+        // Check if order is fully cancelled (status = Cancelled from backend)
+        if (updatedOrderData.orderStatus === "Cancelled" || updatedOrderData.status === "Cancelled") {
+          showError(`Đơn hàng #${order.orderNumber} đã bị hủy hoàn toàn!`);
+          // Remove the order from list since it's fully cancelled
+          setOrders((prev) => removeOrderFromList(prev, orderId));
+        } else {
+          // Update local state
+          setOrders((prev) =>
+            updateOrderItemInList(prev, orderId, item.order_detail_id, {
+              cancelled: true,
+              status: "Cancelled",
+            })
+          );
+        }
+      } else {
+        // Fallback: Update local state
+        setOrders((prev) =>
+          updateOrderItemInList(prev, orderId, item.order_detail_id, {
+            cancelled: true,
+            status: "Cancelled",
+          })
+        );
+      }
     } catch (error) {
       showError("Không thể hủy món ăn");
     }
