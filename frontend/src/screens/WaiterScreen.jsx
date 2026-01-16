@@ -9,6 +9,7 @@ import { useAuth } from "../context/AuthContext";
 import { useAlert } from "../hooks/useAlert"; // Import useAlert
 import { Search, Bell, X } from "lucide-react";
 import * as waiterService from "../services/waiterService";
+import { SkeletonOrderCard } from "../components/Skeleton";
 import {
   mapOrderFromApi,
   updateOrderItemInList,
@@ -36,7 +37,7 @@ const WaiterScreen = () => {
   });
   const [notification, setNotification] = useState(null);
   const [isAudioEnabled, setIsAudioEnabled] = useState(false);
-  
+
   // Invoice modal state
   const [invoiceModal, setInvoiceModal] = useState({
     isOpen: false,
@@ -354,24 +355,24 @@ const WaiterScreen = () => {
   // Hàm xác nhận thanh toán
   const handleConfirmPayment = async (orderId, paymentMethod) => {
     setInvoiceModal(prev => ({ ...prev, isConfirming: true }));
-    
+
     try {
       const response = await waiterService.confirmPayment(orderId, paymentMethod);
-      
+
       if (response.success) {
         // Đóng modal
         setInvoiceModal({ isOpen: false, order: null, isConfirming: false });
-        
+
         // Cập nhật local state - chuyển đơn sang Paid
         const updateOrders = (ordersList) =>
-          ordersList.map(order => 
-            order.id === orderId 
+          ordersList.map(order =>
+            order.id === orderId
               ? { ...order, status: "Paid" }
               : order
           );
         setOrders(updateOrders);
         setMyOrders(updateOrders);
-        
+
         showAlert("Thành công", "Đã xác nhận thanh toán thành công!", "success");
       }
     } catch (error) {
@@ -393,10 +394,22 @@ const WaiterScreen = () => {
           console.log("⚠️ Order already exists in list, skipping:", newOrder.id);
           return prev;
         }
+        
+        // Phát âm thanh và hiển thị thông báo khi có đơn mới
+        playNotificationSound();
+        setNotification({
+          message: `Đơn hàng mới #${newOrder.orderNumber} - Bàn ${newOrder.tableNumber}`,
+          orderId: newOrder.id,
+          type: "new",
+        });
+        
+        // Tự động ẩn sau 5 giây
+        setTimeout(() => setNotification(null), 5000);
+        
         return [newOrder, ...prev];
       });
     }
-  }, [fetchOrderDetails]);
+  }, [fetchOrderDetails, playNotificationSound]);
 
   const handleOrderUpdated = useCallback((data) => {
     console.log("🔔 Order updated:", data);
@@ -433,6 +446,29 @@ const WaiterScreen = () => {
         setTimeout(() => setNotification(null), 5000);
       } else {
         console.log("⏭️ Skipping Ready notification - order not in myOrders");
+      }
+    }
+
+    // Thông báo khi món ăn bị hủy (Cancelled) - chỉ thông báo nếu đơn thuộc về waiter này
+    if (data.status === "Cancelled") {
+      const order = myOrders.find(o => String(o.id) === targetOrderId);
+
+      if (order) {
+        const item = order?.items?.find(i => String(i.id) === targetDetailId || String(i.dishId) === targetDishId);
+        const itemName = item?.name || "Món ăn";
+        const tableNumber = order?.tableNumber || "";
+
+        setNotification({
+          message: `❌ ${itemName} (Bàn ${tableNumber}) đã bị hủy!`,
+          orderId: data.orderId,
+          type: "cancelled",
+        });
+        playNotificationSound();
+
+        // Tự động ẩn sau 5 giây
+        setTimeout(() => setNotification(null), 5000);
+      } else {
+        console.log("⏭️ Skipping Cancelled notification - order not in myOrders");
       }
     }
 
@@ -580,7 +616,13 @@ const WaiterScreen = () => {
 
       {/* Notification Toast */}
       {notification && (
-        <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-4 flex items-center justify-between shadow-lg animate-in slide-in-from-top duration-300">
+        <div className={`${
+          notification.type === "cancelled" 
+            ? "bg-gradient-to-r from-red-500 to-red-600" 
+            : notification.type === "new"
+            ? "bg-gradient-to-r from-blue-500 to-blue-600"
+            : "bg-gradient-to-r from-green-500 to-green-600"
+        } text-white px-6 py-4 flex items-center justify-between shadow-lg animate-in slide-in-from-top duration-300`}>
           <div className="flex items-center gap-3">
             <Bell className="w-5 h-5 animate-bounce" />
             <span className="font-semibold text-lg">
@@ -659,11 +701,10 @@ const WaiterScreen = () => {
 
         {/* Loading State */}
         {isLoading ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Đang tải đơn hàng...</p>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {[...Array(6)].map((_, i) => (
+              <SkeletonOrderCard key={i} variant="waiter" />
+            ))}
           </div>
         ) : (
           <WaiterOrdersGrid

@@ -8,6 +8,7 @@ import OrderListView from "../../components/orders/OrderListView";
 import OrderForm from "../../components/orders/OrderForm";
 import OrderDetailViewModal from "../../components/orders/OrderDetailViewModal";
 import AlertModal from "../../components/Modal/AlertModal";
+import ConfirmModal from "../../components/Modal/ConfirmModal";
 import LoadingOverlay from "../../components/SpinnerLoad/LoadingOverlay";
 import Pagination from "../../components/SpinnerLoad/Pagination";
 
@@ -858,61 +859,18 @@ const OrderManagementContent = () => {
           type={alertModal.type}
         />
 
-        {/* Confirm Modal với danh sách items */}
-        {confirmDialog.isOpen && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-            <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden">
-              {/* Header */}
-              <div className="bg-amber-50 border-b border-amber-200 p-5">
-                <h3 className="text-xl font-bold text-amber-800 flex items-center gap-2">
-                  <AlertTriangle className="w-6 h-6 text-amber-600" />
-                  {confirmDialog.title}
-                </h3>
-              </div>
-
-              {/* Content */}
-              <div className="p-5">
-                {/* Hiển thị danh sách items nếu có */}
-                {confirmDialog.items && confirmDialog.items.length > 0 && (
-                  <>
-                    <p className="text-gray-700 mb-4">
-                      Đơn hàng có <span className="font-bold text-red-600">{confirmDialog.items.length} món</span> cần xử lý:
-                    </p>
-
-                    <div className="bg-gray-50 rounded-lg p-3 mb-4 max-h-40 overflow-y-auto">
-                      {confirmDialog.items.map((item, idx) => (
-                        <div key={item.id || idx} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-                          <span className="font-medium text-gray-800">{item.name || item.dishName}</span>
-                          <span className="text-orange-600 font-bold">x{item.quantity}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-
-                <p className="text-gray-600 text-sm whitespace-pre-line">
-                  {confirmDialog.message}
-                </p>
-              </div>
-
-              {/* Actions */}
-              <div className="p-5 bg-gray-50 border-t border-gray-200 flex gap-3">
-                <button
-                  onClick={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
-                  className="flex-1 py-2.5 px-4 rounded-lg font-semibold border-2 border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors"
-                >
-                  Hủy bỏ
-                </button>
-                <button
-                  onClick={confirmDialog.onConfirm}
-                  className="flex-1 py-2.5 px-4 rounded-lg font-semibold bg-amber-500 text-white hover:bg-amber-600 transition-colors"
-                >
-                  {confirmDialog.confirmText || "Xác nhận"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Confirm Modal - Using reusable component */}
+        <ConfirmModal
+          isOpen={confirmDialog.isOpen}
+          onClose={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
+          onConfirm={confirmDialog.onConfirm}
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          confirmText={confirmDialog.confirmText}
+          cancelText="Hủy bỏ"
+          type={confirmDialog.type}
+          items={confirmDialog.items}
+        />
       </div>
     </div>
   );

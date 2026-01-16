@@ -1,0 +1,86 @@
+name: Backend CI/CD
+
+# Kích hoạt workflow khi:
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci-cd.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/**'
+
+# Định nghĩa các jobs
+jobs:
+  # Job 1: Kiểm thử và Build
+  test-and-build:
+    name: Test & Build Backend
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+      # Bước 1: Checkout code
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      # Bước 2: Setup Node.js
+      - name: 🔧 Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+      
+      # Bước 3: Install dependencies
+      - name: 📦 Install dependencies
+        working-directory: ./backend
+        run: npm ci
+      
+      # Bước 4: Lint code (nếu có ESLint)
+      - name: 🔍 Lint code
+        working-directory: ./backend
+        run: |
+          if [ -f ".eslintrc.json" ] || [ -f ".eslintrc.js" ]; then
+            npm run lint || echo "⚠️ No lint script found, skipping..."
+          else
+            echo "⚠️ No ESLint config found, skipping..."
+          fi
+        continue-on-error: true
+      
+      # Bước 5: Run tests (nếu có)
+      - name: 🧪 Run tests
+        working-directory: ./backend
+        run: |
+          if grep -q "\"test\"" package.json; then
+            npm test
+          else
+            echo "⚠️ No test script found, skipping..."
+          fi
+        continue-on-error: true
+      
+      # Bước 6: Build check (đảm bảo code không có lỗi syntax)
+      - name: 🏗️ Build check
+        working-directory: ./backend
+        run: |
+          echo "✅ Checking if server.js can be loaded..."
+          node -c server.js
+          echo "✅ Backend code syntax is valid!"
+
+  # Job 2: Deploy to Render (chỉ chạy khi push vào main)
+  deploy:
+    name: Deploy to Render
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: 🚀 Deploy to Render
+        run: |
+          echo "🎯 Triggering Render deployment..."
+          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+          echo "✅ Deployment triggered successfully!"

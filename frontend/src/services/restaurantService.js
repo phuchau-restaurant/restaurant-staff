@@ -1,10 +1,10 @@
 // frontend/src/services/restaurantService.js
-const BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/restaurant`;
+const BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/tenants`;
 
 const getHeaders = () => {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     const tenantId = user.tenantId;
-    
+
     return {
         "Content-Type": "application/json",
         "x-tenant-id": tenantId,
@@ -128,12 +128,49 @@ export const uploadLogo = async (file) => {
     }
 };
 
+/**
+ * Upload QR payment image to separate folder
+ * @param {File} file - File ảnh QR
+ * @returns {Promise<string>} URL của QR đã upload
+ */
+export const uploadQrPayment = async (file) => {
+    try {
+        const formData = new FormData();
+        formData.append("image", file);
+        formData.append("folder", "qr-payments");
+
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
+        const response = await fetch(
+            `${import.meta.env.VITE_BACKEND_URL}/api/upload`,
+            {
+                method: "POST",
+                headers: {
+                    "x-tenant-id": user.tenantId,
+                },
+                body: formData,
+            }
+        );
+
+        const result = await response.json();
+
+        if (result.data?.url) {
+            return result.data.url;
+        }
+        throw new Error(result.message || "Failed to upload QR payment");
+    } catch (error) {
+        console.error("Upload QR payment error:", error);
+        throw error;
+    }
+};
+
 // Default export for backward compatibility
 const restaurantService = {
     getRestaurantInfo,
     updateRestaurantInfo,
     updateLogo,
     uploadLogo,
+    uploadQrPayment,
 };
 
 export default restaurantService;
+

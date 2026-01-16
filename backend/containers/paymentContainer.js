@@ -1,17 +1,18 @@
 // backend/containers/paymentContainer.js
 import { PaymentRepository } from "../repositories/implementation/PaymentRepository.js";
-import { RestaurantInfoRepository } from "../repositories/implementation/RestaurantInfoRepository.js";
+import { TenantsRepository } from "../repositories/implementation/TenantsRepository.js";
 import PaymentService from "../services/Payment/PaymentService.js";
 import PaymentController from "../controllers/Payment/PaymentController.js";
 
 // Repositories
 const paymentRepository = new PaymentRepository();
-const restaurantInfoRepository = new RestaurantInfoRepository();
+const tenantsRepository = new TenantsRepository();
 
 // Services
-const paymentService = new PaymentService(paymentRepository, restaurantInfoRepository);
+const paymentService = new PaymentService(paymentRepository, tenantsRepository);
 
 // Controllers
 const paymentController = new PaymentController(paymentService);
 
 export { paymentController, paymentService };
+

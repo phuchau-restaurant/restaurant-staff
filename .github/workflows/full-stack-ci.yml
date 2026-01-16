@@ -1,0 +1,55 @@
+name: Full Stack CI
+
+# Workflow này chạy cho toàn bộ project
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  # Job kiểm tra toàn bộ project
+  full-stack-check:
+    name: Full Stack Health Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+      
+      # Kiểm tra Backend
+      - name: 🔍 Check Backend
+        working-directory: ./backend
+        run: |
+          echo "📦 Installing backend dependencies..."
+          npm ci
+          echo "✅ Backend dependencies installed!"
+          echo "🔍 Checking backend syntax..."
+          node -c server.js
+          echo "✅ Backend syntax check passed!"
+      
+      # Kiểm tra Frontend
+      - name: 🔍 Check Frontend
+        working-directory: ./frontend
+        run: |
+          echo "📦 Installing frontend dependencies..."
+          npm ci
+          echo "✅ Frontend dependencies installed!"
+          echo "🏗️ Building frontend..."
+          npm run build
+          echo "✅ Frontend build successful!"
+      
+      # Tạo summary report
+      - name: 📊 Generate Summary
+        run: |
+          echo "## ✅ Full Stack CI Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Backend: Dependencies installed & syntax validated" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Frontend: Dependencies installed & build successful" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Project is healthy and ready for deployment! 🚀**" >> $GITHUB_STEP_SUMMARY

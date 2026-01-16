@@ -1,0 +1,80 @@
+name: Frontend CI/CD
+
+# Kích hoạt workflow khi:
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend-ci-cd.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'frontend/**'
+
+# Định nghĩa các jobs
+jobs:
+  # Job 1: Kiểm thử và Build
+  test-and-build:
+    name: Test & Build Frontend
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Bước 1: Checkout code
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      # Bước 2: Setup Node.js
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      
+      # Bước 3: Install dependencies
+      - name: 📦 Install dependencies
+        working-directory: ./frontend
+        run: npm ci
+      
+      # Bước 4: Lint code
+      - name: 🔍 Lint code
+        working-directory: ./frontend
+        run: npm run lint
+        continue-on-error: true
+      
+      # Bước 5: Build production
+      - name: 🏗️ Build production
+        working-directory: ./frontend
+        env:
+          VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
+          VITE_TENANT_ID: ${{ secrets.VITE_TENANT_ID }}
+        run: npm run build
+      
+      # Bước 6: Upload build artifacts (để deploy sau)
+      - name: 📤 Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/dist
+          retention-days: 7
+
+  # Job 2: Deploy to Vercel (chỉ chạy khi push vào main)
+  deploy-vercel:
+    name: Deploy to Vercel
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🚀 Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./frontend
+          vercel-args: '--prod'

@@ -171,7 +171,7 @@ const UserProfileModal = ({ user, onClose, onSave }) => {
                 exit={{ opacity: 0 }}
             >
                 <motion.div
-                    className="relative bg-white rounded-3xl shadow-2xl overflow-hidden"
+                    className="relative bg-white rounded-3xl shadow-2xl overflow-hidden w-full max-w-[95vw] sm:max-w-none"
                     initial={{ scale: 0.9, opacity: 0, y: 30 }}
                     animate={{ scale: 1, opacity: 1, y: 0 }}
                     exit={{ scale: 0.9, opacity: 0, y: 30 }}
@@ -179,15 +179,24 @@ const UserProfileModal = ({ user, onClose, onSave }) => {
                     onClick={(e) => e.stopPropagation()}
                     ref={modalRef}
                     style={{
-                        position: "absolute",
-                        left: modalPos.x,
-                        top: modalPos.y,
-                        width: modalSize.width,
-                        height: modalSize.height,
-                        minWidth: 400,
-                        minHeight: 400,
-                        maxWidth: "100vw",
-                        maxHeight: "100vh",
+                        // On mobile: use relative positioning (centered by flex parent)
+                        // On desktop: use absolute positioning with drag
+                        ...(window.innerWidth < 640 ? {
+                            position: "relative",
+                            width: "100%",
+                            maxWidth: "95vw",
+                            maxHeight: "90vh",
+                        } : {
+                            position: "absolute",
+                            left: modalPos.x,
+                            top: modalPos.y,
+                            width: modalSize.width,
+                            height: modalSize.height,
+                            minWidth: 400,
+                            minHeight: 400,
+                            maxWidth: "100vw",
+                            maxHeight: "100vh",
+                        }),
                         display: "flex",
                         flexDirection: "column",
                     }}
