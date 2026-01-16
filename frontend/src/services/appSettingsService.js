@@ -1,12 +1,14 @@
+import { getTenantId } from "../utils/auth";
+
 /**
  * AppSettings Service - API calls cho app settings (location, icons, etc.)
  */
 
 const BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/appsettings`;
-const HEADERS = {
+const getHeaders = () => ({
   "Content-Type": "application/json",
-  "x-tenant-id": import.meta.env.VITE_TENANT_ID,
-};
+  "x-tenant-id": getTenantId(),
+});
 
 /**
  * Fetch app settings theo category
@@ -20,7 +22,7 @@ export const fetchAppSettings = async (category) => {
 
     const url = `${BASE_URL}?${queryParams.toString()}`;
 
-    const response = await fetch(url, { headers: HEADERS });
+    const response = await fetch(url, { headers: getHeaders() });
     const result = await response.json();
 
     if (response.ok && result.success) {

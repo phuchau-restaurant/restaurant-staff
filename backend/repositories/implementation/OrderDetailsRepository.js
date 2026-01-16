@@ -27,7 +27,7 @@ export class OrderDetailsRepository extends BaseRepository {
       .select();
 
     if (error) throw new Error(`[OrderDetails] CreateMany failed: ${error.message}`);
-    
+
     // 3. Map kết quả về Model
     return data.map(item => new OrderDetails(item));
   }
@@ -54,7 +54,7 @@ export class OrderDetailsRepository extends BaseRepository {
 
     return data.map(item => new OrderDetails(item));
   }
-  
+
   async getByOrderId(orderId) {
     const { data, error } = await supabase
       .from(this.tableName)
@@ -64,7 +64,7 @@ export class OrderDetailsRepository extends BaseRepository {
     if (error) throw new Error(`[OrderDetails] GetByOrderId failed: ${error.message}`);
     return data.map(item => new OrderDetails(item));
   }
-  
+
   async deleteByOrderId(orderId) {
     const { error } = await supabase
       .from(this.tableName)
@@ -76,8 +76,8 @@ export class OrderDetailsRepository extends BaseRepository {
   }
 
   async updateById(id, updates) {
-    const entity = new OrderDetails(updates); 
-    const dbPayload = entity.toPersistence(); 
+    const entity = new OrderDetails(updates);
+    const dbPayload = entity.toPersistence();
 
     // Clean payload (bỏ undefined)
     Object.keys(dbPayload).forEach(key => dbPayload[key] === undefined && delete dbPayload[key]);
@@ -92,21 +92,47 @@ export class OrderDetailsRepository extends BaseRepository {
   }
   //Update all order details by orderId
   async updateByOrderId(orderId, updates) {
-    const entity = new OrderDetails(updates); 
+    const entity = new OrderDetails(updates);
     const dbPayload = entity.toPersistence();
 
     // Clean payload (bỏ undefined)
     Object.keys(dbPayload).forEach(
-      key => dbPayload[key] === undefined 
-      && delete dbPayload[key]
+      key => dbPayload[key] === undefined
+        && delete dbPayload[key]
     );
-    
+
     const { data, error } = await supabase
       .from(this.tableName)
       .update(dbPayload)
       .eq("order_id", orderId)
       .select();
     if (error) throw new Error(error.message);
+    return data.map(item => new OrderDetails(item));
+  }
+
+  /**
+   * Batch update nhiều order details theo danh sách IDs
+   * @param {Array} ids - Danh sách order_detail_id cần update
+   * @param {Object} updates - Object chứa các field cần cập nhật (VD: { status: 'Ready' })
+   */
+  async updateByIds(ids, updates) {
+    if (!ids || ids.length === 0) return [];
+
+    const entity = new OrderDetails(updates);
+    const dbPayload = entity.toPersistence();
+
+    // Clean payload (bỏ undefined)
+    Object.keys(dbPayload).forEach(
+      key => dbPayload[key] === undefined && delete dbPayload[key]
+    );
+
+    const { data, error } = await supabase
+      .from(this.tableName)
+      .update(dbPayload)
+      .in("id", ids)
+      .select();
+
+    if (error) throw new Error(`[OrderDetails] UpdateByIds failed: ${error.message}`);
     return data.map(item => new OrderDetails(item));
   }
 }

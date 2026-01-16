@@ -27,6 +27,9 @@ import {
   ERROR_MESSAGES,
 } from "../constants/tableConstants";
 
+// Socket hooks for real-time updates
+import { useTableSocket } from "../hooks/useTableSocket";
+
 /**
  * TablesScreen - Màn hình quản lý bàn
  * Hiển thị danh sách bàn với các chức năng:
@@ -73,6 +76,36 @@ const TablesScreen = () => {
 
   // Options cho dropdowns
   const [areaOptions, setAreaOptions] = useState([{ value: "", label: "Tất cả khu vực" }]);
+
+  // ==================== SOCKET REAL-TIME UPDATES ====================
+
+  // Handler for table created (from other tabs/users)
+  const handleSocketTableCreated = useCallback(async (data) => {
+    console.log("🔔 [Socket] New table created:", data);
+    await fetchTables(); // Re-fetch để có dữ liệu mới nhất
+  }, [statusFilter, areaFilter, currentPage, pageSize]);
+
+  // Handler for table updated (from other tabs/users)
+  const handleSocketTableUpdated = useCallback(async (data) => {
+    console.log("🔔 [Socket] Table updated:", data);
+    await fetchTables(); // Re-fetch để có dữ liệu mới nhất
+  }, [statusFilter, areaFilter, currentPage, pageSize]);
+
+  // Handler for table deleted
+  const handleSocketTableDeleted = useCallback(async (data) => {
+    console.log("🔔 [Socket] Table deleted:", data);
+    // data can be either { tableId: id } or just the id itself
+    const tableId = data.tableId || data;
+    // Refetch để cập nhật pagination và đảm bảo tất cả màn hình đồng bộ
+    await fetchTables();
+  }, [statusFilter, areaFilter, currentPage, pageSize]);
+
+  // Connect socket listeners and get connection status
+  const { isConnected: socketConnected } = useTableSocket({
+    onTableCreated: handleSocketTableCreated,
+    onTableUpdated: handleSocketTableUpdated,
+    onTableDeleted: handleSocketTableDeleted,
+  });
 
   // ==================== LIFECYCLE ====================
 
@@ -212,6 +245,75 @@ const TablesScreen = () => {
     });
   };
 
+  /**
+   * Xóa mềm bàn (soft delete)
+   */
+  const handleDeleteTable = (tableId) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Xác nhận xóa bàn",
+      message: "Bạn có chắc chắn muốn xóa bàn này? Bàn sẽ bị vô hiệu hóa.",
+      onConfirm: async () => {
+        try {
+          await tableService.updateTableStatus(tableId, TableStatus.INACTIVE);
+          showSuccess("Đã xóa bàn thành công");
+          fetchTables();
+        } catch (error) {
+          console.error("Error deleting table:", error);
+          showError(error.message || "Không thể xóa bàn");
+        } finally {
+          setConfirmDialog({ isOpen: false, title: "", message: "", onConfirm: null });
+        }
+      },
+    });
+  };
+
+  /**
+   * Khôi phục bàn đã xóa
+   */
+  const handleRestoreTable = (tableId) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Xác nhận khôi phục",
+      message: "Bạn có chắc chắn muốn khôi phục bàn này?",
+      onConfirm: async () => {
+        try {
+          await tableService.updateTableStatus(tableId, TableStatus.AVAILABLE);
+          showSuccess("Đã khôi phục bàn thành công");
+          fetchTables();
+        } catch (error) {
+          console.error("Error restoring table:", error);
+          showError(error.message || "Không thể khôi phục bàn");
+        } finally {
+          setConfirmDialog({ isOpen: false, title: "", message: "", onConfirm: null });
+        }
+      },
+    });
+  };
+
+  /**
+   * Xóa vĩnh viễn bàn (hard delete)
+   */
+  const handleDeletePermanent = (tableId) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Xác nhận xóa vĩnh viễn",
+      message: "Bạn có chắc chắn muốn xóa vĩnh viễn bàn này? Hành động này không thể hoàn tác!",
+      onConfirm: async () => {
+        try {
+          await tableService.deleteTablePermanent(tableId);
+          showSuccess("Đã xóa vĩnh viễn bàn thành công");
+          fetchTables();
+        } catch (error) {
+          console.error("Error permanently deleting table:", error);
+          showError(error.message || "Không thể xóa vĩnh viễn bàn");
+        } finally {
+          setConfirmDialog({ isOpen: false, title: "", message: "", onConfirm: null });
+        }
+      },
+    });
+  };
+
   // ==================== HELPERS ====================
 
   /**
@@ -296,6 +398,7 @@ const TablesScreen = () => {
             totalTables={filteredTables.length}
             onCreateTable={handleCreateTable}
             onManageQR={handleManageQR}
+            socketConnected={socketConnected}
           />
           {/* Filter Bar */}
           <TablesFilterBar
@@ -342,7 +445,9 @@ const TablesScreen = () => {
                     table={table}
                     onEdit={handleEditTable}
                     onToggleStatus={toggleOccupiedStatus}
-                    onToggleActive={toggleTableActive}
+                    onDelete={handleDeleteTable}
+                    onRestore={handleRestoreTable}
+                    onDeletePermanent={handleDeletePermanent}
                   />
                 ))}
               </div>
@@ -352,7 +457,9 @@ const TablesScreen = () => {
                 tables={filteredTables}
                 onEdit={handleEditTable}
                 onToggleStatus={toggleOccupiedStatus}
-                onToggleActive={toggleTableActive}
+                onDelete={handleDeleteTable}
+                onRestore={handleRestoreTable}
+                onDeletePermanent={handleDeletePermanent}
               />
             )}
 

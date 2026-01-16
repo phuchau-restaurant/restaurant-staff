@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Plus, UtensilsCrossed } from "lucide-react";
 
 // Components
@@ -21,6 +21,10 @@ import {
   VIEW_MODES,
   PRICE_RANGES,
 } from "../../constants/menuConstants";
+import { SkeletonProductGrid, SkeletonTable } from "../../components/Skeleton";
+
+// Socket hooks for real-time updates
+import { useMenuSocket } from "../../hooks/useMenuSocket";
 
 /**
  * MenuManagementContent - Màn hình quản lý món ăn trong Dashboard
@@ -35,7 +39,7 @@ import {
  */
 const MenuManagementContent = () => {
   // ==================== STATE MANAGEMENT ====================
-  
+
   // State quản lý dữ liệu
   const [menuItems, setMenuItems] = useState([]);
   const [filteredMenuItems, setFilteredMenuItems] = useState([]);
@@ -76,6 +80,42 @@ const MenuManagementContent = () => {
     onConfirm: null,
   });
 
+  // ==================== SOCKET REAL-TIME UPDATES ====================
+
+  // Handler for menu created (from other tabs/users)
+  const handleSocketMenuCreated = useCallback(async (data) => {
+    console.log("🔔 [Socket] Menu created:", data);
+    // Close form if open to prevent flash
+    setShowForm(false);
+    setEditingMenuItem(null);
+    await fetchInitialData(); // Re-fetch để có dữ liệu mới nhất
+  }, []);
+
+  // Handler for menu updated (from other tabs/users)
+  const handleSocketMenuUpdated = useCallback(async (data) => {
+    console.log("🔔 [Socket] Menu updated:", data);
+    // Close form if open to prevent flash
+    setShowForm(false);
+    setEditingMenuItem(null);
+    await fetchInitialData(); // Re-fetch để có dữ liệu mới nhất
+  }, []);
+
+  // Handler for menu deleted (from other tabs/users)
+  const handleSocketMenuDeleted = useCallback(async (data) => {
+    console.log("🔔 [Socket] Menu deleted:", data);
+    // Close form if open to prevent flash
+    setShowForm(false);
+    setEditingMenuItem(null);
+    await fetchInitialData(); // Re-fetch để có dữ liệu mới nhất
+  }, []);
+
+  // Connect socket listeners and get connection status
+  const { isConnected: socketConnected } = useMenuSocket({
+    onMenuCreated: handleSocketMenuCreated,
+    onMenuUpdated: handleSocketMenuUpdated,
+    onMenuDeleted: handleSocketMenuDeleted,
+  });
+
   // ==================== LIFECYCLE ====================
 
   // Fetch dữ liệu ban đầu
@@ -105,11 +145,14 @@ const MenuManagementContent = () => {
     try {
       setInitialLoading(true);
       const [menuResult, categoryData, modifierData] = await Promise.all([
-        menuService.fetchMenuItems({ pageNumber: currentPage, pageSize: pageSize }),
+        menuService.fetchMenuItems({
+          pageNumber: currentPage,
+          pageSize: pageSize,
+        }),
         menuService.fetchActiveCategories(),
         modifierService.fetchModifierGroups(),
       ]);
-      
+
       // Xử lý response có pagination hoặc không
       let menuData = [];
       if (menuResult.pagination) {
@@ -119,41 +162,53 @@ const MenuManagementContent = () => {
         menuData = Array.isArray(menuResult) ? menuResult : [];
         setPaginationInfo(null);
       }
-      
+
       // Xử lý categoryData có thể có pagination
       const categoryList = categoryData.data || categoryData || [];
-      
+
       // Tạo map categoryId -> categoryName để lookup nhanh
       const categoryMap = {};
-      categoryList.forEach(cat => {
+      categoryList.forEach((cat) => {
         categoryMap[cat.id] = cat.name;
       });
-      
-      // Fetch ảnh cho từng món ăn và map categoryName
-      const menuItemsWithImages = await Promise.all(
+
+      // Fetch ảnh và modifier groups cho từng món ăn
+      const menuItemsWithImagesAndModifiers = await Promise.all(
         menuData.map(async (item) => {
           try {
+            // Fetch ảnh
             const photos = await menuService.getPhotosByDishId(item.id);
+
+            // Fetch modifier groups đã gắn cho món này
+            const attachedModifiers =
+              await modifierService.fetchDishModifierGroups(item.id);
+            const modifierGroupIds = attachedModifiers.map(
+              (mod) => mod.groupId || mod.id
+            );
+
             return {
               ...item,
               categoryName: categoryMap[item.categoryId] || "",
-              images: photos.map(photo => ({
+              images: photos.map((photo) => ({
                 id: photo.id,
                 url: photo.url,
-                isPrimary: photo.isPrimary || photo.is_primary || false
-              }))
+                isPrimary: photo.isPrimary || photo.is_primary || false,
+              })),
+              modifierGroups: modifierGroupIds.map((id) => ({ id })),
             };
           } catch (error) {
-            // Nếu lỗi thì giữ nguyên item không có images
+            // Nếu lỗi thì giữ nguyên item không có images/modifiers
+            console.warn(`Error fetching data for item ${item.id}:`, error);
             return {
               ...item,
-              categoryName: categoryMap[item.categoryId] || ""
+              categoryName: categoryMap[item.categoryId] || "",
+              modifierGroups: [],
             };
           }
         })
       );
-      
-      setMenuItems(menuItemsWithImages);
+
+      setMenuItems(menuItemsWithImagesAndModifiers);
       setCategories(categoryList);
       setModifierGroups(modifierData.data || modifierData || []);
     } catch (error) {
@@ -185,41 +240,49 @@ const MenuManagementContent = () => {
   const handleCreateMenuItem = async (menuData) => {
     try {
       const newMenuItem = await menuService.createMenuItem(menuData);
-      
+
       // Upload images if any
       let uploadedPhotos = [];
       if (menuData.newImages && menuData.newImages.length > 0) {
         // Upload tất cả ảnh một lần (API hỗ trợ multi-upload)
-        uploadedPhotos = await menuService.uploadMenuImage(newMenuItem.id, menuData.newImages);
-        
+        uploadedPhotos = await menuService.uploadMenuImage(
+          newMenuItem.id,
+          menuData.newImages
+        );
+
         // Set ảnh đầu tiên làm primary nếu có upload thành công
         if (uploadedPhotos && uploadedPhotos.length > 0) {
           await menuService.setPrimaryImage(uploadedPhotos[0].id);
-          
+
           // Cập nhật imageUrl vào database để khi load lại trang vẫn có ảnh
           const primaryPhotoUrl = uploadedPhotos[0].url;
-          await menuService.updateMenuItem(newMenuItem.id, { imageUrl: primaryPhotoUrl });
-          
+          await menuService.updateMenuItem(newMenuItem.id, {
+            imageUrl: primaryPhotoUrl,
+          });
+
           // Gán imgUrl từ ảnh primary để hiển thị ngay
           newMenuItem.imgUrl = primaryPhotoUrl;
-          newMenuItem.images = uploadedPhotos.map(p => ({
+          newMenuItem.images = uploadedPhotos.map((p) => ({
             id: p.id,
             url: p.url,
-            isPrimary: p.isPrimary || p.is_primary
+            isPrimary: p.isPrimary || p.is_primary,
           }));
         }
       }
 
       // Attach modifier groups
-      if (menuData.selectedModifierGroups && menuData.selectedModifierGroups.length > 0) {
+      if (
+        menuData.selectedModifierGroups &&
+        menuData.selectedModifierGroups.length > 0
+      ) {
         for (const groupId of menuData.selectedModifierGroups) {
           await modifierService.addDishModifierGroup(newMenuItem.id, groupId);
         }
       }
 
       // Thêm món mới vào state thay vì fetch lại toàn bộ
-      setMenuItems(prev => [...prev, newMenuItem]);
-      
+      setMenuItems((prev) => [...prev, newMenuItem]);
+
       setShowForm(false);
       showAlert("Thành công", MESSAGES.CREATE_SUCCESS, "success");
     } catch (error) {
@@ -241,7 +304,10 @@ const MenuManagementContent = () => {
 
       // Sync modifier groups
       if (menuData.selectedModifierGroups !== undefined) {
-        await modifierService.syncDishModifierGroups(id, menuData.selectedModifierGroups);
+        await modifierService.syncDishModifierGroups(
+          id,
+          menuData.selectedModifierGroups
+        );
       }
 
       // Delete images if any
@@ -255,13 +321,22 @@ const MenuManagementContent = () => {
       let uploadedPhotos = [];
       if (menuData.newImages && menuData.newImages.length > 0) {
         // Upload tất cả ảnh một lần (API hỗ trợ multi-upload)
-        uploadedPhotos = await menuService.uploadMenuImage(id, menuData.newImages);
-        
+        uploadedPhotos = await menuService.uploadMenuImage(
+          id,
+          menuData.newImages
+        );
+
         // Nếu chưa có ảnh primary, set ảnh đầu tiên làm primary
-        const hasExistingPrimary = menuData.images?.some(img => img.isPrimary);
-        if (!hasExistingPrimary && uploadedPhotos && uploadedPhotos.length > 0) {
+        const hasExistingPrimary = menuData.images?.some(
+          (img) => img.isPrimary
+        );
+        if (
+          !hasExistingPrimary &&
+          uploadedPhotos &&
+          uploadedPhotos.length > 0
+        ) {
           await menuService.setPrimaryImage(uploadedPhotos[0].id);
-          
+
           // Cập nhật imageUrl vào database để khi load lại trang vẫn có ảnh
           const primaryPhotoUrl = uploadedPhotos[0].url;
           await menuService.updateMenuItem(id, { imageUrl: primaryPhotoUrl });
@@ -269,42 +344,50 @@ const MenuManagementContent = () => {
       }
 
       // Set primary image if specified (chỉ khi là ảnh cũ, không phải ảnh mới upload)
-      if (menuData.primaryImageId && !menuData.primaryImageId.toString().startsWith('new-')) {
+      if (
+        menuData.primaryImageId &&
+        !menuData.primaryImageId.toString().startsWith("new-")
+      ) {
         await menuService.setPrimaryImage(menuData.primaryImageId);
-        
+
         // Cập nhật imageUrl vào database khi thay đổi ảnh chính
-        const primaryImage = menuData.images?.find(img => img.id === menuData.primaryImageId);
+        const primaryImage = menuData.images?.find(
+          (img) => img.id === menuData.primaryImageId
+        );
         if (primaryImage?.url) {
           await menuService.updateMenuItem(id, { imageUrl: primaryImage.url });
         }
       }
 
       // Cập nhật state trực tiếp thay vì fetch lại
-      setMenuItems(prev => prev.map(item => {
-        if (item.id === id) {
-          // Tính toán danh sách ảnh mới
-          const remainingImages = (menuData.images || [])
-            .filter(img => !menuData.imagesToDelete?.includes(img.id));
-          const newUploadedImages = (uploadedPhotos || []).map(p => ({
-            id: p.id,
-            url: p.url,
-            isPrimary: p.isPrimary || p.is_primary
-          }));
-          const allImages = [...remainingImages, ...newUploadedImages];
-          
-          return {
-            ...item,
-            name: menuData.name,
-            description: menuData.description,
-            price: menuData.price,
-            categoryId: menuData.categoryId,
-            isAvailable: menuData.isAvailable,
-            imgUrl: getPrimaryImage(allImages)?.url || item.imgUrl,
-            images: allImages
-          };
-        }
-        return item;
-      }));
+      setMenuItems((prev) =>
+        prev.map((item) => {
+          if (item.id === id) {
+            // Tính toán danh sách ảnh mới
+            const remainingImages = (menuData.images || []).filter(
+              (img) => !menuData.imagesToDelete?.includes(img.id)
+            );
+            const newUploadedImages = (uploadedPhotos || []).map((p) => ({
+              id: p.id,
+              url: p.url,
+              isPrimary: p.isPrimary || p.is_primary,
+            }));
+            const allImages = [...remainingImages, ...newUploadedImages];
+
+            return {
+              ...item,
+              name: menuData.name,
+              description: menuData.description,
+              price: menuData.price,
+              categoryId: menuData.categoryId,
+              isAvailable: menuData.isAvailable,
+              imgUrl: getPrimaryImage(allImages)?.url || item.imgUrl,
+              images: allImages,
+            };
+          }
+          return item;
+        })
+      );
 
       setShowForm(false);
       setEditingMenuItem(null);
@@ -331,7 +414,11 @@ const MenuManagementContent = () => {
           item.id === id ? { ...item, isAvailable: false } : item
         )
       );
-      showAlert("Thành công", "Món ăn đã được chuyển sang trạng thái ngừng bán", "success");
+      showAlert(
+        "Thành công",
+        "Món ăn đã được chuyển sang trạng thái ngừng bán",
+        "success"
+      );
     } catch (error) {
       console.error("Delete menu item error:", error);
       showAlert(
@@ -376,6 +463,33 @@ const MenuManagementContent = () => {
         }
       },
     });
+  };
+
+  /**
+   * Toggle availability (bật/tắt bán) từ UI (không confirm)
+   */
+  const handleToggleAvailability = async (menuItem, newStatus) => {
+    try {
+      await menuService.updateMenuItemStatus(menuItem.id, newStatus);
+      setMenuItems(
+        menuItems.map((item) =>
+          item.id === menuItem.id ? { ...item, isAvailable: newStatus } : item
+        )
+      );
+      showAlert(
+        "Thành công",
+        newStatus ? "Đã bật bán món ăn" : "Đã ngừng bán món ăn",
+        "success"
+      );
+    } catch (error) {
+      console.error("Toggle availability error:", error);
+      showAlert(
+        "Lỗi",
+        "Không thể cập nhật trạng thái. Vui lòng thử lại!",
+        "error"
+      );
+      throw error;
+    }
   };
 
   /**
@@ -439,22 +553,26 @@ const MenuManagementContent = () => {
     try {
       // Fetch chi tiết món để lấy đầy đủ thông tin (có thể bao gồm images)
       const menuDetail = await menuService.fetchMenuItemById(menuItem.id);
-      
+
       // Fetch modifier groups đã gắn cho dish này
-      const attachedModifiers = await modifierService.fetchDishModifierGroups(menuItem.id);
-      
+      const attachedModifiers = await modifierService.fetchDishModifierGroups(
+        menuItem.id
+      );
+
       // Lấy danh sách groupId từ response
-      const selectedModifierGroupIds = attachedModifiers.map(item => item.groupId || item.id);
-      
+      const selectedModifierGroupIds = attachedModifiers.map(
+        (item) => item.groupId || item.id
+      );
+
       // Fetch tất cả ảnh của món ăn từ API
       let images = [];
       try {
         const dishPhotos = await menuService.getPhotosByDishId(menuItem.id);
         if (dishPhotos && dishPhotos.length > 0) {
-          images = dishPhotos.map(photo => ({
+          images = dishPhotos.map((photo) => ({
             id: photo.id,
             url: photo.url,
-            isPrimary: photo.isPrimary || photo.is_primary || false
+            isPrimary: photo.isPrimary || photo.is_primary || false,
           }));
         }
       } catch (photoError) {
@@ -477,9 +595,9 @@ const MenuManagementContent = () => {
         ...menuDetail,
         id: menuItem.id,
         images,
-        modifierGroups: selectedModifierGroupIds.map(id => ({ id })),
+        modifierGroups: selectedModifierGroupIds.map((id) => ({ id })),
       };
-      
+
       setEditingMenuItem(menuItemWithModifiers);
       setShowForm(true);
     } catch (error) {
@@ -487,7 +605,7 @@ const MenuManagementContent = () => {
       // Nếu lỗi thì vẫn mở form nhưng dùng data từ state
       setEditingMenuItem({
         ...menuItem,
-        images: menuItem.images || []
+        images: menuItem.images || [],
       });
       setShowForm(true);
     } finally {
@@ -547,11 +665,31 @@ const MenuManagementContent = () => {
 
   if (initialLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-          <div className="text-gray-500 font-medium">Đang tải dữ liệu...</div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-6">
+        {/* Header Skeleton */}
+        <div className="mb-6">
+          <div className="h-9 bg-gray-200 rounded w-64 mb-2 animate-pulse"></div>
+          <div className="h-4 bg-gray-200 rounded w-96 animate-pulse"></div>
         </div>
+
+        {/* Filter Bar Skeleton */}
+        <div className="bg-white rounded-lg p-4 mb-6 shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-10 bg-gray-200 rounded animate-pulse"
+              ></div>
+            ))}
+          </div>
+        </div>
+
+        {/* Content Skeleton */}
+        {viewMode === VIEW_MODES.GRID ? (
+          <SkeletonProductGrid items={12} />
+        ) : (
+          <SkeletonTable rows={12} columns={6} />
+        )}
       </div>
     );
   }
@@ -563,9 +701,26 @@ const MenuManagementContent = () => {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800">Quản Lý Món Ăn</h1>
+              <h1 className="text-3xl font-bold text-gray-800">
+                Quản Lý Món Ăn
+              </h1>
               <p className="text-gray-600 mt-1">
                 Tổng số: {filteredMenuItems.length} món ăn
+                {/* Socket connection indicator */}
+                <span
+                  className={`ml-3 inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${
+                    socketConnected
+                      ? "bg-green-100 text-green-700"
+                      : "bg-red-100 text-red-700"
+                  }`}
+                >
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      socketConnected ? "bg-green-500" : "bg-red-500"
+                    }`}
+                  ></span>
+                  {socketConnected ? "Live" : "Offline"}
+                </span>
               </p>
             </div>
             <button
@@ -584,7 +739,9 @@ const MenuManagementContent = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 font-medium">Tổng số</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">{stats.total}</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">
+                  {stats.total}
+                </p>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <UtensilsCrossed className="w-6 h-6 text-blue-600" />
@@ -595,7 +752,9 @@ const MenuManagementContent = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 font-medium">Đang bán</p>
-                <p className="text-3xl font-bold text-green-600 mt-1">{stats.available}</p>
+                <p className="text-3xl font-bold text-green-600 mt-1">
+                  {stats.available}
+                </p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                 <UtensilsCrossed className="w-6 h-6 text-green-600" />
@@ -606,7 +765,9 @@ const MenuManagementContent = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 font-medium">Ngừng bán</p>
-                <p className="text-3xl font-bold text-red-600 mt-1">{stats.unavailable}</p>
+                <p className="text-3xl font-bold text-red-600 mt-1">
+                  {stats.unavailable}
+                </p>
               </div>
               <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
                 <UtensilsCrossed className="w-6 h-6 text-red-600" />
@@ -662,6 +823,7 @@ const MenuManagementContent = () => {
                 onDelete={handleDeleteClick}
                 onRestore={handleRestoreMenuItem}
                 onDeletePermanent={handleDeletePermanent}
+                onToggleAvailability={handleToggleAvailability}
               />
             ))}
           </div>
@@ -672,6 +834,7 @@ const MenuManagementContent = () => {
             onDelete={handleDeleteClick}
             onRestore={handleRestoreMenuItem}
             onDeletePermanent={handleDeletePermanent}
+            onToggleAvailability={handleToggleAvailability}
           />
         )}
 
@@ -716,9 +879,7 @@ const MenuManagementContent = () => {
         {/* Confirm Modal */}
         <ConfirmModal
           isOpen={confirmDialog.isOpen}
-          onClose={() =>
-            setConfirmDialog({ ...confirmDialog, isOpen: false })
-          }
+          onClose={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
           onConfirm={confirmDialog.onConfirm}
           title={confirmDialog.title}
           message={confirmDialog.message}

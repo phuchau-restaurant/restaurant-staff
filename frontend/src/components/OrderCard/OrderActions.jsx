@@ -1,67 +1,163 @@
 // src/components/OrderCard/OrderActions.jsx
 import React from 'react';
 
-const OrderActions = ({ status, orderId, handleStart, handleComplete, handleCancel, handleRecall, viewMode }) => {
-  const gridClass = viewMode === 'list' ? 'grid-cols-2 gap-1.5' : 'grid-cols-2 gap-2';
+const OrderActions = ({ status, dbStatus, orderId, handleConfirmOrder, handleComplete, handleCancel, handleRecall, viewMode }) => {
+  // Check if we're in list view mode
+  const isListView = viewMode === 'list';
 
-  if (status === 'new') {
+  // Base button styles
+  const baseBtn = "rounded-lg font-semibold text-sm transition-all border-2";
+
+  // Button styles - adapt based on view mode
+  const primaryBtn = isListView
+    ? `${baseBtn} px-4 py-1.5 whitespace-nowrap`
+    : `${baseBtn} w-full py-2`;
+  const secondaryBtn = isListView
+    ? `${baseBtn} px-3 py-1.5 whitespace-nowrap`
+    : `${baseBtn} flex-1 py-1.5`;
+
+  // Outline button color variants - light background + dark border
+  const greenOutline = "bg-green-50 border-green-500 text-green-700 hover:bg-green-100";
+  const blueOutline = "bg-blue-50 border-blue-500 text-blue-700 hover:bg-blue-100";
+  const orangeOutline = "bg-orange-50 border-orange-500 text-orange-700 hover:bg-orange-100";
+  const purpleOutline = "bg-purple-50 border-purple-500 text-purple-700 hover:bg-purple-100";
+
+  // Container style based on view mode
+  const containerClass = isListView
+    ? "flex items-center gap-2"
+    : "space-y-2";
+
+  // --- APPROVED ORDER (Waiter đã xác nhận, chờ Bếp nhận) ---
+  if (dbStatus === 'Approved') {
     return (
-      <div className={`grid ${gridClass}`}>
+      <div className={containerClass}>
         <button
-          onClick={(e) => { e.stopPropagation(); handleStart(orderId); }}
-          className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white py-2.5 px-3 rounded-lg font-bold hover:shadow-lg hover:scale-105 transition-all text-sm"
+          onClick={(e) => { e.stopPropagation(); handleConfirmOrder(orderId); }}
+          className={`${primaryBtn} ${purpleOutline}`}
         >
-          Bắt đầu
-        </button>
-        <button
-          onClick={(e) => { e.stopPropagation(); handleCancel(orderId); }}
-          className="bg-red-50 text-red-700 py-2.5 px-3 rounded-lg font-bold hover:bg-red-100 hover:shadow-md hover:scale-105 transition-all text-sm border-2 border-red-200"
-          style={{ backgroundColor: '#FEF2F2', color: '#B91C1C', borderColor: '#FECACA' }}
-        >
-          Hủy đơn
+          Bếp nhận đơn
         </button>
       </div>
     );
   }
 
-  if (status === 'cooking' || status === 'warning' || status === 'late') {
+  // --- NEW ORDER ---
+  if (status === 'new') {
+    if (isListView) {
+      // Horizontal layout for list view
+      return (
+        <div className={containerClass}>
+          <button
+            onClick={(e) => { e.stopPropagation(); handleComplete(orderId); }}
+            className={`${primaryBtn} ${greenOutline}`}
+          >
+            Hoàn thành
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); handleRecall(orderId); }}
+            className={`${secondaryBtn} ${blueOutline}`}
+          >
+            Gọi PV
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); handleCancel(orderId); }}
+            className={`${secondaryBtn} ${orangeOutline}`}
+          >
+            Hủy
+          </button>
+        </div>
+      );
+    }
+    // Original vertical layout for card view
     return (
-      <div className={`grid ${gridClass}`}>
+      <div className={containerClass}>
         <button
           onClick={(e) => { e.stopPropagation(); handleComplete(orderId); }}
-          className="bg-gradient-to-r from-green-500 to-emerald-600 text-white py-2.5 px-3 rounded-lg font-bold hover:shadow-lg hover:scale-105 transition-all col-span-2 text-sm"
+          className={`${primaryBtn} ${greenOutline}`}
         >
           Hoàn thành
         </button>
-        <button
-          onClick={(e) => { e.stopPropagation(); handleCancel(orderId); }}
-          className="bg-red-50 text-red-700 py-2.5 px-3 rounded-lg font-bold hover:bg-red-100 hover:shadow-md hover:scale-105 transition-all text-sm border-2 border-red-200"
-          style={{ backgroundColor: '#FEF2F2', color: '#B91C1C', borderColor: '#FECACA' }}
-        >
-          Hủy đơn
-        </button>
-        <button
-          onClick={(e) => { e.stopPropagation(); handleRecall(orderId); }}
-          className="bg-blue-100 text-blue-700 py-2.5 px-3 rounded-lg font-bold hover:bg-blue-200 hover:shadow-md hover:scale-105 transition-all text-sm border-2 border-blue-300"
-          style={{ backgroundColor: '#DBEAFE', color: '#1D4ED8' }}
-        >
-          Gọi PV
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={(e) => { e.stopPropagation(); handleRecall(orderId); }}
+            className={`${secondaryBtn} ${blueOutline}`}
+          >
+            Gọi PV
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); handleCancel(orderId); }}
+            className={`${secondaryBtn} ${orangeOutline}`}
+          >
+            Hủy
+          </button>
+        </div>
       </div>
     );
   }
 
+  // --- COOKING / LATE ---
+  if (status === 'cooking' || status === 'warning' || status === 'late') {
+    if (isListView) {
+      // Horizontal layout for list view
+      return (
+        <div className={containerClass}>
+          <button
+            onClick={(e) => { e.stopPropagation(); handleComplete(orderId); }}
+            className={`${primaryBtn} ${greenOutline}`}
+          >
+            Hoàn thành
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); handleRecall(orderId); }}
+            className={`${secondaryBtn} ${blueOutline}`}
+          >
+            Gọi PV
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); handleCancel(orderId); }}
+            className={`${secondaryBtn} ${orangeOutline}`}
+          >
+            Hủy
+          </button>
+        </div>
+      );
+    }
+    // Original vertical layout for card view
+    return (
+      <div className={containerClass}>
+        <button
+          onClick={(e) => { e.stopPropagation(); handleComplete(orderId); }}
+          className={`${primaryBtn} ${greenOutline}`}
+        >
+          Hoàn thành
+        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={(e) => { e.stopPropagation(); handleRecall(orderId); }}
+            className={`${secondaryBtn} ${blueOutline}`}
+          >
+            Gọi PV
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); handleCancel(orderId); }}
+            className={`${secondaryBtn} ${orangeOutline}`}
+          >
+            Hủy
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // --- COMPLETED ---
   if (status === 'completed') {
     return (
-      <div className={`grid ${gridClass}`}>
-        <button
-          onClick={(e) => { e.stopPropagation(); handleRecall(orderId); }}
-          className="bg-blue-100 text-blue-700 py-2.5 px-3 rounded-lg font-bold hover:bg-blue-200 hover:shadow-md hover:scale-105 transition-all col-span-2 text-sm border-2 border-blue-300"
-          style={{ backgroundColor: '#DBEAFE', color: '#1D4ED8' }}
-        >
-          Gọi ra lấy
-        </button>
-      </div>
+      <button
+        onClick={(e) => { e.stopPropagation(); handleRecall(orderId); }}
+        className={`${primaryBtn} ${blueOutline}`}
+      >
+        Gọi nhân viên ra lấy
+      </button>
     );
   }
 

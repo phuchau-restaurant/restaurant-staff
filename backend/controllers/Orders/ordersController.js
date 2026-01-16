@@ -1,6 +1,12 @@
 // backend/controllers/Orders/ordersController.js
 import OrderStatus from "../../constants/orderStatus.js";
 import OrderDetailStatus from "../../constants/orderdetailStatus.js";
+import {
+  emitOrderCreated,
+  emitOrderUpdated,
+  emitOrderDetailUpdated,
+  emitOrderDeleted,
+} from "../../utils/orderSocketEmitters.js";
 
 class OrdersController {
   constructor(ordersService) {
@@ -21,11 +27,21 @@ class OrdersController {
       });
 
       // 1. Clean Order Info
-      const { id: _oid, tenantId: _tid, ...orderData } = result.order;
+      const { tenantId: _tid, ...orderData } = result.order;
 
       const detailsData = result.details.map((d) => {
         const { id, tenantId, orderId, ...rest } = d;
         return rest;
+      });
+
+      // Emit socket event for new order
+      emitOrderCreated(tenantId, {
+        orderId: result.order.id,
+        tableId: result.order.tableId,
+        status: result.order.status,
+        totalAmount: result.order.totalAmount,
+        displayOrder: result.order.displayOrder,
+        items: detailsData,
       });
 
       return res.status(201).json({
@@ -56,18 +72,25 @@ class OrdersController {
         });
       }
 
-      // req.body chứa các trường muốn sửa: { status: 'completed', tableId: 5 ... }
+      // req.body chứa các trường muốn sửa: { status: 'completed', tableId: 5, dishes: [...] }
       const updatedOrder = await this.ordersService.updateOrder(
         id,
         tenantId,
         req.body
       );
 
-      // Clean Response (Destructuring)
-      const { id: _oid, tenantId: _tid, ...returnData } = updatedOrder;
+      // Clean Response - giữ lại id để frontend dùng
+      const { tenantId: _tid, ...returnData } = updatedOrder;
       const mess = status
         ? `Order status updated to ${status}`
         : `Order updated successfully`;
+
+      // Emit socket event for order update
+      emitOrderUpdated(tenantId, {
+        orderId: updatedOrder.id,
+        ...returnData,
+      });
+
       return res.status(200).json({
         message: mess,
         success: true,
@@ -86,7 +109,6 @@ class OrdersController {
       const tenantId = req.tenantId;
       const { orderId, orderDetailId } = req.params;
       const { status } = req.body; // Ví dụ: 'Ready', 'Served', 'Cancelled' hoặc OrderStatus.READY, .SERVED, .CANCELLED
-      console.log("Updating order detail:", { orderId, orderDetailId, status });
       if (!status) {
         return res.status(400).json({
           success: false,
@@ -109,6 +131,17 @@ class OrdersController {
       );
       // Clean Response
       const cleanedDetail = (({ tenantId, ...rest }) => rest)(updatedDetail);
+
+      // Emit socket event for order detail update
+      emitOrderDetailUpdated(tenantId, {
+        orderId: parseInt(orderId),
+        orderDetailId: updatedDetail.id,
+        dishId: updatedDetail.dishId,
+        status: updatedDetail.status,
+        quantity: updatedDetail.quantity,
+        unitPrice: updatedDetail.unitPrice,
+      });
+
       return res.status(200).json({
         success: true,
         message: `Order detail status ${status} updated successfully`,
@@ -126,12 +159,13 @@ class OrdersController {
       const tenantId = req.tenantId;
       const { id } = req.params;
 
+      // Load đầy đủ với dishName khi xem chi tiết đơn hàng
       const result = await this.ordersService.getOrderById(id, tenantId);
 
-      // Clean Response
-      const { id: _oid, tenantId: _tid, ...orderData } = result.order;
+      // Clean Response - giữ lại id để frontend có thể dùng
+      const { tenantId: _tid, ...orderData } = result.order;
       const detailsData = result.details.map((d) => {
-        const { id, tenantId, orderId, ...rest } = d;
+        const { tenantId, orderId, ...rest } = d;
         return rest;
       });
 
@@ -140,7 +174,7 @@ class OrdersController {
         message: "Order fetched successfully",
         data: {
           ...orderData,
-          items: detailsData,
+          orderDetails: detailsData, // Đổi từ 'items' thành 'orderDetails' để consistent
         },
       });
     } catch (error) {
@@ -157,6 +191,9 @@ class OrdersController {
 
       await this.ordersService.deleteOrder(id, tenantId);
 
+      // Emit socket event for order deletion
+      emitOrderDeleted(tenantId, parseInt(id));
+
       return res.status(200).json({
         success: true,
         message: "Order and details deleted successfully",
@@ -167,36 +204,72 @@ class OrdersController {
     }
   };
   // [GET] /api/orders
+  // Query params: status, waiterId, pageNumber, pageSize
   getAll = async (req, res, next) => {
     try {
       const tenantId = req.tenantId;
-      const { status } = req.query; // Lọc theo trạng thái đơn hàng nếu có
+      const { status, waiterId, pageNumber, pageSize } = req.query;
+
+      // Xây dựng filters (bao gồm cả pagination nếu có)
       const filters = {};
       if (status) filters.status = status;
-      const orders = await this.ordersService.getAllOrders(tenantId, filters);
-      //clean response
-      const responseData = orders.map((order) => {
-        const { /*id: _oid,*/ tenantId: _tid, ...rest } = order;
-        return rest;
-      });
-      return res.status(200).json({
-        success: true,
-        message: "Get all orders successfully",
-        total: orders.length,
-        data: responseData, //TODO: tạm thời trả về order id
-      });
+      if (waiterId) filters.waiterId = waiterId;
+      if (pageNumber) filters.pageNumber = pageNumber;
+      if (pageSize) filters.pageSize = pageSize;
+
+      // Gọi service (tự xử lý pagination nếu có)
+      const result = await this.ordersService.getAllOrders(tenantId, filters);
+
+      // Kiểm tra có pagination hay không
+      const usePagination = pageNumber && pageSize;
+
+      // Build message
+      let message = "Get orders";
+      if (waiterId) message += ` for waiter ${waiterId}`;
+      if (status) message += ` with status ${status}`;
+      message += " successfully";
+
+      if (usePagination) {
+        // Response có pagination
+        const responseData = result.data.map((order) => {
+          const { tenantId: _tid, ...rest } = order;
+          return rest;
+        });
+
+        return res.status(200).json({
+          success: true,
+          message: message,
+          total: result.pagination.totalCount,
+          data: responseData,
+          pagination: result.pagination,
+        });
+      } else {
+        // Response không có pagination
+        const responseData = result.map((order) => {
+          const { tenantId: _tid, ...rest } = order;
+          return rest;
+        });
+
+        return res.status(200).json({
+          success: true,
+          message: message,
+          total: result.length,
+          data: responseData,
+        });
+      }
     } catch (error) {
       if (!error.statusCode) error.statusCode = 400;
       next(error);
     }
   };
-  // [GET] /api/kitchen/orders?status= <orderStatus> & categoryId = <Id> & itemStatus = <itemStatus>
+
+  // [GET] /api/kitchen/orders?status=<orderStatus>&categoryId=<Id>&itemStatus=<itemStatus>&pageNumber=<page>&pageSize=<size>
   getForKitchen = async (req, res, next) => {
     try {
       const tenantId = req.tenantId;
-      const { status, categoryId, itemStatus } = req.query; // Lấy query param
+      const { status, categoryId, itemStatus, pageNumber, pageSize } = req.query;
 
-      const orderStatus = status; //|| OrderStatus.PENDING;
+      const orderStatus = status;
       if (status && !Object.values(OrderStatus).includes(status)) {
         return res.status(400).json({
           success: false,
@@ -204,30 +277,49 @@ class OrdersController {
         });
       }
 
-      const data = await this.ordersService.getKitchenOrders(
+      // Xây dựng pagination object nếu có
+      const pagination = (pageNumber && pageSize) 
+        ? { pageNumber, pageSize } 
+        : null;
+
+      // Gọi service (tự xử lý pagination nếu có)
+      const result = await this.ordersService.getKitchenOrders(
         tenantId,
         orderStatus,
         categoryId,
-        itemStatus
+        itemStatus,
+        pagination
       );
-      // Clean Response
-      // const cleanedData = data.map(order => {
-      //     const { id: _oid, tenantId: _tid, ...orderInfo } = order;
-      // });
+
+      // Build message
       const isOrderStatus = orderStatus ? ` with status ${orderStatus}` : "";
       const isItemStatus = itemStatus ? ` and item status ${itemStatus}` : "";
       const categoryInfo = categoryId ? ` in category Id = ${categoryId}` : "";
       const message = `Get orders${isOrderStatus}${categoryInfo}${isItemStatus} successfully`;
-      return res.status(200).json({
-        success: true,
-        message: message,
-        total: data.length,
-        data: data,
-      });
+
+      // Kiểm tra có pagination hay không
+      if (pagination) {
+        return res.status(200).json({
+          success: true,
+          message: message,
+          total: result.pagination.totalCount,
+          data: result.data,
+          pagination: result.pagination,
+        });
+      } else {
+        return res.status(200).json({
+          success: true,
+          message: message,
+          total: result.length,
+          data: result,
+        });
+      }
     } catch (error) {
       next(error);
     }
   };
+
 }
+
 
 export default OrdersController;

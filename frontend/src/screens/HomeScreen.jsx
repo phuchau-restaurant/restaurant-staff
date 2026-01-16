@@ -1,10 +1,17 @@
-import { useState } from "react";
+import { useState, useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Mail, Lock, Home, Eye, EyeOff } from "lucide-react";
+import AuthContext, { getRoleBasedRoute } from "../context/AuthContext";
 
 // --- COMPONENT: HOMESCREEN ---
 const HomeScreen = () => {
   const navigate = useNavigate();
+  const {
+    isLoading: authLoading,
+    isAuthenticated,
+    user,
+    login,
+  } = useContext(AuthContext);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -12,25 +19,45 @@ const HomeScreen = () => {
   const [passwordError, setPasswordError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  // Nếu đã đăng nhập, redirect đến trang phù hợp với role
+  useEffect(() => {
+    if (isAuthenticated && !authLoading && user) {
+      const targetRoute = getRoleBasedRoute(user.role);
+      navigate(targetRoute, { replace: true });
+    }
+  }, [isAuthenticated, authLoading, user, navigate]);
+
+  // Nếu đang kiểm tra authentication, hiển thị loading
+  if (authLoading) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-linear-to-br from-blue-50 to-indigo-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Đang kiểm tra phiên đăng nhập...</p>
+        </div>
+      </div>
+    );
+  }
+
   const handleLogin = async (e) => {
     e.preventDefault();
-    
+
     // Reset errors
     setEmailError("");
     setPasswordError("");
-    
+
     // Validate email
     if (!email.trim()) {
       setEmailError("Vui lòng nhập email");
       return;
     }
-    
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
       setEmailError("Email không đúng định dạng");
       return;
     }
-    
+
     // Validate password
     if (!password.trim()) {
       setPasswordError("Vui lòng nhập mật khẩu");
@@ -40,64 +67,30 @@ const HomeScreen = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/auth/login`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-tenant-id": import.meta.env.VITE_TENANT_ID,
-          },
-          body: JSON.stringify({
-            email: email.trim(),
-            password: password,
-          }),
-        }
-      );
+      // Sử dụng login function từ AuthContext
+      const result = await login(email.trim(), password);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        // Xác định loại lỗi và hiển thị đúng vị trí
-        const errorMsg = data.message || "Đăng nhập thất bại";
-        if (errorMsg.toLowerCase().includes("email")) {
-          setEmailError(errorMsg);
-        } else if (errorMsg.toLowerCase().includes("password") || errorMsg.toLowerCase().includes("mật khẩu")) {
-          setPasswordError(errorMsg);
-        } else {
-          setPasswordError(errorMsg);
-        }
-        setIsLoading(false);
-        return;
-      }
-
-      // Lưu thông tin user và token
-      if (data.data?.user) {
-        localStorage.setItem("user", JSON.stringify(data.data.user));
-        localStorage.setItem("adminToken", data.data.token);
-
-        const userRole = data.data.user.role;
-
-        // Phân tách route theo role
-        if (userRole === "admin") {
-          navigate("/dashboard");
-        } else if (userRole === "chef") {
-          navigate("/kitchen");
-        } else if (userRole === "waiter" || userRole === "staff") {
-          navigate("/waiter");
-        } else {
-          // Default route nếu role không xác định
-          navigate("/dashboard");
-        }
-      } else {
-        setPasswordError("Dữ liệu đăng nhập không hợp lệ");
+      if (result.success && result.user) {
+        // Sử dụng helper function để xác định route dựa trên role
+        const targetRoute = getRoleBasedRoute(result.user.role);
+        navigate(targetRoute, { replace: true });
       }
     } catch (err) {
       console.error("Login error:", err);
-      setPasswordError("Không thể kết nối đến server");
+      const errorMsg = err.message || "Không thể kết nối đến server";
+      if (errorMsg.toLowerCase().includes("email")) {
+        setEmailError(errorMsg);
+      } else if (
+        errorMsg.toLowerCase().includes("password") ||
+        errorMsg.toLowerCase().includes("mật khẩu")
+      ) {
+        setPasswordError(errorMsg);
+      } else {
+        setPasswordError(errorMsg);
+      }
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   return (
@@ -158,9 +151,11 @@ const HomeScreen = () => {
                 }`}
                 placeholder="Nhập email của bạn..."
               />
-              <Mail className={`absolute right-4 top-3.5 w-5 h-5 ${
-                emailError ? "text-red-400" : "text-blue-300"
-              }`} />
+              <Mail
+                className={`absolute right-4 top-3.5 w-5 h-5 ${
+                  emailError ? "text-red-400" : "text-blue-300"
+                }`}
+              />
             </div>
             {emailError && (
               <p className="text-red-600 text-sm ml-1">{emailError}</p>

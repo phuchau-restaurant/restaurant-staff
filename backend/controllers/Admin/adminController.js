@@ -1,4 +1,5 @@
 // backend/controllers/Admin/adminController.js
+import { emitQRGenerated } from "../../utils/qrSocketEmitters.js";
 
 export default class AdminController {
   constructor(adminService) {
@@ -21,6 +22,14 @@ export default class AdminController {
         tenantId,
         userId
       );
+
+      // Emit socket event for real-time updates
+      emitQRGenerated(tenantId, { 
+        tableId, 
+        tableNumber: result.tableNumber,
+        qrToken: result.qrToken,
+        qrTokenCreatedAt: result.qrTokenCreatedAt 
+      });
 
       res.status(200).json({
         message: "QR code generated successfully",

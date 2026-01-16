@@ -1,14 +1,16 @@
+import { getTenantId } from "../utils/auth";
+
 /**
  * Modifier Service - API calls cho quản lý modifier groups và options
  * Base: /api/admin/menu
  */
 
 const BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/admin/menu`;
-const HEADERS = {
+const getHeaders = () => ({
   "Content-Type": "application/json",
-  "x-tenant-id": import.meta.env.VITE_TENANT_ID,
-  Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
-};
+  "x-tenant-id": getTenantId(),
+  Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+});
 
 // ==================== MODIFIER GROUPS ====================
 
@@ -22,18 +24,17 @@ export const fetchModifierGroups = async (searchTerm = "", pagination = null) =>
   try {
     const queryParams = new URLSearchParams();
     if (searchTerm) queryParams.append("search", searchTerm);
-    
+
     // Thêm pagination params nếu có
     if (pagination && pagination.pageNumber && pagination.pageSize) {
       queryParams.append("pageNumber", pagination.pageNumber);
       queryParams.append("pageSize", pagination.pageSize);
     }
 
-    const url = `${BASE_URL}/modifier-groups${
-      queryParams.toString() ? `?${queryParams.toString()}` : ""
-    }`;
+    const url = `${BASE_URL}/modifier-groups${queryParams.toString() ? `?${queryParams.toString()}` : ""
+      }`;
 
-    const response = await fetch(url, { headers: HEADERS });
+    const response = await fetch(url, { headers: getHeaders() });
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -64,7 +65,7 @@ export const fetchModifierGroups = async (searchTerm = "", pagination = null) =>
 export const fetchModifierGroupById = async (groupId) => {
   try {
     const response = await fetch(`${BASE_URL}/modifier-groups/${groupId}`, {
-      headers: HEADERS,
+      headers: getHeaders(),
     });
     const result = await response.json();
 
@@ -88,7 +89,7 @@ export const createModifierGroup = async (groupData) => {
     console.log("Creating modifier group with data:", groupData);
     const response = await fetch(`${BASE_URL}/modifier-groups`, {
       method: "POST",
-      headers: HEADERS,
+      headers: getHeaders(),
       body: JSON.stringify(groupData),
     });
 
@@ -114,7 +115,7 @@ export const updateModifierGroup = async (groupId, groupData) => {
   try {
     const response = await fetch(`${BASE_URL}/modifier-groups/${groupId}`, {
       method: "PUT",
-      headers: HEADERS,
+      headers: getHeaders(),
       body: JSON.stringify(groupData),
     });
 
@@ -139,7 +140,7 @@ export const deleteModifierGroup = async (groupId) => {
   try {
     const response = await fetch(`${BASE_URL}/modifier-groups/${groupId}`, {
       method: "DELETE",
-      headers: HEADERS,
+      headers: getHeaders(),
     });
 
     const result = await response.json();
@@ -164,7 +165,7 @@ export const toggleModifierGroupStatus = async (groupId, isActive) => {
     // Use PUT to update the group with new isActive status
     const response = await fetch(`${BASE_URL}/modifier-groups/${groupId}`, {
       method: "PUT",
-      headers: HEADERS,
+      headers: getHeaders(),
       body: JSON.stringify({ isActive }),
     });
 
@@ -190,11 +191,10 @@ export const toggleModifierGroupStatus = async (groupId, isActive) => {
  */
 export const fetchDishModifierGroups = async (dishId) => {
   try {
-    const url = `${
-      import.meta.env.VITE_BACKEND_URL
-    }/api/menu-item-modifier-group?dishId=${dishId}`;
+    const url = `${import.meta.env.VITE_BACKEND_URL
+      }/api/menu-item-modifier-group?dishId=${dishId}`;
 
-    const response = await fetch(url, { headers: HEADERS });
+    const response = await fetch(url, { headers: getHeaders() });
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -220,13 +220,12 @@ export const fetchDishModifierGroups = async (dishId) => {
  */
 export const addDishModifierGroup = async (dishId, groupId) => {
   try {
-    const url = `${
-      import.meta.env.VITE_BACKEND_URL
-    }/api/menu-item-modifier-group`;
+    const url = `${import.meta.env.VITE_BACKEND_URL
+      }/api/menu-item-modifier-group`;
 
     const response = await fetch(url, {
       method: "POST",
-      headers: HEADERS,
+      headers: getHeaders(),
       body: JSON.stringify({ dishId, groupId }),
     });
 
@@ -251,13 +250,12 @@ export const addDishModifierGroup = async (dishId, groupId) => {
  */
 export const removeDishModifierGroup = async (dishId, groupId) => {
   try {
-    const url = `${
-      import.meta.env.VITE_BACKEND_URL
-    }/api/menu-item-modifier-group`;
+    const url = `${import.meta.env.VITE_BACKEND_URL
+      }/api/menu-item-modifier-group`;
 
     const response = await fetch(url, {
       method: "DELETE",
-      headers: HEADERS,
+      headers: getHeaders(),
       body: JSON.stringify({ dishId, groupId }),
     });
 
@@ -329,7 +327,7 @@ export const createModifier = async (groupId, optionData) => {
       `${BASE_URL}/modifier-groups/${groupId}/options`,
       {
         method: "POST",
-        headers: HEADERS,
+        headers: getHeaders(),
         body: JSON.stringify(modifierData),
       }
     );
@@ -359,7 +357,7 @@ export const updateModifier = async (groupId, optionId, optionData) => {
   try {
     const response = await fetch(`${BASE_URL}/modifier-options/${optionId}`, {
       method: "PUT",
-      headers: HEADERS,
+      headers: getHeaders(),
       body: JSON.stringify(optionData),
     });
 
@@ -386,7 +384,7 @@ export const deleteModifier = async (groupId, optionId) => {
   try {
     const response = await fetch(`${BASE_URL}/modifier-options/${optionId}`, {
       method: "DELETE",
-      headers: HEADERS,
+      headers: getHeaders(),
     });
 
     const result = await response.json();
@@ -408,8 +406,8 @@ export const deleteModifier = async (groupId, optionId) => {
 export const deleteModifierGroupPermanent = async (groupId) => {
   try {
     const response = await fetch(`${BASE_URL}/modifier-groups/${groupId}`, {
-      method: "DELETE", 
-      headers: HEADERS,
+      method: "DELETE",
+      headers: getHeaders(),
     });
 
     const result = await response.json();

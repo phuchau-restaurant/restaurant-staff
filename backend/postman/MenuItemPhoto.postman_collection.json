@@ -1,0 +1,141 @@
+{
+  "info": {
+    "name": "MenuItemPhoto APIs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Collection chứa các API quản lý photos của menu items"
+  },
+  "item": [
+    {
+      "name": "Upload Menu Item Photos",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "x-tenant-id",
+            "value": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "images",
+              "type": "file",
+              "src": []
+            },
+            {
+              "key": "dishId",
+              "value": "123",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/admin/menu/items/photos",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "admin", "menu", "items", "photos"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Menu Item Photo",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "x-tenant-id",
+            "value": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/api/admin/menu/items/photos/1",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "admin", "menu", "items", "photos", "1"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Set Primary Photo",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "x-tenant-id",
+            "value": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/api/admin/menu/items/photos/1",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "admin", "menu", "items", "photos", "1"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Primary Photo",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-tenant-id",
+            "value": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/api/admin/menu/items/photos/primary?dishId=123",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "admin", "menu", "items", "photos", "primary"],
+          "query": [
+            {
+              "key": "dishId",
+              "value": "123"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Photos By Dish ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-tenant-id",
+            "value": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/api/admin/menu/items/photos?dishId=123",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "admin", "menu", "items", "photos"],
+          "query": [
+            {
+              "key": "dishId",
+              "value": "123"
+            }
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

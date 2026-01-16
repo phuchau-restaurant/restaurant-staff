@@ -1,4 +1,9 @@
 // backend/controllers/Menus/menusController.js
+import {
+  emitMenuCreated,
+  emitMenuUpdated,
+  emitMenuDeleted,
+} from "../../utils/menuSocketEmitters.js";
 
 class MenusController {
   constructor(menusService, categoriesService) {
@@ -112,6 +117,9 @@ class MenusController {
       // Lọc bỏ id và tenantId
       const {tenantId: _tid, ...returnData } = newMenu;
 
+      // Emit socket event for real-time updates
+      emitMenuCreated(tenantId, returnData);
+
       return res.status(201).json({
         success: true,
         message: "Menu item created successfully",
@@ -137,6 +145,9 @@ class MenusController {
       // Lọc bỏ id và tenantId
       const { id: _id, tenantId: _tid, ...returnData } = updatedMenu;
 
+      // Emit socket event for real-time updates
+      emitMenuUpdated(tenantId, { ...returnData, id });
+
       return res.status(200).json({
         success: true,
         message: "Menu item updated",
@@ -154,6 +165,9 @@ class MenusController {
       const tenantId = req.tenantId;
       const { id } = req.params;
       await this.menusService.deleteMenu(id, tenantId);
+
+      // Emit socket event for real-time updates
+      emitMenuDeleted(tenantId, id);
 
       return res.status(200).json({
         success: true,

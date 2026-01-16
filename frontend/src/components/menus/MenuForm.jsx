@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { X, Upload, Trash2, Star, Plus } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { validateMenuItemData } from "../../utils/menuUtils";
 
 /**
@@ -32,6 +34,17 @@ const MenuForm = ({
   // Initialize form with menuItem data if editing
   useEffect(() => {
     if (menuItem) {
+      // Extract modifier group IDs - handle both object and direct ID formats
+      let selectedIds = [];
+      if (menuItem.modifierGroups) {
+        selectedIds = menuItem.modifierGroups
+          .map((g) => {
+            // Support both { id: X } and direct ID formats
+            return typeof g === "object" ? g.id : g;
+          })
+          .filter((id) => id !== undefined && id !== null);
+      }
+
       setFormData({
         name: menuItem.name || "",
         description: menuItem.description || "",
@@ -41,7 +54,7 @@ const MenuForm = ({
         isAvailable:
           menuItem.isAvailable !== undefined ? menuItem.isAvailable : true,
         images: menuItem.images || [],
-        selectedModifierGroups: menuItem.modifierGroups?.map((g) => g.id) || [],
+        selectedModifierGroups: selectedIds,
       });
     }
   }, [menuItem]);
@@ -258,355 +271,379 @@ const MenuForm = ({
     };
   }, [isResizing, resizeStart, modalSize]);
 
-  return (
-    <div className="fixed inset-0 bg-black/10 backdrop-blur-sm z-50 p-4 select-none">
-      <div
-        ref={modalRef}
-        style={{
-          position: "absolute",
-          left: modalPos.x,
-          top: modalPos.y,
-          width: modalSize.width,
-          height: modalSize.height,
-          minWidth: 400,
-          minHeight: 300,
-          maxWidth: "100vw",
-          maxHeight: "100vh",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
-          background: "white",
-          borderRadius: 12,
-          overflow: "hidden",
-          display: "flex",
-          flexDirection: "column",
-        }}
-        className="shadow-2xl border border-gray-200"
+  const modalContent = (
+    <AnimatePresence>
+      <motion.div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm bg-black/30"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
       >
-        {/* Drag bar */}
-        <div
-          className="cursor-move bg-gray-100 px-6 py-3 flex items-center justify-between border-b border-gray-200"
-          onMouseDown={onDragStart}
-          style={{ userSelect: "none" }}
+        <motion.div
+          className="relative bg-white rounded-3xl shadow-2xl overflow-hidden"
+          initial={{ scale: 0.9, opacity: 0, y: 30 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.9, opacity: 0, y: 30 }}
+          transition={{ type: "spring", stiffness: 300, damping: 25 }}
+          onClick={(e) => e.stopPropagation()}
+          ref={modalRef}
+          style={{
+            position: "absolute",
+            left: modalPos.x,
+            top: modalPos.y,
+            width: modalSize.width,
+            height: modalSize.height,
+            minWidth: 400,
+            minHeight: 300,
+            maxWidth: "100vw",
+            maxHeight: "100vh",
+            display: "flex",
+            flexDirection: "column",
+          }}
         >
-          <h2 className="text-xl font-bold text-gray-800">
-            {menuItem ? "Chỉnh sửa món ăn" : "Thêm món ăn mới"}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+          {/* Header (drag handle) */}
+          <div
+            className="cursor-move bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 flex items-center justify-between"
+            onMouseDown={onDragStart}
+            style={{ userSelect: "none" }}
           >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-
-        {/* Form - Scrollable content */}
-        <div className="flex-1 overflow-y-auto p-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Basic Info Section */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-gray-700 border-b pb-2">
-              Thông tin cơ bản
-            </h3>
-
-            {/* Name */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Tên món ăn <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                placeholder="Nhập tên món ăn"
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
-                  errors.name
-                    ? "border-red-500 focus:ring-red-500"
-                    : "border-gray-300 focus:ring-blue-500"
-                }`}
-              />
-              {errors.name && (
-                <p className="text-red-600 text-sm mt-1">{errors.name}</p>
-              )}
-              {!errors.name && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Name is required, 2–80 characters
-                </p>
-              )}
-            </div>
-
-            {/* Category & Price */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Danh mục <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="categoryId"
-                  value={formData.categoryId}
-                  onChange={handleInputChange}
-                  className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
-                    errors.categoryId
-                      ? "border-red-500 focus:ring-red-500"
-                      : "border-gray-300 focus:ring-blue-500"
-                  }`}
-                >
-                  <option value="">Chọn danh mục</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
-                {errors.categoryId && (
-                  <p className="text-red-600 text-sm mt-1">
-                    {errors.categoryId}
-                  </p>
-                )}
-                {!errors.categoryId && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Category must exist and belong to the same restaurant
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Giá (VNĐ) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  name="price"
-                  value={formData.price}
-                  onChange={handleInputChange}
-                  placeholder="0"
-                  min="0.01"
-                  step="0.01"
-                  className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
-                    errors.price
-                      ? "border-red-500 focus:ring-red-500"
-                      : "border-gray-300 focus:ring-blue-500"
-                  }`}
-                />
-                {errors.price && (
-                  <p className="text-red-600 text-sm mt-1">{errors.price}</p>
-                )}
-                {!errors.price && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Price must be a positive number (e.g., 0.01 to 999999)
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Description */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Mô tả
-              </label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                placeholder="Nhập mô tả món ăn"
-                rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            {/* Preparation Time */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Thời gian chuẩn bị (phút)
-              </label>
-              <input
-                type="number"
-                name="preparationTime"
-                value={formData.preparationTime}
-                onChange={handleInputChange}
-                placeholder="0"
-                min="0"
-                max="240"
-                step="1"
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
-                  errors.preparationTime
-                    ? "border-red-500 focus:ring-red-500"
-                    : "border-gray-300 focus:ring-blue-500"
-                }`}
-              />
-              {errors.preparationTime && (
-                <p className="text-red-600 text-sm mt-1">
-                  {errors.preparationTime}
-                </p>
-              )}
-              {!errors.preparationTime && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Preparation time must be a non-negative integer (0–240 suggested)
-                </p>
-              )}
-            </div>
-
-            {/* Is Available */}
-            <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                id="isAvailable"
-                name="isAvailable"
-                checked={formData.isAvailable}
-                onChange={handleInputChange}
-                className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <label
-                htmlFor="isAvailable"
-                className="text-sm font-medium text-gray-700"
-              >
-                Đang bán
-              </label>
-            </div>
+            <h2 className="text-xl font-semibold">
+              {menuItem ? "Chỉnh sửa món ăn" : "Thêm món ăn mới"}
+            </h2>
+            <button
+              onClick={onClose}
+              className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
           </div>
 
-          {/* Images Section */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-gray-700 border-b pb-2">
-              Hình ảnh
-            </h3>
+          {/* Form - Scrollable content */}
+          <div className="flex-1 overflow-y-auto p-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Basic Info Section */}
+              <div className="space-y-4">
+                <h3 className="font-semibold text-gray-700 border-b pb-2">
+                  Thông tin cơ bản
+                </h3>
 
-            {/* Image Grid */}
-            <div className="grid grid-cols-3 gap-4">
-              {allImages.map((img) => (
-                <div
-                  key={img.id}
-                  className={`relative aspect-square rounded-lg overflow-hidden border-2 ${
-                    img.isPrimary ? "border-yellow-400" : "border-gray-200"
-                  }`}
-                >
-                  <img
-                    src={img.url}
-                    alt="Preview"
-                    className="w-full h-full object-cover"
+                {/* Name */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Tên món ăn <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    placeholder="Nhập tên món ăn"
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                      errors.name
+                        ? "border-red-500 focus:ring-red-500"
+                        : "border-gray-300 focus:ring-blue-500"
+                    }`}
                   />
-
-                  {/* Primary badge */}
-                  {img.isPrimary && (
-                    <div className="absolute top-1 left-1">
-                      <span className="px-2 py-0.5 bg-yellow-400 text-yellow-900 text-xs font-semibold rounded">
-                        Ảnh chính
-                      </span>
-                    </div>
+                  {errors.name && (
+                    <p className="text-red-600 text-sm mt-1">{errors.name}</p>
                   )}
-
-                  {/* Actions */}
-                  <div className="absolute bottom-1 right-1 flex gap-1">
-                    {!img.isPrimary && (
-                      <button
-                        type="button"
-                        onClick={() => handleSetPrimary(img.id, img.isNew)}
-                        className="p-1.5 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition-colors"
-                        title="Đặt làm ảnh chính"
-                      >
-                        <Star className="w-3 h-3" />
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveImage(img.id, img.isNew)}
-                      className="p-1.5 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
-                      title="Xóa ảnh"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                  </div>
+                  {!errors.name && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Name is required, 2–80 characters
+                    </p>
+                  )}
                 </div>
-              ))}
 
-              {/* Upload button */}
-              <label className="aspect-square rounded-lg border-2 border-dashed border-gray-300 hover:border-blue-500 cursor-pointer flex flex-col items-center justify-center transition-colors">
-                <Plus className="w-8 h-8 text-gray-400" />
-                <span className="text-sm text-gray-500 mt-2">Thêm ảnh</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-              </label>
-            </div>
-            <p className="text-xs text-gray-500">
-              Hỗ trợ upload nhiều ảnh. Click vào ngôi sao để đặt ảnh chính.
-            </p>
-          </div>
-
-          {/* Modifier Groups Section */}
-          {modifierGroups.filter((g) => g.isActive).length > 0 && (
-            <div className="space-y-4">
-              <h3 className="font-semibold text-gray-700 border-b pb-2">
-                Modifier Groups
-              </h3>
-              <div className="grid grid-cols-2 gap-3">
-                {modifierGroups
-                  .filter((group) => group.isActive)
-                  .map((group) => (
-                    <label
-                      key={group.id}
-                      className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                        formData.selectedModifierGroups.includes(group.id)
-                          ? "bg-blue-50 border-blue-300"
-                          : "bg-white border-gray-200 hover:bg-gray-50"
+                {/* Category & Price */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Danh mục <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="categoryId"
+                      value={formData.categoryId}
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                        errors.categoryId
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-gray-300 focus:ring-blue-500"
                       }`}
                     >
-                      <input
-                        type="checkbox"
-                        checked={formData.selectedModifierGroups.includes(
-                          group.id
-                        )}
-                        onChange={() => handleModifierGroupToggle(group.id)}
-                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                      />
-                      <div className="flex-1">
-                        <span className="font-medium text-gray-800">
-                          {group.name}
-                        </span>
-                        <p className="text-xs text-gray-500">
-                          {group.modifiers?.length || 0} options
-                        </p>
-                      </div>
+                      <option value="">Chọn danh mục</option>
+                      {categories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.categoryId && (
+                      <p className="text-red-600 text-sm mt-1">
+                        {errors.categoryId}
+                      </p>
+                    )}
+                    {!errors.categoryId && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Category must exist and belong to the same restaurant
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Giá (VNĐ) <span className="text-red-500">*</span>
                     </label>
-                  ))}
+                    <input
+                      type="number"
+                      name="price"
+                      value={formData.price}
+                      onChange={handleInputChange}
+                      placeholder="0"
+                      min="0.01"
+                      step="0.01"
+                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                        errors.price
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-gray-300 focus:ring-blue-500"
+                      }`}
+                    />
+                    {errors.price && (
+                      <p className="text-red-600 text-sm mt-1">
+                        {errors.price}
+                      </p>
+                    )}
+                    {!errors.price && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Price must be a positive number (e.g., 0.01 to 999999)
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Mô tả
+                  </label>
+                  <textarea
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    placeholder="Nhập mô tả món ăn"
+                    rows={3}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* Preparation Time */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Thời gian chuẩn bị (phút)
+                  </label>
+                  <input
+                    type="number"
+                    name="preparationTime"
+                    value={formData.preparationTime}
+                    onChange={handleInputChange}
+                    placeholder="0"
+                    min="0"
+                    max="240"
+                    step="1"
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                      errors.preparationTime
+                        ? "border-red-500 focus:ring-red-500"
+                        : "border-gray-300 focus:ring-blue-500"
+                    }`}
+                  />
+                  {errors.preparationTime && (
+                    <p className="text-red-600 text-sm mt-1">
+                      {errors.preparationTime}
+                    </p>
+                  )}
+                  {!errors.preparationTime && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Preparation time must be a non-negative integer (0–240
+                      suggested)
+                    </p>
+                  )}
+                </div>
+
+                {/* Is Available */}
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="isAvailable"
+                    name="isAvailable"
+                    checked={formData.isAvailable}
+                    onChange={handleInputChange}
+                    className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <label
+                    htmlFor="isAvailable"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Đang bán
+                  </label>
+                </div>
               </div>
-            </div>
-          )}
 
-          {/* Submit buttons */}
-          <div className="flex gap-4 pt-4 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-colors"
-            >
-              Hủy
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSubmitting ? "Đang lưu..." : menuItem ? "Cập nhật" : "Tạo mới"}
-            </button>
+              {/* Images Section */}
+              <div className="space-y-4">
+                <h3 className="font-semibold text-gray-700 border-b pb-2">
+                  Hình ảnh
+                </h3>
+
+                {/* Image Grid */}
+                <div className="grid grid-cols-3 gap-4">
+                  {allImages.map((img) => (
+                    <div
+                      key={img.id}
+                      className={`relative aspect-square rounded-lg overflow-hidden border-2 ${
+                        img.isPrimary ? "border-yellow-400" : "border-gray-200"
+                      }`}
+                    >
+                      <img
+                        src={img.url}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
+
+                      {/* Primary badge */}
+                      {img.isPrimary && (
+                        <div className="absolute top-1 left-1">
+                          <span className="px-2 py-0.5 bg-yellow-400 text-yellow-900 text-xs font-semibold rounded">
+                            Ảnh chính
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Actions */}
+                      <div className="absolute bottom-1 right-1 flex gap-1">
+                        {!img.isPrimary && (
+                          <button
+                            type="button"
+                            onClick={() => handleSetPrimary(img.id, img.isNew)}
+                            className="p-1.5 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition-colors"
+                            title="Đặt làm ảnh chính"
+                          >
+                            <Star className="w-3 h-3" />
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(img.id, img.isNew)}
+                          className="p-1.5 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                          title="Xóa ảnh"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Upload button */}
+                  <label className="aspect-square rounded-lg border-2 border-dashed border-gray-300 hover:border-blue-500 cursor-pointer flex flex-col items-center justify-center transition-colors">
+                    <Plus className="w-8 h-8 text-gray-400" />
+                    <span className="text-sm text-gray-500 mt-2">Thêm ảnh</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+                <p className="text-xs text-gray-500">
+                  Hỗ trợ upload nhiều ảnh. Click vào ngôi sao để đặt ảnh chính.
+                </p>
+              </div>
+
+              {/* Modifier Groups Section */}
+              {modifierGroups.filter((g) => g.isActive).length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-gray-700 border-b pb-2">
+                    Modifier Groups
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    {modifierGroups
+                      .filter((group) => group.isActive)
+                      .map((group) => {
+                        // Use string comparison to handle type mismatches
+                        const isSelected = formData.selectedModifierGroups.some(
+                          (id) => String(id) === String(group.id)
+                        );
+
+                        return (
+                          <label
+                            key={group.id}
+                            className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                              isSelected
+                                ? "bg-blue-50 border-blue-300"
+                                : "bg-white border-gray-200 hover:bg-gray-50"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() =>
+                                handleModifierGroupToggle(group.id)
+                              }
+                              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                            />
+                            <div className="flex-1">
+                              <span className="font-medium text-gray-800">
+                                {group.name}
+                              </span>
+                              <p className="text-xs text-gray-500">
+                                {group.modifiers?.length || 0} options
+                              </p>
+                            </div>
+                          </label>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
+
+              {/* Submit buttons */}
+              <div className="flex gap-4 pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="flex-1 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-colors"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting
+                    ? "Đang lưu..."
+                    : menuItem
+                    ? "Cập nhật"
+                    : "Tạo mới"}
+                </button>
+              </div>
+            </form>
           </div>
-        </form>
-      </div>
 
-        {/* Resize handle */}
-        <div
-          onMouseDown={onResizeStart}
-          className="absolute right-0 bottom-0 w-6 h-6 cursor-nwse-resize z-20 flex items-end justify-end"
-          style={{ userSelect: "none" }}
-        >
-          <div className="w-4 h-4 bg-gray-200 rounded-br-lg border-r-2 border-b-2 border-gray-400" />
-        </div>
-      </div>
-    </div>
+          {/* Resize handle */}
+          <div
+            onMouseDown={onResizeStart}
+            className="absolute right-0 bottom-0 w-6 h-6 cursor-nwse-resize z-20 flex items-end justify-end"
+            style={{ userSelect: "none" }}
+          >
+            <div className="w-4 h-4 bg-gray-200 rounded-br-lg border-r-2 border-b-2 border-gray-400" />
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default MenuForm;

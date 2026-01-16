@@ -1,0 +1,234 @@
+{
+  "info": {
+    "name": "Modifiers APIs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Collection chứa các API quản lý modifier groups và options (topping, size...)"
+  },
+  "item": [
+    {
+      "name": "Get All Modifier Groups",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-tenant-id",
+            "value": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/api/admin/menu/modifier-groups",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "admin", "menu", "modifier-groups"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Modifier Group By ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-tenant-id",
+            "value": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/api/admin/menu/modifier-groups/1",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "admin", "menu", "modifier-groups", "1"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Modifier Group",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "x-tenant-id",
+            "value": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Size\",\n  \"description\": \"Kích thước món\",\n  \"is_required\": true,\n  \"max_selections\": 1\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/admin/menu/modifier-groups",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "admin", "menu", "modifier-groups"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update Modifier Group",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "x-tenant-id",
+            "value": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Kích cỡ\",\n  \"max_selections\": 2\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/admin/menu/modifier-groups/1",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "admin", "menu", "modifier-groups", "1"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Modifier Group",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "x-tenant-id",
+            "value": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/api/admin/menu/modifier-groups/1",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "admin", "menu", "modifier-groups", "1"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Toggle Modifier Group Status",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "x-tenant-id",
+            "value": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/api/admin/menu/modifier-groups/1/status",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "admin", "menu", "modifier-groups", "1", "status"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Modifier Option",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "x-tenant-id",
+            "value": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Lớn\",\n  \"price_adjustment\": 5000,\n  \"is_default\": false\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/admin/menu/modifier-groups/1/options",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "admin", "menu", "modifier-groups", "1", "options"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update Modifier Option",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "x-tenant-id",
+            "value": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Size lớn\",\n  \"price_adjustment\": 10000\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/admin/menu/modifier-options/1",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "admin", "menu", "modifier-options", "1"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Modifier Option",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "x-tenant-id",
+            "value": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/api/admin/menu/modifier-options/1",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "admin", "menu", "modifier-options", "1"]
+        }
+      },
+      "response": []
+    }
+  ]
+}

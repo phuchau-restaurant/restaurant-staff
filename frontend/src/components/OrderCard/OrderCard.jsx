@@ -1,154 +1,208 @@
 // src/components/OrderCard/OrderCard.jsx
-import React, { useState } from 'react';
-import { Bell, Clock, User, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { STATUS_CONFIG } from './constants.jsx'; // Giả sử constants cùng thư mục hoặc chỉnh đường dẫn phù hợp
+import React, { useState } from "react";
+import { Clock, CheckCircle2, XCircle, StickyNote } from "lucide-react";
+import { STATUS_CONFIG, STATUS_BADGE } from "../../constants/orderConstants";
+import OrderActions from "./OrderActions";
+import OrderDetailModal from "./OrderDetailModal";
 
-// Import components đã tách
-import OrderActions from './OrderActions';
-import OrderDetailModal from './OrderDetailModal';
-
-const OrderCard = ({ 
-  order, 
-  currentTime, 
-  getElapsedTime, 
-  getOrderStatus, 
-  handleStart, 
-  handleComplete, 
-  handleCancel, 
+const OrderCard = ({
+  order,
+  currentTime,
+  getElapsedTime,
+  getOrderStatus,
+  handleConfirmOrder,
+  handleComplete,
+  handleCancel,
   handleRecall,
   handleCompleteItem,
-  viewMode 
+  handleCancelItem,
+  viewMode,
 }) => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const status = getOrderStatus(order);
-  const statusConfig = STATUS_CONFIG[status];
+  const statusConfig = STATUS_CONFIG[status] || STATUS_CONFIG["new"];
+  // Use dbStatus from order for badge display (database status)
+  const dbStatus = order.dbStatus || order.status || "Pending";
+  const statusBadge = STATUS_BADGE[dbStatus] || STATUS_BADGE["Pending"];
   const elapsed = getElapsedTime(order.orderTime);
+
+  // Get prep time from order (in minutes) - use prepTimeOrder from API
+  const prepTime = order.prepTimeOrder || order.prepTime;
+
+  // Timer turns red when elapsed time exceeds prep time (only if prepTime is available)
+  const isLate = prepTime ? elapsed >= prepTime : false;
 
   return (
     <>
-      <div 
+      <div
         onClick={() => setShowDetailModal(true)}
-        className={`group bg-white rounded-xl shadow-md border-l-8 ${statusConfig.borderColor} overflow-hidden hover:shadow-xl transition-all cursor-pointer ${
-        viewMode === 'list' ? 'flex items-stretch' : 'flex flex-col h-full'
-      }`}>
-        {/* Header */}
-        <div className={`bg-gradient-to-br from-gray-50 to-white p-4 border-b-2 border-gray-100 ${viewMode === 'list' ? 'w-64 flex-shrink-0 border-b-0 border-r-2' : ''}`}>
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-blue-400 to-blue-500 p-2 rounded-lg shadow-sm">
-                <Bell size={20} className="text-white" />
-              </div>
-              <div>
-                <span className="font-black text-xl text-gray-800">{order.orderNumber}</span>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-blue-400 to-blue-500 text-white shadow-sm">
-                    Bàn {order.tableNumber}
-                  </span>
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-gray-200 text-gray-700">
-                    {order.items.length} món
-                  </span>
-                </div>
-              </div>
+        className={`rounded-xl shadow-md border-2 ${statusConfig.borderColor} bg-white overflow-hidden cursor-pointer flex flex-col h-full hover:shadow-xl hover:-translate-y-1 transition-all duration-200`}
+      >
+        {/* Header - Bold with gradient accent */}
+        <div className={`px-4 py-3 ${statusConfig.bgLight} border-b-2 ${statusConfig.borderColor}`}>
+          <div className="flex items-center justify-between">
+            {/* Order Info - Simpler */}
+            <div className="flex items-center gap-2">
+              <span className="font-black text-gray-900 text-xl">
+                Đơn #{order.orderNumber}
+              </span>
+              <span className="text-gray-300">|</span>
+              <span className="font-bold text-gray-700 text-lg">
+                Bàn {order.tableNumber}
+              </span>
+            </div>
+
+            {/* Timer Badge - Prep Time Only */}
+            <div
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full font-black text-sm bg-gray-200 text-gray-600"
+            >
+              <Clock size={14} strokeWidth={3} />
+              <span>{prepTime ? `${prepTime}'` : '--'}</span>
             </div>
           </div>
-          
-          <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200">
-            <Clock size={16} className={elapsed >= 10 ? 'text-red-500' : 'text-gray-500'} />
-            <span className={`font-bold text-sm ${elapsed >= 10 ? 'text-red-600' : 'text-gray-700'}`}>
-              {elapsed} phút
-            </span>
-            {elapsed >= 10 && <AlertCircle size={16} className="text-red-500 animate-pulse" />}
-          </div>
 
-          <div className="mt-3 flex items-center gap-2 text-xs text-gray-600">
-            <User size={14} />
-            <span className="font-medium">{order.server}</span>
+          {/* Status Badge */}
+          <div className="mt-2">
+            <span className={`text-xs font-semibold px-2 py-0.5 rounded-md border ${statusBadge.bgColor} ${statusBadge.textColor} ${statusBadge.borderColor}`}>
+              {statusBadge.label}
+            </span>
           </div>
         </div>
 
-        {/* Content - Danh sách món trong thẻ */}
-        <div className={`p-4 flex-1 ${viewMode === 'list' ? 'flex items-center gap-4' : 'flex flex-col'}`}>
-          <div className={`${viewMode === 'list' ? 'flex-1 mb-0' : 'flex-1 max-h-[180px] overflow-y-auto mb-3'}`}>
-            <div className={viewMode === 'list' ? 'space-y-1' : 'space-y-2'}>
-              {order.items.map(item => (
-                <div key={item.id} className={`flex gap-3 bg-gray-50 p-2 rounded-lg relative ${
-                  item.completed ? 'opacity-50 bg-green-50' : ''
-                } ${viewMode === 'list' ? 'items-center p-1.5' : ''}`}>
-                  <img 
-                    src={item.image} 
-                    alt={item.name} 
-                    className={`rounded-lg object-cover flex-shrink-0 ${viewMode === 'list' ? 'w-10 h-10' : 'w-14 h-14'}`}
-                  />
-                  <div className="flex-1 min-w-0">
+        {/* Items List - Better contrast */}
+        <div className="flex-1 px-3 py-2 overflow-y-auto bg-white min-h-[160px]">
+          <div className="space-y-0.5">
+            {order.items.map((item, idx) => {
+              // Determine item status
+              const itemStatus = item.status || (item.completed ? "Ready" : item.cancelled ? "Cancelled" : "Pending");
+              const isItemCompleted = item.completed || itemStatus === "Ready" || itemStatus === "Served";
+              const isItemCancelled = item.cancelled || itemStatus === "Cancelled";
+
+              return (
+                <div
+                  key={item.id || idx}
+                  className={`flex items-start justify-between gap-3 p-3 rounded-lg transition-colors ${isItemCompleted ? "bg-green-50" : isItemCancelled ? "bg-gray-100" : "hover:bg-gray-50"
+                    } ${idx !== order.items.length - 1 ? "border-b-2 border-gray-100" : ""}`}
+                >
+                  <div className="flex-1 min-w-0 space-y-1.5">
+                    {/* Item Name with Quantity inline */}
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className={`font-bold text-gray-800 truncate ${
-                        item.completed ? 'line-through' : ''
-                      } ${viewMode === 'list' ? 'text-sm' : 'text-base'}`}>
+                      <span
+                        className={`font-bold text-xl ${isItemCompleted ? "text-gray-400 line-through" : isItemCancelled ? "text-gray-400 line-through" : "text-gray-900"
+                          }`}
+                      >
                         {item.name}
-                      </h3>
-                      <span className="bg-orange-500 text-white px-2 py-0.5 rounded-full text-xs font-bold flex-shrink-0">
+                      </span>
+                      <span className="text-lg font-black text-orange-600">
                         x{item.quantity}
                       </span>
                     </div>
-                    {item.notes && (
-                      <p className="text-red-600 text-xs font-semibold mt-0.5 italic truncate">
-                        📝 {item.notes}
-                      </p>
+
+                    {/* Modifiers - Green pills */}
+                    {item.modifiers && item.modifiers.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {item.modifiers.map((mod, mIdx) => (
+                          <span
+                            key={mIdx}
+                            className="text-xs font-semibold text-green-700 bg-green-100 px-2 py-1 rounded-md"
+                          >
+                            + {mod.optionName}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Note - Yellow with StickyNote icon */}
+                    {item.note && (
+                      <div className="text-sm font-semibold text-amber-700 bg-amber-100 px-2 py-1 rounded-md inline-flex items-center gap-1.5">
+                        <StickyNote size={14} />
+                        {item.note}
+                      </div>
                     )}
                   </div>
-                  {/* Nút hoàn thành món - chỉ hiện khi đã bắt đầu nấu */}
-                  {(status === 'cooking' || status === 'late') && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (!item.completed) {
-                          handleCompleteItem(order.id, item.id);
-                        }
-                      }}
-                      disabled={item.completed}
-                      className={`shrink-0 self-center p-1 rounded-lg border-2 transition-all ${
-                        item.completed
-                          ? 'text-white bg-green-600 cursor-not-allowed'
-                          : 'text-white bg-green-500 hover:shadow-lg hover:scale-110 cursor-pointer'
-                      }`}
-                      title={item.completed ? 'Đã hoàn thành' : 'Đánh dấu hoàn thành'}
-                    >
-                      <CheckCircle2 size={25} />
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
 
-          {/* Buttons on Card - Luôn ở cuối */}
-          <div onClick={(e) => e.stopPropagation()} className="mt-auto">
-            <OrderActions 
-              status={status}
-              orderId={order.id}
-              handleStart={handleStart}
-              handleComplete={handleComplete}
-              handleCancel={handleCancel}
-              handleRecall={handleRecall}
-              viewMode={viewMode}
-            />
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-1.5 flex-shrink-0 mt-1">
+                    {/* Complete Button - Only show when kitchen has claimed the order (not Approved status) */}
+                    {!isItemCompleted && !isItemCancelled && order.dbStatus !== "Approved" && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCompleteItem(order.id, item.id);
+                        }}
+                        className="w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all border-green-400 text-green-500 hover:bg-green-50 hover:border-green-500 hover:text-green-600"
+                        title="Hoàn thành món"
+                      >
+                        <CheckCircle2 size={18} strokeWidth={2.5} />
+                      </button>
+                    )}
+
+                    {/* Cancel Button */}
+                    {!isItemCompleted && !isItemCancelled && handleCancelItem && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCancelItem(order.id, item.id);
+                        }}
+                        className="w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all border-red-400 text-red-500 hover:bg-red-50 hover:border-red-500 hover:text-red-600"
+                        title="Hủy món"
+                      >
+                        <XCircle size={18} strokeWidth={2.5} />
+                      </button>
+                    )}
+
+                    {/* Completed indicator */}
+                    {isItemCompleted && (
+                      <div className="w-9 h-9 rounded-full flex items-center justify-center bg-green-500 text-white shadow-md">
+                        <CheckCircle2 size={18} strokeWidth={2.5} />
+                      </div>
+                    )}
+
+                    {/* Cancelled indicator */}
+                    {isItemCancelled && (
+                      <div className="w-9 h-9 rounded-full flex items-center justify-center bg-gray-400 text-white">
+                        <XCircle size={18} strokeWidth={2.5} />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
+        </div>
+
+        {/* Actions Footer - Tighter */}
+        <div
+          className="p-2.5 bg-gray-50 border-t-2 border-gray-100"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <OrderActions
+            status={status}
+            dbStatus={order.dbStatus}
+            orderId={order.id}
+            handleConfirmOrder={handleConfirmOrder}
+            handleComplete={handleComplete}
+            handleCancel={handleCancel}
+            handleRecall={handleRecall}
+            viewMode={viewMode}
+          />
         </div>
       </div>
 
-      {/* Render Modal if open */}
+      {/* Detail Modal */}
       {showDetailModal && (
-        <OrderDetailModal 
+        <OrderDetailModal
           order={order}
           status={status}
           statusConfig={statusConfig}
           elapsed={elapsed}
           onClose={() => setShowDetailModal(false)}
-          handleStart={handleStart}
+          handleConfirmOrder={handleConfirmOrder}
           handleComplete={handleComplete}
           handleCancel={handleCancel}
           handleRecall={handleRecall}
           handleCompleteItem={handleCompleteItem}
+          handleCancelItem={handleCancelItem}
         />
       )}
     </>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Loader2 } from "lucide-react";
 import QRStats from "./QrManagement/QRStats";
 import QRGridView from "./QrManagement/QRGridView";
@@ -9,6 +9,10 @@ import QRFilterBar from "../components/qr/QRFilterBar";
 import { useAlert } from "../hooks/useAlert";
 import * as tableService from "../services/tableService";
 import { sortByTableNumber } from "../utils/tableUtils";
+import { getTenantId } from "../utils/auth";
+
+// Socket hooks for real-time updates
+import { useQRSocket } from "../hooks/useQRSocket";
 
 const QRManagementScreen = () => {
   const [tables, setTables] = useState([]);
@@ -16,14 +20,45 @@ const QRManagementScreen = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState("grid"); // grid or list
   const [selectedTable, setSelectedTable] = useState(null);
-  const { alert: alertState, showSuccess, showError, showWarning, showInfo, closeAlert } = useAlert();
+  const {
+    alert: alertState,
+    showSuccess,
+    showError,
+    showWarning,
+    showInfo,
+    closeAlert,
+  } = useAlert();
 
   // Filter states
   const [searchTerm, setSearchTerm] = useState("");
   const [qrStatusFilter, setQRStatusFilter] = useState("all");
   const [areaFilter, setAreaFilter] = useState("");
   const [sortBy, setSortBy] = useState("tableNumber");
-  const [areaOptions, setAreaOptions] = useState([{ value: "", label: "Tất cả khu vực" }]);
+  const [areaOptions, setAreaOptions] = useState([
+    { value: "", label: "Tất cả khu vực" },
+  ]);
+
+  // ==================== SOCKET REAL-TIME UPDATES ====================
+
+  // Handler for QR generated/regenerated (from other tabs/users)
+  const handleSocketQRGenerated = useCallback(async (data) => {
+    console.log("🔔 [Socket] QR generated:", data);
+    await fetchTables(); // Re-fetch để có dữ liệu mới nhất
+  }, []);
+
+  // Handler for QR deleted (from other tabs/users)
+  const handleSocketQRDeleted = useCallback(async (data) => {
+    console.log("🔔 [Socket] QR deleted:", data);
+    await fetchTables(); // Re-fetch để có dữ liệu mới nhất
+  }, []);
+
+  // Connect socket listeners and get connection status
+  const { isConnected: socketConnected } = useQRSocket({
+    onQRGenerated: handleSocketQRGenerated,
+    onQRDeleted: handleSocketQRDeleted,
+  });
+
+  // ==================== LIFECYCLE ====================
 
   useEffect(() => {
     fetchTables();
@@ -52,7 +87,10 @@ const QRManagementScreen = () => {
     if (searchTerm) {
       result = result.filter(
         (table) =>
-          table.tableNumber?.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
+          table.tableNumber
+            ?.toString()
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
           table.area?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
@@ -98,11 +136,13 @@ const QRManagementScreen = () => {
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/admin/tables/${tableId}/qr/view`,
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/admin/tables/${tableId}/qr/view`,
         {
           headers: {
-            "x-tenant-id": import.meta.env.VITE_TENANT_ID,
-            Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+            "x-tenant-id": getTenantId(),
+            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
           },
         }
       );
@@ -111,7 +151,9 @@ const QRManagementScreen = () => {
       if (response.ok && result.data) {
         setTables((prev) =>
           prev.map((t) =>
-            t.id === tableId ? { ...t, qrCodeData: result.data, qrLoading: false } : t
+            t.id === tableId
+              ? { ...t, qrCodeData: result.data, qrLoading: false }
+              : t
           )
         );
       }
@@ -134,7 +176,7 @@ const QRManagementScreen = () => {
         `${import.meta.env.VITE_BACKEND_URL}/api/admin/tables`,
         {
           headers: {
-            "x-tenant-id": import.meta.env.VITE_TENANT_ID,
+            "x-tenant-id": getTenantId(),
           },
         }
       );
@@ -182,13 +224,15 @@ const QRManagementScreen = () => {
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/admin/tables/${selectedTable.id}/qr/generate`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/tables/${
+          selectedTable.id
+        }/qr/generate`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "x-tenant-id": import.meta.env.VITE_TENANT_ID,
-            Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+            "x-tenant-id": getTenantId(),
+            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
           },
         }
       );
@@ -221,11 +265,13 @@ const QRManagementScreen = () => {
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/admin/tables/${table.id}/qr/download?format=png`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/tables/${
+          table.id
+        }/qr/download?format=png`,
         {
           headers: {
-            "x-tenant-id": import.meta.env.VITE_TENANT_ID,
-            Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+            "x-tenant-id": getTenantId(),
+            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
           },
         }
       );
@@ -257,11 +303,13 @@ const QRManagementScreen = () => {
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/admin/tables/${table.id}/qr/download?format=pdf`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/tables/${
+          table.id
+        }/qr/download?format=pdf`,
         {
           headers: {
-            "x-tenant-id": import.meta.env.VITE_TENANT_ID,
-            Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+            "x-tenant-id": getTenantId(),
+            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
           },
         }
       );
@@ -288,11 +336,13 @@ const QRManagementScreen = () => {
     showInfo("Đang chuẩn bị file tải xuống...");
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/admin/tables/qr/download-all?format=${format}`,
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/admin/tables/qr/download-all?format=${format}`,
         {
           headers: {
-            "x-tenant-id": import.meta.env.VITE_TENANT_ID,
-            Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+            "x-tenant-id": getTenantId(),
+            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
           },
         }
       );
@@ -397,9 +447,10 @@ const QRManagementScreen = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
       {/* QR Stats */}
       <div className="mb-6">
-        <QRStats
-          tables={tables}
+        <QRStats 
+          tables={tables} 
           onDownloadAll={handleDownloadAll}
+          socketConnected={socketConnected}
         />
       </div>
 

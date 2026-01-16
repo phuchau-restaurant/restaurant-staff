@@ -13,7 +13,7 @@ export class TablesRepository extends BaseRepository {
   async create(data) {
     const entity = new Tables(data);
     const dbPayload = entity.toPersistence();
-    
+
     // Clean payload
     Object.keys(dbPayload).forEach(key => dbPayload[key] === undefined && delete dbPayload[key]);
 
@@ -46,7 +46,7 @@ export class TablesRepository extends BaseRepository {
   // --- Override GetAll ---
   async getAll(filters = {}, pagination = null) {
     const result = await super.getAll(filters, pagination);
-    
+
     // Nếu có phân trang, result là object { data, pagination }
     if (pagination && pagination.pageNumber && pagination.pageSize) {
       return {
@@ -54,7 +54,7 @@ export class TablesRepository extends BaseRepository {
         pagination: result.pagination
       };
     }
-    
+
     // Nếu không có phân trang, result là array
     return result.map(item => new Tables(item));
   }
@@ -63,6 +63,22 @@ export class TablesRepository extends BaseRepository {
   async getById(id) {
     const rawData = await super.getById(id);
     return rawData ? new Tables(rawData) : null;
+  }
+
+  /**
+   * Lấy nhiều bàn theo danh sách ID
+   * @param {number[]} ids - Danh sách ID bàn
+   */
+  async getByIds(ids) {
+    if (!ids || ids.length === 0) return [];
+
+    const { data, error } = await supabase
+      .from(this.tableName)
+      .select("*")
+      .in("id", ids);
+
+    if (error) throw new Error(`[Tables] GetByIds failed: ${error.message}`);
+    return data ? data.map(item => new Tables(item)) : [];
   }
 
   /**
@@ -83,9 +99,9 @@ export class TablesRepository extends BaseRepository {
     }
 
     const { data, error } = await query;
-    
+
     if (error) throw new Error(`FindByTableNumber failed: ${error.message}`);
-    
+
     // Nếu có data > 0 tức là đã tồn tại
     return data && data.length > 0 ? new Tables(data[0]) : null;
   }

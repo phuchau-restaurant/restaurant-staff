@@ -33,21 +33,14 @@ class UsersService {
    * - Rule 1: Email không được để trống
    * - Rule 2: Email không được trùng trong cùng 1 Tenant
    */
-  async createUser({
-    tenantId,
-    email,
-    fullName,
-    passwordHash,
-    role,
-    isActive,
-  }) {
+  async createUser({ tenantId, email, fullName, password, role, isActive }) {
     // 1. Validate dữ liệu đầu vào
     if (!tenantId) throw new Error("Tenant ID is required");
     if (!email || email.trim() === "")
       throw new Error("User email is required");
     if (!fullName || fullName.trim() === "")
       throw new Error("Full name is required");
-    if (!passwordHash || passwordHash.trim() === "")
+    if (!password || password.trim() === "")
       throw new Error("Password is required");
     if (!role || role.trim() === "") throw new Error("Role is required");
 
@@ -71,12 +64,12 @@ class UsersService {
 
     // chuẩn bị dữ liệu
     // Hash password trước khi lưu vào DB
-    const hashedPassword = await bcrypt.hash(passwordHash.trim(), 10);
+    const hashedPassword = await bcrypt.hash(password.trim(), 10);
 
     const newUserData = {
       tenantId: tenantId,
       email: email.trim(),
-      name: fullName.trim(),
+      fullName: fullName.trim(),
       role: role.trim(),
       passwordHash: hashedPassword,
       isActive: isActive,
@@ -131,7 +124,20 @@ class UsersService {
       }
     }
 
-    // 3. Thực hiện update
+    // 3. Nếu có password trong updates, hash nó trước khi lưu
+    if (updates.password) {
+      // Validate password
+      if (updates.password.trim().length < 6) {
+        throw new Error("Password must be at least 6 characters");
+      }
+      // Hash password
+      const hashedPassword = await bcrypt.hash(updates.password.trim(), 10);
+      // Thay thế password bằng passwordHash
+      delete updates.password;
+      updates.passwordHash = hashedPassword;
+    }
+
+    // 4. Thực hiện update
     // <updates> là object từ Controller (VD: { name: "New Name", email: "new@example.com" })
     // Repository.update đã có logic new Users(updates) -> toPersistence() nên cứ truyền thẳng.
     return await this.usersRepo.update(id, updates);
@@ -154,3 +160,4 @@ class UsersService {
 
 //export default new UsersService(); - singleton: 3 lớp
 export default UsersService; // Export class, KHÔNG export new instance
+

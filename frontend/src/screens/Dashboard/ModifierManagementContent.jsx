@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Plus, Settings2 } from "lucide-react";
 
 // Components
@@ -12,12 +12,18 @@ import Pagination from "../../components/SpinnerLoad/Pagination";
 
 // Services & Utils
 import * as modifierService from "../../services/modifierService";
-import { filterAndSortModifierGroups, countActiveModifiers } from "../../utils/modifierUtils";
+import {
+  filterAndSortModifierGroups,
+  countActiveModifiers,
+} from "../../utils/modifierUtils";
 import {
   STATUS_OPTIONS,
   MESSAGES,
   VIEW_MODES,
 } from "../../constants/modifierConstants";
+import { SkeletonCard, SkeletonTable } from "../../components/Skeleton";
+// Socket hooks for real-time updates
+import { useModifierSocket } from "../../hooks/useModifierSocket";
 
 /**
  * ModifierManagementContent - Màn hình quản lý modifier trong Dashboard
@@ -31,7 +37,7 @@ import {
  */
 const ModifierManagementContent = () => {
   // ==================== STATE MANAGEMENT ====================
-  
+
   // State quản lý dữ liệu
   const [modifierGroups, setModifierGroups] = useState([]);
   const [filteredGroups, setFilteredGroups] = useState([]);
@@ -67,6 +73,33 @@ const ModifierManagementContent = () => {
     onConfirm: null,
   });
 
+  // ==================== SOCKET REAL-TIME UPDATES ====================
+
+  // Handler for modifier created (from other tabs/users)
+  const handleSocketModifierCreated = useCallback(async (data) => {
+    console.log("🔔 [Socket] Modifier created:", data);
+    await fetchModifierGroups(); // Re-fetch để có dữ liệu mới nhất
+  }, []);
+
+  // Handler for modifier updated (from other tabs/users)
+  const handleSocketModifierUpdated = useCallback(async (data) => {
+    console.log("🔔 [Socket] Modifier updated:", data);
+    await fetchModifierGroups(); // Re-fetch để có dữ liệu mới nhất
+  }, []);
+
+  // Handler for modifier deleted (from other tabs/users)
+  const handleSocketModifierDeleted = useCallback(async (data) => {
+    console.log("🔔 [Socket] Modifier deleted:", data);
+    await fetchModifierGroups(); // Re-fetch để có dữ liệu mới nhất
+  }, []);
+
+  // Connect socket listeners and get connection status
+  const { isConnected: socketConnected } = useModifierSocket({
+    onModifierCreated: handleSocketModifierCreated,
+    onModifierUpdated: handleSocketModifierUpdated,
+    onModifierDeleted: handleSocketModifierDeleted,
+  });
+
   // ==================== LIFECYCLE ====================
 
   // Fetch dữ liệu khi page hoặc pageSize thay đổi
@@ -95,9 +128,9 @@ const ModifierManagementContent = () => {
       setInitialLoading(true);
       const result = await modifierService.fetchModifierGroups(searchTerm, {
         pageNumber: currentPage,
-        pageSize: pageSize
+        pageSize: pageSize,
       });
-      
+
       // Xử lý response có pagination hoặc không
       if (result.pagination) {
         setModifierGroups(result.data);
@@ -140,11 +173,7 @@ const ModifierManagementContent = () => {
       showAlert("Thành công", MESSAGES.GROUP_CREATE_SUCCESS, "success");
     } catch (error) {
       console.error("Create modifier group error:", error);
-      showAlert(
-        "Lỗi",
-        error.message || MESSAGES.CREATE_ERROR,
-        "error"
-      );
+      showAlert("Lỗi", error.message || MESSAGES.CREATE_ERROR, "error");
     }
   };
 
@@ -153,7 +182,10 @@ const ModifierManagementContent = () => {
    */
   const handleUpdateGroup = async (id, groupData) => {
     try {
-      const updatedGroup = await modifierService.updateModifierGroup(id, groupData);
+      const updatedGroup = await modifierService.updateModifierGroup(
+        id,
+        groupData
+      );
       setModifierGroups(
         modifierGroups.map((g) => (g.id === id ? updatedGroup : g))
       );
@@ -162,11 +194,7 @@ const ModifierManagementContent = () => {
       showAlert("Thành công", MESSAGES.GROUP_UPDATE_SUCCESS, "success");
     } catch (error) {
       console.error("Update modifier group error:", error);
-      showAlert(
-        "Lỗi",
-        error.message || MESSAGES.UPDATE_ERROR,
-        "error"
-      );
+      showAlert("Lỗi", error.message || MESSAGES.UPDATE_ERROR, "error");
     }
   };
 
@@ -177,18 +205,12 @@ const ModifierManagementContent = () => {
     try {
       await modifierService.toggleModifierGroupStatus(id, false);
       setModifierGroups(
-        modifierGroups.map((g) =>
-          g.id === id ? { ...g, isActive: false } : g
-        )
+        modifierGroups.map((g) => (g.id === id ? { ...g, isActive: false } : g))
       );
       showAlert("Thành công", MESSAGES.GROUP_DELETE_SUCCESS, "success");
     } catch (error) {
       console.error("Delete modifier group error:", error);
-      showAlert(
-        "Lỗi",
-        error.message || MESSAGES.DELETE_ERROR,
-        "error"
-      );
+      showAlert("Lỗi", error.message || MESSAGES.DELETE_ERROR, "error");
     }
   };
 
@@ -208,7 +230,11 @@ const ModifierManagementContent = () => {
               g.id === group.id ? { ...g, isActive: true } : g
             )
           );
-          showAlert("Thành công", "Đã khôi phục nhóm modifier thành công", "success");
+          showAlert(
+            "Thành công",
+            "Đã khôi phục nhóm modifier thành công",
+            "success"
+          );
         } catch (error) {
           console.error("Restore modifier group error:", error);
           showAlert(
@@ -279,7 +305,11 @@ const ModifierManagementContent = () => {
       );
     } catch (error) {
       console.error("Toggle status error:", error);
-      showAlert("Lỗi", "Không thể thay đổi trạng thái. Vui lòng thử lại!", "error");
+      showAlert(
+        "Lỗi",
+        "Không thể thay đổi trạng thái. Vui lòng thử lại!",
+        "error"
+      );
     }
   };
 
@@ -368,11 +398,35 @@ const ModifierManagementContent = () => {
 
   if (initialLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-          <div className="text-gray-500 font-medium">Đang tải dữ liệu...</div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-6">
+        {/* Header Skeleton */}
+        <div className="mb-6">
+          <div className="h-9 bg-gray-200 rounded w-64 mb-2 animate-pulse"></div>
+          <div className="h-4 bg-gray-200 rounded w-96 animate-pulse"></div>
         </div>
+
+        {/* Filter Bar Skeleton */}
+        <div className="bg-white rounded-lg p-4 mb-6 shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-10 bg-gray-200 rounded animate-pulse"
+              ></div>
+            ))}
+          </div>
+        </div>
+
+        {/* Content Skeleton */}
+        {viewMode === VIEW_MODES.GRID ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 9 }).map((_, index) => (
+              <SkeletonCard key={index} />
+            ))}
+          </div>
+        ) : (
+          <SkeletonTable rows={10} columns={5} />
+        )}
       </div>
     );
   }
@@ -384,9 +438,26 @@ const ModifierManagementContent = () => {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800">Quản Lý Modifier</h1>
+              <h1 className="text-3xl font-bold text-gray-800">
+                Quản Lý Modifier
+              </h1>
               <p className="text-gray-600 mt-1">
                 Tổng số: {filteredGroups.length} nhóm modifier
+                {/* Socket connection indicator */}
+                <span
+                  className={`ml-3 inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${
+                    socketConnected
+                      ? "bg-green-100 text-green-700"
+                      : "bg-red-100 text-red-700"
+                  }`}
+                >
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      socketConnected ? "bg-green-500" : "bg-red-500"
+                    }`}
+                  ></span>
+                  {socketConnected ? "Live" : "Offline"}
+                </span>
               </p>
             </div>
             <button
@@ -405,7 +476,9 @@ const ModifierManagementContent = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 font-medium">Tổng nhóm</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">{stats.total}</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">
+                  {stats.total}
+                </p>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <Settings2 className="w-6 h-6 text-blue-600" />
@@ -415,8 +488,12 @@ const ModifierManagementContent = () => {
           <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-100">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 font-medium">Đang hoạt động</p>
-                <p className="text-3xl font-bold text-green-600 mt-1">{stats.active}</p>
+                <p className="text-sm text-gray-600 font-medium">
+                  Đang hoạt động
+                </p>
+                <p className="text-3xl font-bold text-green-600 mt-1">
+                  {stats.active}
+                </p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                 <Settings2 className="w-6 h-6 text-green-600" />
@@ -426,8 +503,12 @@ const ModifierManagementContent = () => {
           <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-100">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 font-medium">Không hoạt động</p>
-                <p className="text-3xl font-bold text-red-600 mt-1">{stats.inactive}</p>
+                <p className="text-sm text-gray-600 font-medium">
+                  Không hoạt động
+                </p>
+                <p className="text-3xl font-bold text-red-600 mt-1">
+                  {stats.inactive}
+                </p>
               </div>
               <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
                 <Settings2 className="w-6 h-6 text-red-600" />
@@ -437,8 +518,12 @@ const ModifierManagementContent = () => {
           <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-100">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 font-medium">Tổng Options</p>
-                <p className="text-3xl font-bold text-blue-600 mt-1">{stats.totalModifiers}</p>
+                <p className="text-sm text-gray-600 font-medium">
+                  Tổng Options
+                </p>
+                <p className="text-3xl font-bold text-blue-600 mt-1">
+                  {stats.totalModifiers}
+                </p>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <Settings2 className="w-6 h-6 text-blue-600" />
@@ -537,9 +622,7 @@ const ModifierManagementContent = () => {
         {/* Confirm Modal */}
         <ConfirmModal
           isOpen={confirmDialog.isOpen}
-          onClose={() =>
-            setConfirmDialog({ ...confirmDialog, isOpen: false })
-          }
+          onClose={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
           onConfirm={confirmDialog.onConfirm}
           title={confirmDialog.title}
           message={confirmDialog.message}

@@ -24,7 +24,7 @@ export class ModifierOptions {
     return {
       group_id: this.groupId,
       name: this.name,
-      price_adjustment: this.price,
+      price_adjustment: this.priceAdjustment ?? this.price,
       is_active: this.isActive,
     };
   }

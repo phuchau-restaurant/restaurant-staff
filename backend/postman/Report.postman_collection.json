@@ -1,0 +1,104 @@
+{
+  "info": {
+    "name": "Report APIs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Collection chứa các API báo cáo (revenue, best-sellers, summary)"
+  },
+  "item": [
+    {
+      "name": "Get Revenue",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-tenant-id",
+            "value": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+            "type": "text"
+          },
+          { "key": "Accept", "value": "application/json", "type": "text" }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/api/report/revenue?period=week",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "report", "revenue"],
+          "query": [{ "key": "period", "value": "week" }]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Revenue Range",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-tenant-id",
+            "value": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+            "type": "text"
+          },
+          { "key": "Accept", "value": "application/json", "type": "text" }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/api/report/revenue/range?from=2025-01-01&to=2025-01-07",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "report", "revenue", "range"],
+          "query": [
+            { "key": "from", "value": "2025-01-01" },
+            { "key": "to", "value": "2025-01-07" }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Best Sellers",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-tenant-id",
+            "value": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+            "type": "text"
+          },
+          { "key": "Accept", "value": "application/json", "type": "text" }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/api/report/best-sellers?limit=10",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "report", "best-sellers"],
+          "query": [{ "key": "limit", "value": "10" }]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Summary",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-tenant-id",
+            "value": "019abac9-846f-75d0-8dfd-bcf9c9457866",
+            "type": "text"
+          },
+          { "key": "Accept", "value": "application/json", "type": "text" }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/api/report/summary",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "report", "summary"]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": []
+}

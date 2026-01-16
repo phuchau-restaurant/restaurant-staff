@@ -29,6 +29,9 @@ router.put("/tables/:id", tablesController.update);
 // PATCH Status (only)
 router.patch("/tables/:id/status", tablesController.updateStatus);
 
+// DELETE (permanent delete)
+router.delete("/tables/:id", tablesController.delete);
+
 router.use(authMiddleware);
 
 // Tạo QR code cho bàn (chỉ admin)

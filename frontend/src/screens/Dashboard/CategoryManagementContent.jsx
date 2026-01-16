@@ -18,6 +18,10 @@ import {
   MESSAGES,
   VIEW_MODES,
 } from "../../constants/categoryConstants";
+import { SkeletonCard, SkeletonTable } from "../../components/Skeleton";
+
+// Socket hooks for real-time updates
+import { useCategorySocket } from "../../hooks/useCategorySocket";
 
 /**
  * CategoryManagementContent - Màn hình quản lý danh mục trong Dashboard
@@ -66,6 +70,33 @@ const CategoryManagementContent = () => {
     onConfirm: null,
   });
 
+  // ==================== SOCKET REAL-TIME UPDATES ====================
+
+  // Handler for category created (from other tabs/users)
+  const handleSocketCategoryCreated = useCallback(async (data) => {
+    console.log("🔔 [Socket] Category created:", data);
+    await fetchCategories(); // Re-fetch để có dữ liệu mới nhất
+  }, []);
+
+  // Handler for category updated (from other tabs/users)
+  const handleSocketCategoryUpdated = useCallback(async (data) => {
+    console.log("🔔 [Socket] Category updated:", data);
+    await fetchCategories(); // Re-fetch để có dữ liệu mới nhất
+  }, []);
+
+  // Handler for category deleted (from other tabs/users)
+  const handleSocketCategoryDeleted = useCallback(async (data) => {
+    console.log("🔔 [Socket] Category deleted:", data);
+    await fetchCategories(); // Re-fetch để có dữ liệu mới nhất
+  }, []);
+
+  // Connect socket listeners and get connection status
+  const { isConnected: socketConnected } = useCategorySocket({
+    onCategoryCreated: handleSocketCategoryCreated,
+    onCategoryUpdated: handleSocketCategoryUpdated,
+    onCategoryDeleted: handleSocketCategoryDeleted,
+  });
+
   // ==================== LIFECYCLE ====================
 
   // Fetch dữ liệu khi page hoặc pageSize thay đổi
@@ -95,9 +126,9 @@ const CategoryManagementContent = () => {
       setInitialLoading(true);
       const result = await categoryService.fetchCategories(searchTerm, {
         pageNumber: currentPage,
-        pageSize: pageSize
+        pageSize: pageSize,
       });
-      
+
       // Xử lý response có pagination hoặc không
       if (result.pagination) {
         setCategories(result.data);
@@ -198,9 +229,7 @@ const CategoryManagementContent = () => {
           // Cập nhật local state
           setCategories(
             categories.map((cat) =>
-              cat.id === categoryId
-                ? { ...cat, is_active: newStatus }
-                : cat
+              cat.id === categoryId ? { ...cat, is_active: newStatus } : cat
             )
           );
           showAlert(
@@ -346,13 +375,17 @@ const CategoryManagementContent = () => {
       // Chỉ gửi changedData đi thay vì toàn bộ categoryData
       // Backend trả về id (camelCase)
       const idToUpdate = editingCategory.id;
-      
+
       if (!idToUpdate) {
         console.error("Category ID is missing:", editingCategory);
-        showAlert("Lỗi", "Không tìm thấy ID danh mục. Vui lòng thử lại!", "error");
+        showAlert(
+          "Lỗi",
+          "Không tìm thấy ID danh mục. Vui lòng thử lại!",
+          "error"
+        );
         return;
       }
-      
+
       await handleUpdateCategory(idToUpdate, changedData);
     } else {
       // Tạo mới thì gửi toàn bộ
@@ -428,11 +461,35 @@ const CategoryManagementContent = () => {
 
   if (initialLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-          <div className="text-gray-500 font-medium">Đang tải dữ liệu...</div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
+        {/* Header Skeleton */}
+        <div className="mb-6">
+          <div className="h-9 bg-gray-200 rounded w-64 mb-2 animate-pulse"></div>
+          <div className="h-4 bg-gray-200 rounded w-80 animate-pulse"></div>
         </div>
+
+        {/* Filter Bar Skeleton */}
+        <div className="bg-white rounded-lg p-4 mb-6 shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-10 bg-gray-200 rounded animate-pulse"
+              ></div>
+            ))}
+          </div>
+        </div>
+
+        {/* Content Skeleton */}
+        {viewMode === VIEW_MODES.GRID ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 9 }).map((_, index) => (
+              <SkeletonCard key={index} />
+            ))}
+          </div>
+        ) : (
+          <SkeletonTable rows={10} columns={4} />
+        )}
       </div>
     );
   }
@@ -448,6 +505,21 @@ const CategoryManagementContent = () => {
             </h1>
             <p className="text-gray-600 mt-1">
               Tổng số: {filteredCategories.length} danh mục
+              {/* Socket connection indicator */}
+              <span
+                className={`ml-3 inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${
+                  socketConnected
+                    ? "bg-green-100 text-green-700"
+                    : "bg-red-100 text-red-700"
+                }`}
+              >
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    socketConnected ? "bg-green-500" : "bg-red-500"
+                  }`}
+                ></span>
+                {socketConnected ? "Live" : "Offline"}
+              </span>
             </p>
           </div>
           <button
