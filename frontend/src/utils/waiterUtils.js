@@ -90,18 +90,18 @@ export const determineOrderStatus = (order, elapsed) => {
 };
 
 /**
- * Filter orders theo điều kiện tìm kiếm
+ * Filter orders theo điều kiện tìm kiếm (theo số bàn)
  * @param {Array} orders - Danh sách orders
- * @param {string} searchOrderId - Từ khóa tìm kiếm
+ * @param {string} searchTable - Từ khóa tìm kiếm (số bàn)
  * @returns {Array} Danh sách orders đã được filter
  */
-export const filterOrdersBySearch = (orders, searchOrderId) => {
-  if (!searchOrderId) return orders;
+export const filterOrdersBySearch = (orders, searchTable) => {
+  if (!searchTable) return orders;
 
   return orders.filter((order) => {
-    return String(order.orderNumber)
+    return String(order.tableNumber)
       .toLowerCase()
-      .includes(searchOrderId.toLowerCase());
+      .includes(searchTable.toLowerCase());
   });
 };
 

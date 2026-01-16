@@ -115,15 +115,11 @@ const OrderDetailModal = ({
       <div
         ref={modalRef}
         style={{
-          position: "absolute",
-          left: modalPos.x,
-          top: modalPos.y,
-          width: modalSize.width,
-          height: modalSize.height,
-          minWidth: 800,
-          minHeight: 600,
-          maxWidth: "100vw",
-          maxHeight: "100vh",
+          position: "relative",
+          width: "100%",
+          maxWidth: window.innerWidth < 768 ? "95vw" : window.innerWidth < 1024 ? "90vw" : "1200px",
+          height: "auto",
+          maxHeight: "90vh",
           boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
           background: "white",
           borderRadius: 16,

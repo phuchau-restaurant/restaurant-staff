@@ -2,9 +2,10 @@
 import { supabase } from "../../configs/database.js";
 
 class PaymentService {
-    constructor(paymentRepository, tenantsRepository) {
+    constructor(paymentRepository, tenantsRepository, tablesRepository) {
         this.paymentRepo = paymentRepository;
         this.tenantsRepo = tenantsRepository;
+        this.tablesRepo = tablesRepository;
     }
 
     /**
@@ -52,6 +53,11 @@ class PaymentService {
 
         // Update order status to 'Paid'
         await this.updateOrderStatus(orderId, tenantId, 'Paid');
+
+        // Clear current_order_id của bàn (đánh dấu bàn trống)
+        if (this.tablesRepo) {
+            await this.tablesRepo.clearCurrentOrderByOrderId(orderId);
+        }
 
         return {
             payment,

@@ -241,14 +241,41 @@ const WaiterScreen = () => {
   const handleCancelItem = async (orderId, itemId) => {
     try {
       await waiterService.cancelOrderItem(orderId, itemId);
-      // Update local state
-      const updateOrders = (ordersList) =>
-        updateOrderItemInList(ordersList, orderId, itemId, {
-          status: "Cancelled",
-          cancelled: true,
-        });
-      setOrders(updateOrders);
-      setMyOrders(updateOrders);
+
+      // Fetch updated order to check status (similar to handleServeItem)
+      const updatedOrder = await fetchOrderDetails(orderId);
+
+      console.log('🔍 handleCancelItem - Updated order:', {
+        orderId,
+        status: updatedOrder?.status,
+        orderNumber: updatedOrder?.orderNumber,
+        items: updatedOrder?.items?.map(i => ({ name: i.name, status: i.status }))
+      });
+
+      if (updatedOrder) {
+        // Update local state with fresh data
+        const updateOrders = (ordersList) =>
+          ordersList.map((o) => (o.id === orderId ? updatedOrder : o));
+
+        setOrders(updateOrders);
+        setMyOrders(updateOrders);
+
+        // Check if order is fully cancelled
+        if (updatedOrder.status === "Cancelled") {
+          console.log('❌ Order is fully cancelled - showing notification');
+          showAlert("Đơn hàng đã hủy", `Đơn hàng #${updatedOrder.orderNumber} đã bị hủy hoàn toàn!`, "error");
+        }
+      } else {
+        console.warn('⚠️ Failed to fetch updated order');
+        // Fallback local update if fetch fails
+        const updateOrders = (ordersList) =>
+          updateOrderItemInList(ordersList, orderId, itemId, {
+            status: "Cancelled",
+            cancelled: true,
+          });
+        setOrders(updateOrders);
+        setMyOrders(updateOrders);
+      }
     } catch (error) {
       console.error("Error cancelling item:", error);
     }
@@ -394,7 +421,7 @@ const WaiterScreen = () => {
           console.log("⚠️ Order already exists in list, skipping:", newOrder.id);
           return prev;
         }
-        
+
         // Phát âm thanh và hiển thị thông báo khi có đơn mới
         playNotificationSound();
         setNotification({
@@ -402,10 +429,10 @@ const WaiterScreen = () => {
           orderId: newOrder.id,
           type: "new",
         });
-        
+
         // Tự động ẩn sau 5 giây
         setTimeout(() => setNotification(null), 5000);
-        
+
         return [newOrder, ...prev];
       });
     }
@@ -566,6 +593,15 @@ const WaiterScreen = () => {
     return sortOrdersByTime(withoutCancelled, "asc");
   }, [orders, myOrders, activeTab, searchOrderId]);
 
+  // Đếm số đơn active (không bao gồm Cancelled/Paid) để hiển thị trên badge
+  const activeOrdersCount = useMemo(() => {
+    return filterOutCancelledOrders(orders).length;
+  }, [orders]);
+
+  const myActiveOrdersCount = useMemo(() => {
+    return filterOutCancelledOrders(myOrders).length;
+  }, [myOrders]);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <WaiterHeader
@@ -616,13 +652,12 @@ const WaiterScreen = () => {
 
       {/* Notification Toast */}
       {notification && (
-        <div className={`${
-          notification.type === "cancelled" 
-            ? "bg-gradient-to-r from-red-500 to-red-600" 
-            : notification.type === "new"
+        <div className={`${notification.type === "cancelled"
+          ? "bg-gradient-to-r from-red-500 to-red-600"
+          : notification.type === "new"
             ? "bg-gradient-to-r from-blue-500 to-blue-600"
             : "bg-gradient-to-r from-green-500 to-green-600"
-        } text-white px-6 py-4 flex items-center justify-between shadow-lg animate-in slide-in-from-top duration-300`}>
+          } text-white px-6 py-4 flex items-center justify-between shadow-lg animate-in slide-in-from-top duration-300`}>
           <div className="flex items-center gap-3">
             <Bell className="w-5 h-5 animate-bounce" />
             <span className="font-semibold text-lg">
@@ -669,7 +704,7 @@ const WaiterScreen = () => {
             >
               Đơn mới
               <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-bold ${activeTab === "new" ? "bg-white/20" : "bg-gray-200"}`}>
-                {orders.length}
+                {activeOrdersCount}
               </span>
             </button>
             <button
@@ -681,7 +716,7 @@ const WaiterScreen = () => {
             >
               Đơn của tôi
               <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-bold ${activeTab === "my" ? "bg-white/20" : "bg-gray-200"}`}>
-                {myOrders.length}
+                {myActiveOrdersCount}
               </span>
             </button>
           </div>
@@ -691,7 +726,7 @@ const WaiterScreen = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
             <input
               type="text"
-              placeholder="Tìm mã đơn..."
+              placeholder="Tìm số bàn..."
               value={searchOrderId}
               onChange={(e) => setSearchOrderId(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 text-sm bg-white border border-gray-200 rounded-full focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-100 transition-all"

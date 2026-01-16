@@ -126,6 +126,25 @@ export class UsersRepository extends BaseRepository {
     const rawData = await super.getAll(filters); // Gọi cha lấy raw data
     return rawData.map((item) => new Users(item)) || []; // Map sang Model
   }
+
+  /**
+   * Tìm user theo email và tenant ID (exact match)
+   * @param {string} email - Email cần tìm
+   * @param {string} tenantId - ID của tenant
+   */
+  async getByEmailAndTenant(email, tenantId) {
+    if (!email || !tenantId) return null;
+
+    const { data, error } = await supabase
+      .from(this.tableName)
+      .select("*")
+      .eq("email", email)
+      .eq("tenant_id", tenantId)
+      .maybeSingle();
+
+    if (error) throw new Error(`getByEmailAndTenant failed: ${error.message}`);
+    return data ? new Users(data) : null;
+  }
 }
 // LƯU Ý QUAN TRỌNG:
 // KHÔNG export "new UsersRepository()" ở đây như kiến trúc 3 lớp.

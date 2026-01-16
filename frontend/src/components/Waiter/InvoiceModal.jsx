@@ -539,7 +539,6 @@ const InvoiceModal = ({
                                     </>
                                 ) : (
                                     <>
-                                        <CheckCircle className="w-5 h-5" />
                                         Xác nhận đã thanh toán
                                     </>
                                 )}
