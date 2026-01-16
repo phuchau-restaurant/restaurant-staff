@@ -14,7 +14,7 @@ export const useSocket = () => {
 };
 
 export const SocketProvider = ({ children }) => {
-  const { accessToken, isAuthenticated } = useAuth();
+  const { accessToken, isAuthenticated, user } = useAuth();
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef(null);
@@ -56,6 +56,12 @@ export const SocketProvider = ({ children }) => {
       newSocket.on("connect", () => {
         console.log("✅ Socket connected:", newSocket.id);
         setIsConnected(true);
+        
+        // Join 'waiters' room để nhận thông báo đơn hàng mới
+        if (user?.id) {
+          newSocket.emit("join_waiter", user.id);
+          console.log("🏠 Joined waiters room with user ID:", user.id);
+        }
       });
 
       newSocket.on("disconnect", (reason) => {
@@ -100,7 +106,14 @@ export const SocketProvider = ({ children }) => {
         }
       );
 
-      newSocket.on("connect", () => setIsConnected(true));
+      newSocket.on("connect", () => {
+        setIsConnected(true);
+        // Join waiters room
+        if (user?.id) {
+          newSocket.emit("join_waiter", user.id);
+          console.log("🏠 Joined waiters room with user ID:", user.id);
+        }
+      });
       newSocket.on("disconnect", () => setIsConnected(false));
       newSocket.on("connect_error", () => setIsConnected(false));
 

@@ -303,7 +303,7 @@ const OrderForm = ({
         >
           {/* Header */}
           <div
-            className="cursor-move bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 flex items-center justify-between"
+            className="shrink-0 cursor-move bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 flex items-center justify-between"
             onMouseDown={onDragStart}
             style={{ userSelect: "none" }}
           >
@@ -319,8 +319,8 @@ const OrderForm = ({
           </div>
 
           {/* Body */}
-          <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
-            <form onSubmit={handleSubmit}>
+          <div className="flex-1 p-6 overflow-y-auto">
+            <form onSubmit={handleSubmit} className="h-full">
               {/* Errors */}
               {errors.length > 0 && (
                 <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -621,7 +621,7 @@ const OrderForm = ({
           </div>
 
           {/* Footer */}
-          <div className="bg-gray-50 px-6 py-4 flex items-center justify-end gap-3 border-t border-gray-200">
+          <div className="shrink-0 bg-gray-50 px-6 py-4 flex items-center justify-end gap-3 border-t border-gray-200">
             <button
               type="button"
               onClick={onClose}
