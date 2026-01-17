@@ -74,6 +74,12 @@ export const initializeSocket = (httpServer) => {
       socket.join(`${tenantRoom}:admin`);
     }
 
+    // Join waiter room (for receiving order notifications from Customer Backend)
+    socket.on("join_waiter", (waiterId) => {
+      socket.join("waiters");
+      console.log(`🏠 Socket ${socket.id} joined waiters room (Waiter ID: ${waiterId})`);
+    });
+
     socket.on("disconnect", () => {
       console.log(`❌ Client disconnected: ${socket.id}`);
     });

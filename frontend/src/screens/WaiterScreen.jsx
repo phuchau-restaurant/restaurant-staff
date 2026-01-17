@@ -19,6 +19,7 @@ import {
   filterOutCancelledOrders,
   sortOrdersByTime,
 } from "../utils/waiterUtils";
+import StaffNotificationPanel from "../components/StaffNotificationPanel";
 
 const WaiterScreen = () => {
   const { user, logout, updateUser } = useAuth();
@@ -603,7 +604,8 @@ const WaiterScreen = () => {
   }, [myOrders]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 lg:pr-80">
+      {/* lg:pr-80 = padding-right for notification sidebar on desktop */}
       <WaiterHeader
         currentTime={currentTime}
         user={user}
@@ -673,22 +675,6 @@ const WaiterScreen = () => {
           </button>
         </div>
       )}
-
-      {/* Test Audio Button - Fixed position */}
-      <button
-        onClick={() => {
-          console.log('🔊 Testing notification sound...');
-          playNotificationSound();
-        }}
-        className="fixed bottom-4 right-4 z-50 bg-green-500 hover:bg-green-600 text-white p-3 rounded-full shadow-lg transition-all hover:scale-110"
-        title="Test âm thanh thông báo"
-      >
-        <Bell className={`w-5 h-5 ${isAudioEnabled ? 'text-white' : 'text-red-200 animate-pulse'}`} />
-        {!isAudioEnabled && <span className="absolute -top-1 -right-1 flex h-3 w-3">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-        </span>}
-      </button>
 
       {/* Tabs & Search */}
       <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-4">
@@ -765,6 +751,9 @@ const WaiterScreen = () => {
         onConfirmPayment={handleConfirmPayment}
         isConfirming={invoiceModal.isConfirming}
       />
+
+      {/* Staff Notification Panel - For payment requests and other staff notifications */}
+      <StaffNotificationPanel />
     </div>
   );
 };

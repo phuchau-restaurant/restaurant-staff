@@ -1,68 +1,46 @@
 import { useEffect, useState, useCallback } from 'react';
-import { io } from 'socket.io-client';
+import { useSocket } from '../context/SocketContext';
 import { showNotificationWithSound, requestNotificationPermission } from '../utils/notificationSound';
 
 /**
  * Custom hook to manage staff notifications via Socket.IO
- * Listens for customer call events and plays notification sounds
+ * Uses existing SocketContext instead of creating new connection
  */
 export const useStaffNotifications = () => {
-  const [socket, setSocket] = useState(null);
+  const { socket, isConnected } = useSocket(); // Use existing socket from context
   const [notifications, setNotifications] = useState([]);
-  const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    // Get token and setup socket connection
-    const token = localStorage.getItem('token'); // Adjust based on your auth implementation
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
-
-    if (!token) {
-      console.warn('No token found, cannot connect to socket');
+    if (!socket || !isConnected) {
+      console.warn('Socket not connected yet');
       return;
     }
 
-    // Create socket connection
-    const newSocket = io(backendUrl, {
-      auth: { token },
-      transports: ['websocket'],
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionAttempts: 5
-    });
+    console.log('🔔 Setting up staff notification listeners');
 
-    // Connection events
-    newSocket.on('connect', () => {
-      console.log('✅ Socket connected:', newSocket.id);
-      setIsConnected(true);
-    });
-
-    newSocket.on('disconnect', () => {
-      console.log('❌ Socket disconnected');
-      setIsConnected(false);
-    });
-
-    newSocket.on('connect_error', (error) => {
-      console.error('❌ Socket connection error:', error.message);
-      setIsConnected(false);
-    });
+    // Join waiters room to receive notifications
+    const userId = localStorage.getItem('userId') || 'waiter';
+    socket.emit('join_waiter', userId);
+    console.log('🏠 Joined waiters room with user:', userId);
 
     // Listen for customer call events
-    newSocket.on('staff:customer_call', (data) => {
+    const handleCustomerCall = (data) => {
       console.log('🔔 Customer call received:', data);
       
-      // Add notification to list
       const notification = {
         id: Date.now(),
+        type: 'service',
+        requestType: 'service',
         ...data,
-        read: false
+        read: false,
+        timestamp: data.timestamp || new Date().toISOString()
       };
       
       setNotifications(prev => [notification, ...prev]);
       
-      // Play notification sound and show browser notification
       showNotificationWithSound({
         title: '🔔 Khách hàng cần hỗ trợ!',
-        body: data.message,
+        body: data.message || `Bàn ${data.tableNumber} cần hỗ trợ`,
         soundType: 'double'
       });
       
@@ -70,18 +48,95 @@ export const useStaffNotifications = () => {
       setTimeout(() => {
         setNotifications(prev => prev.filter(n => n.id !== notification.id));
       }, 30000);
-    });
+    };
 
-    setSocket(newSocket);
+    // Listen for payment request events (from Customer Backend webhook)
+    const handlePaymentRequest = (data) => {
+      console.log('💰 Payment request received:', data);
+      
+      const notification = {
+        id: Date.now(),
+        type: 'payment',
+        requestType: 'payment',
+        ...data,
+        read: false,
+        timestamp: data.timestamp || new Date().toISOString()
+      };
+      
+      setNotifications(prev => [notification, ...prev]);
+      
+      showNotificationWithSound({
+        title: '💰 Yêu cầu thanh toán',
+        body: `Bàn ${data.tableNumber} cần thanh toán`,
+        soundType: 'double'
+      });
+      
+      // Auto-remove after 30 seconds
+      setTimeout(() => {
+        setNotifications(prev => prev.filter(n => n.id !== notification.id));
+      }, 30000);
+    };
+
+    // Listen for new order events
+    const handleOrderCreated = (data) => {
+      console.log('📦 New order notification received:', data);
+      console.log('📦 Data details:', {
+        orderId: data.orderId,
+        tableNumber: data.tableNumber,
+        displayOrder: data.displayOrder,
+        status: data.status
+      });
+      
+      const notification = {
+        id: Date.now(),
+        type: 'order',
+        requestType: 'service',
+        tableNumber: data.tableNumber || data.tableId,
+        orderId: data.orderId,
+        message: `Đơn hàng mới #${data.displayOrder || data.orderId}`,
+        read: false,
+        timestamp: data.timestamp || new Date().toISOString()
+      };
+      
+      console.log('📦 Creating notification:', notification);
+      setNotifications(prev => {
+        console.log('📦 Current notifications:', prev.length);
+        return [notification, ...prev];
+      });
+      
+      // No sound here - WaiterScreen already plays sound for new orders
+      // Just add to notification list
+      
+      // Auto-remove after 60 seconds (longer for orders)
+      setTimeout(() => {
+        setNotifications(prev => prev.filter(n => n.id !== notification.id));
+      }, 60000);
+    };
+
+    console.log('🔔 Registering socket listeners...');
+    
+    // Register listeners
+    socket.on('staff:customer_call', handleCustomerCall);
+    socket.on('payment_request', handlePaymentRequest);
+    socket.on('order:created', handleOrderCreated);
+    
+    console.log('✅ Socket listeners registered:', {
+      'staff:customer_call': 'handleCustomerCall',
+      'payment_request': 'handlePaymentRequest', 
+      'order:created': 'handleOrderCreated'
+    });
 
     // Request notification permission on mount
     requestNotificationPermission();
 
-    // Cleanup on unmount
+    // Cleanup listeners on unmount
     return () => {
-      newSocket.disconnect();
+      socket.off('staff:customer_call', handleCustomerCall);
+      socket.off('payment_request', handlePaymentRequest);
+      socket.off('order:created', handleOrderCreated);
+      console.log('🔕 Cleaned up staff notification listeners');
     };
-  }, []);
+  }, [socket, isConnected]);
 
   // Mark notification as read
   const markAsRead = useCallback((notificationId) => {

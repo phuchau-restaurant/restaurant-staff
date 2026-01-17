@@ -28,6 +28,7 @@ import tenantsRoutes from "./routers/tenants.routes.js";
 import paymentRoutes from "./routers/payment.routes.js";
 import customerRoutes from "./routers/customer.routes.js";
 import platformUsersRoutes from "./routers/platformUsers.routes.js";
+import webhooksRoutes from "./routers/webhooks.routes.js";
 
 //Import middlewares
 import { errorMiddleware } from "./middlewares/errorMiddleware.js";
@@ -95,6 +96,18 @@ app.use("/api/customer", customerRoutes);
 app.use("/api/platform", platformUsersRoutes);
 //Nghiệp vụ cho admin
 app.use("/api/admin", adminRoutes);
+
+// Webhook endpoints (NO auth middleware - public endpoints for Customer Backend)
+app.use("/api/webhooks", webhooksRoutes);
+
+// Health check endpoint
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "ok",
+    service: "restaurant-staff-backend",
+    timestamp: new Date().toISOString(),
+  });
+});
 
 // Route kiểm tra server sống hay chết
 app.get("/", (req, res) => {
