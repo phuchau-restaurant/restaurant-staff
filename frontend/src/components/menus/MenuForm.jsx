@@ -22,6 +22,7 @@ const MenuForm = ({
     categoryId: "",
     preparationTime: "",
     isAvailable: true,
+    isRecommended: false,
     images: [],
     selectedModifierGroups: [],
   });
@@ -53,6 +54,8 @@ const MenuForm = ({
         preparationTime: menuItem.preparationTime || "",
         isAvailable:
           menuItem.isAvailable !== undefined ? menuItem.isAvailable : true,
+        isRecommended:
+          menuItem.isRecommended !== undefined ? menuItem.isRecommended : false,
         images: menuItem.images || [],
         selectedModifierGroups: selectedIds,
       });
@@ -483,6 +486,24 @@ const MenuForm = ({
                     className="text-sm font-medium text-gray-700"
                   >
                     Đang bán
+                  </label>
+                </div>
+
+                {/* Is Recommended */}
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="isRecommended"
+                    name="isRecommended"
+                    checked={formData.isRecommended}
+                    onChange={handleInputChange}
+                    className="w-5 h-5 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500"
+                  />
+                  <label
+                    htmlFor="isRecommended"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Món được gợi ý
                   </label>
                 </div>
               </div>

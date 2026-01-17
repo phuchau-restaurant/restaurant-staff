@@ -33,9 +33,15 @@ export class MenusRepository extends BaseRepository {
   }
 
 async update(id, updates) {
+    console.log('[MenusRepo] Update received:', { id, updates });
+    console.log('[MenusRepo] isRecommended in updates:', updates.isRecommended);
+    
     //"Clean Payload"  
     const menuEntity = new Menus(updates);
+    console.log('[MenusRepo] menuEntity.isRecommended:', menuEntity.isRecommended);
+    
     const dbPayload = menuEntity.toPersistence();
+    console.log('[MenusRepo] dbPayload.is_recommended:', dbPayload.is_recommended);
 
     // Loại bỏ các key có giá trị undefined -> Vì default value của is_active có thể không đc truyền vào
     // lọc sạch object dbPayload.
@@ -44,6 +50,8 @@ async update(id, updates) {
             delete dbPayload[key];
         }
     });
+    console.log('[MenusRepo] Final dbPayload:', dbPayload);
+    
     const { data, error } = await supabase
       .from(this.tableName)
       .update(dbPayload) 

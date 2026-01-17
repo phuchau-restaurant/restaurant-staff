@@ -100,7 +100,7 @@ class MenusService {
 
   async createMenu(menuData) {
     const { tenantId, name, price, categoryId,
-             imgUrl, prepTimeMinutes, isAvailable } = menuData;
+             imgUrl, prepTimeMinutes, isAvailable, isRecommended } = menuData;
 
     // 1. Validation cơ bản
     if (!tenantId) throw new Error("Tenant ID is required");
@@ -109,6 +109,9 @@ class MenusService {
     if (price === undefined || price < 0) throw new Error("Price must be a positive number");
     if (isAvailable !== undefined && typeof isAvailable !== 'boolean') {
         throw new Error("isAvailable must be a boolean");
+    }
+    if (isRecommended !== undefined && typeof isRecommended !== 'boolean') {
+        throw new Error("isRecommended must be a boolean");
     }
     if (imgUrl && typeof imgUrl !== 'string') {
         throw new Error("Image URL must be a string");

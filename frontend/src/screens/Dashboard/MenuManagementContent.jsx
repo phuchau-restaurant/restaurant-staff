@@ -381,6 +381,7 @@ const MenuManagementContent = () => {
               price: menuData.price,
               categoryId: menuData.categoryId,
               isAvailable: menuData.isAvailable,
+              isRecommended: menuData.isRecommended,
               imgUrl: getPrimaryImage(allImages)?.url || item.imgUrl,
               images: allImages,
             };
