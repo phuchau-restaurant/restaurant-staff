@@ -318,45 +318,47 @@ const WaiterOrderCard = ({
           onClick={() => setShowDetail(false)}
         >
           <div
-            className="bg-white rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
+            className="bg-white rounded-2xl max-w-lg sm:max-w-6xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="bg-gray-50 p-6 border-b border-gray-200 sticky top-0 z-10">
+            <div className="bg-gray-50 p-3 sm:p-6 border-b border-gray-200 sticky top-0 z-10">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-2xl font-black text-gray-900">
+                  <h2 className="text-lg sm:text-2xl font-black text-gray-900">
                     {order.tableNumber}
                   </h2>
-                  <p className="text-gray-500 text-sm mt-1">
+                  <p className="text-gray-500 text-xs sm:text-sm mt-0.5 sm:mt-1">
                     Đơn #{order.orderNumber} • {elapsed} phút
                   </p>
                 </div>
-                <button
-                  onClick={() => setShowDetail(false)}
-                  className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors"
-                >
-                  <X size={20} className="sm:w-6 sm:h-6 text-gray-500" />
-                </button>
-              </div>
-
-              {/* Timer in modal - Prep Time Only */}
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg mt-2 font-semibold text-sm bg-gray-200 text-gray-700">
-                <Clock size={16} />
-                <span>{prepTime ? `${prepTime}'` : '--'}</span>
+                <div className="flex items-center gap-2 sm:gap-3">
+                  {/* Timer Badge - Next to close button */}
+                  <div className="inline-flex items-center gap-1 sm:gap-1.5 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg font-semibold text-xs sm:text-sm bg-gray-200 text-gray-700">
+                    <Clock size={14} className="sm:hidden" />
+                    <Clock size={16} className="hidden sm:block" />
+                    <span>{prepTime ? `${prepTime}'` : '--'}</span>
+                  </div>
+                  <button
+                    onClick={() => setShowDetail(false)}
+                    className="w-7 h-7 sm:w-10 sm:h-10 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors"
+                  >
+                    <X size={18} className="sm:w-6 sm:h-6 text-gray-500" />
+                  </button>
+                </div>
               </div>
             </div>
 
             {/* Modal Content */}
-            <div className="p-6 overflow-y-auto max-h-[60vh]">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-base font-bold text-gray-800">
+            <div className="p-3 sm:p-6 overflow-y-auto max-h-[60vh]">
+              <div className="flex items-center justify-between mb-2 sm:mb-3">
+                <h3 className="text-sm sm:text-base font-bold text-gray-800">
                   Chi tiết món ăn
                 </h3>
-                <div className="text-sm text-gray-500">
+                <div className="text-xs sm:text-sm text-gray-500">
                   {readyCount > 0 && <span className="text-green-600 font-medium">{readyCount} sẵn sàng</span>}
-                  {servedCount > 0 && <span className="ml-2 text-gray-600">{servedCount} đã phục vụ</span>}
-                  {cancelledCount > 0 && <span className="ml-2 text-red-600">{cancelledCount} đã hủy</span>}
+                  {servedCount > 0 && <span className="ml-1.5 sm:ml-2 text-gray-600">{servedCount} đã phục vụ</span>}
+                  {cancelledCount > 0 && <span className="ml-1.5 sm:ml-2 text-red-600">{cancelledCount} đã hủy</span>}
                 </div>
               </div>
 
@@ -366,36 +368,36 @@ const WaiterOrderCard = ({
                   return (
                     <div
                       key={`${order.id}-detail-item-${item.id || itemIndex}`}
-                      className={`p-3 sm:p-4 rounded-xl ${style.bg} ${style.border} border-2`}
+                      className={`p-2.5 sm:p-4 rounded-xl ${style.bg} ${style.border} border-2`}
                     >
-                      <div className="flex items-start justify-between gap-3 sm:gap-4">
+                      <div className="flex items-start justify-between gap-2 sm:gap-4">
                         <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2 flex-wrap">
-                            <h4 className={`text-[20px] font-bold text-gray-800 ${item.status === "Cancelled" ? "line-through opacity-60" : ""}`}>
+                          <div className="flex items-center gap-1.5 sm:gap-3 mb-1.5 sm:mb-2 flex-wrap">
+                            <h4 className={`text-sm sm:text-[20px] font-bold text-gray-800 ${item.status === "Cancelled" ? "line-through opacity-60" : ""}`}>
                               {item.name}
                             </h4>
-                            <span className="text-[20px] font-black text-orange-600">
+                            <span className="text-sm sm:text-[20px] font-black text-orange-600">
                               ×{item.quantity}
                             </span>
-                            <span className={`px-2.5 py-1 rounded-lg text-[13px] font-semibold ${style.badge}`}>
+                            <span className={`px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-[10px] sm:text-[13px] font-semibold ${style.badge}`}>
                               {getItemStatusLabel(item)}
                             </span>
                           </div>
 
                           {/* Price */}
-                          <div className="mb-2">
-                            <span className="text-gray-600 text-[15px]">
-                              Đơn giá: <span className="font-bold text-lg text-gray-800">{item.unitPrice?.toLocaleString('vi-VN')}đ</span>
+                          <div className="mb-1.5 sm:mb-2">
+                            <span className="text-gray-600 text-xs sm:text-[15px]">
+                              Đơn giá: <span className="font-bold text-sm sm:text-lg text-gray-800">{item.unitPrice?.toLocaleString('vi-VN')}đ</span>
                             </span>
                           </div>
 
                           {/* Modifiers */}
                           {item.modifiers && item.modifiers.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+                            <div className="flex flex-wrap gap-1 sm:gap-2 mb-1 sm:mb-2">
                               {item.modifiers.map((mod, idx) => (
                                 <span
                                   key={`${item.id}-detail-mod-${mod.id || mod.optionName}-${idx}`}
-                                  className="text-xs sm:text-sm bg-white text-gray-700 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full border border-gray-200"
+                                  className="text-[10px] sm:text-sm bg-white text-gray-700 px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-full border border-gray-200"
                                 >
                                   + {mod.optionName}{mod.price > 0 ? ` (+${mod.price.toLocaleString('vi-VN')}đ)` : ''}
                                 </span>
@@ -405,19 +407,19 @@ const WaiterOrderCard = ({
 
                           {/* Note */}
                           {item.note && (
-                            <p className="text-amber-700 text-sm font-medium bg-amber-50 px-2 py-1 rounded-lg inline-block">
+                            <p className="text-amber-700 text-[10px] sm:text-sm font-medium bg-amber-50 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg inline-block">
                               📝 {item.note}
                             </p>
                           )}
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="flex flex-col gap-1.5 sm:gap-2">
+                        <div className="flex flex-col gap-1 sm:gap-2">
                           {/* Serve button for Ready items */}
                           {isClaimedOrder && item.status === "Ready" && onServeItem && (
                             <button
                               onClick={(e) => handleServeItem(e, item)}
-                              className="flex items-center gap-1.5 sm:gap-2 bg-purple-50 hover:bg-purple-100 text-purple-700 border-2 border-purple-600 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg text-xs sm:text-base font-semibold transition-colors"
+                              className="flex items-center gap-1 sm:gap-2 bg-purple-50 hover:bg-purple-100 text-purple-700 border-2 border-purple-600 px-2 py-1.5 sm:px-4 sm:py-2.5 rounded-lg text-[10px] sm:text-base font-semibold transition-colors"
                             >
                               Phục vụ
                             </button>
@@ -427,7 +429,7 @@ const WaiterOrderCard = ({
                           {isClaimedOrder && item.status === "Pending" && (
                             <button
                               onClick={(e) => handleCancelItem(e, item)}
-                              className="flex items-center gap-1.5 sm:gap-2 bg-red-50 hover:bg-red-100 text-red-700 border-2 border-red-600 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg text-xs sm:text-base font-semibold transition-colors"
+                              className="flex items-center gap-1 sm:gap-2 bg-red-50 hover:bg-red-100 text-red-700 border-2 border-red-600 px-2 py-1.5 sm:px-4 sm:py-2.5 rounded-lg text-[10px] sm:text-base font-semibold transition-colors"
                             >
                               Hủy món
                             </button>
@@ -438,13 +440,13 @@ const WaiterOrderCard = ({
                             <>
                               <button
                                 onClick={(e) => handleConfirmItem(e, item)}
-                                className="flex items-center gap-1.5 sm:gap-2 bg-green-50 hover:bg-green-100 text-green-700 border-2 border-green-600 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg text-xs sm:text-base font-semibold transition-colors"
+                                className="flex items-center gap-1 sm:gap-2 bg-green-50 hover:bg-green-100 text-green-700 border-2 border-green-600 px-2 py-1.5 sm:px-4 sm:py-2.5 rounded-lg text-[10px] sm:text-base font-semibold transition-colors"
                               >
                                 Xác nhận
                               </button>
                               <button
                                 onClick={(e) => handleCancelItem(e, item)}
-                                className="flex items-center justify-center gap-1.5 sm:gap-2 bg-red-50 hover:bg-red-100 text-red-700 border-2 border-red-600 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg text-xs sm:text-base font-semibold transition-colors"
+                                className="flex items-center justify-center gap-1 sm:gap-2 bg-red-50 hover:bg-red-100 text-red-700 border-2 border-red-600 px-2 py-1.5 sm:px-4 sm:py-2.5 rounded-lg text-[10px] sm:text-base font-semibold transition-colors"
                               >
                                 Hủy
                               </button>
@@ -454,8 +456,8 @@ const WaiterOrderCard = ({
                       </div>
 
                       {/* Total Price */}
-                      <div className="flex justify-end pt-2 mt-2 border-t border-dashed border-gray-200">
-                        <span className="text-green-600 font-bold text-lg">
+                      <div className="flex justify-end pt-1.5 mt-1.5 sm:pt-2 sm:mt-2 border-t border-dashed border-gray-200">
+                        <span className="text-green-600 font-bold text-sm sm:text-lg">
                           Thành tiền: {(
                             ((item.unitPrice || 0) + (item.modifiers || []).reduce((sum, mod) => sum + (mod.price || 0), 0)) * (item.quantity || 1)
                           ).toLocaleString('vi-VN')}đ
@@ -469,13 +471,13 @@ const WaiterOrderCard = ({
 
             {/* Modal Footer - Claim button */}
             {showClaimButton && onClaimOrder && (
-              <div className="p-3 sm:p-5 border-t border-gray-200 bg-gray-50">
+              <div className="p-2.5 sm:p-5 border-t border-gray-200 bg-gray-50">
                 <button
                   onClick={() => {
                     onClaimOrder(order.id);
                     setShowDetail(false);
                   }}
-                  className="w-full flex items-center justify-center gap-2 bg-orange-50 hover:bg-orange-100 text-orange-700 border-2 border-orange-600 px-4 py-3 sm:px-6 sm:py-4 rounded-xl font-bold text-base sm:text-lg shadow-lg transition-all hover:shadow-xl active:scale-[0.98]"
+                  className="w-full flex items-center justify-center gap-1.5 sm:gap-2 bg-orange-50 hover:bg-orange-100 text-orange-700 border-2 border-orange-600 px-3 py-2.5 sm:px-6 sm:py-4 rounded-xl font-bold text-sm sm:text-lg shadow-lg transition-all hover:shadow-xl active:scale-[0.98]"
                 >
                   Nhận đơn này
                 </button>
