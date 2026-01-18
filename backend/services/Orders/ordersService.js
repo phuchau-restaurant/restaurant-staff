@@ -488,6 +488,12 @@ class OrdersService {
       repoFilters.waiter_id = filters.waiterId;
     }
 
+    // Lọc theo số giờ gần nhất (VD: 24 giờ)
+    if (filters.hours) {
+      const hoursAgo = new Date(Date.now() - filters.hours * 60 * 60 * 1000);
+      repoFilters.created_after = hoursAgo;
+    }
+
     // Kiểm tra có yêu cầu pagination không
     const usePagination = filters.pageNumber && filters.pageSize;
 
@@ -544,6 +550,7 @@ class OrdersService {
    * @param {string} categoryId - Lọc theo categoryId
    * @param {string} itemStatus - (Optional) Trạng thái món (VD: pending, ready)
    * @param {Object} pagination - { pageNumber, pageSize } (optional)
+   * @param {number} hours - (Optional) Số giờ gần nhất để lọc đơn (VD: 24)
    * @returns {Promise<Array|Object>} Mảng orders hoặc { data, pagination } nếu có phân trang
    */
   async getKitchenOrders(
@@ -551,17 +558,27 @@ class OrdersService {
     orderStatus,
     categoryId = null,
     itemStatus = null,
-    pagination = null
+    pagination = null,
+    hours = null
   ) {
     // Kiểm tra có yêu cầu pagination không
     const usePagination = pagination && pagination.pageNumber && pagination.pageSize;
+
+    // Tạo filter cơ bản
+    const repoFilters = { tenant_id: tenantId, status: orderStatus };
+
+    // Lọc theo số giờ gần nhất (VD: 24 giờ)
+    if (hours) {
+      const hoursAgo = new Date(Date.now() - hours * 60 * 60 * 1000);
+      repoFilters.created_after = hoursAgo;
+    }
 
     let orders;
     let paginationInfo = null;
 
     if (usePagination) {
       const result = await this.ordersRepo.getAllWithPagination(
-        { tenant_id: tenantId, status: orderStatus },
+        repoFilters,
         parseInt(pagination.pageNumber),
         parseInt(pagination.pageSize)
       );
@@ -574,10 +591,7 @@ class OrdersService {
       };
     } else {
       // Lấy tất cả đơn TRỪ Unsubmit (Kitchen chỉ thấy đơn đã được waiter xác nhận)
-      orders = await this.ordersRepo.getAll({
-        tenant_id: tenantId,
-        status: orderStatus,
-      });
+      orders = await this.ordersRepo.getAll(repoFilters);
     }
 
     // Kitchen LUÔN lọc bỏ đơn Unsubmit

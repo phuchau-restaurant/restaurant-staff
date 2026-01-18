@@ -71,6 +71,8 @@ const OrderManagementContent = () => {
   // State quản lý pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   // State quản lý modals
   const [alertModal, setAlertModal] = useState({
@@ -201,7 +203,9 @@ const OrderManagementContent = () => {
           items: order.items || [],
         }));
         setOrders(ordersWithDetails);
-        // Pagination info đã có trong result.pagination
+        // Lưu pagination info từ server
+        setTotalItems(result.pagination.totalCount);
+        setTotalPages(result.pagination.totalPages);
       } else {
         // Fallback: không có pagination
         const ordersWithDetails = result.map((order) => ({
@@ -209,6 +213,8 @@ const OrderManagementContent = () => {
           items: order.items || [],
         }));
         setOrders(ordersWithDetails);
+        setTotalItems(ordersWithDetails.length);
+        setTotalPages(Math.ceil(ordersWithDetails.length / itemsPerPage));
       }
     } catch (error) {
       console.error("Error fetching orders:", error);
@@ -365,7 +371,7 @@ const OrderManagementContent = () => {
    */
   const handleStatusChange = async (order, newStatus) => {
     const items = order.items || [];
-    
+
     // Xác định logic kiểm tra dựa trên trạng thái mới
     let unfinishedItems = [];
     let targetItemStatus = "";
@@ -653,8 +659,8 @@ const OrderManagementContent = () => {
                 {/* Socket connection indicator */}
                 <span
                   className={`ml-3 inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${socketConnected
-                      ? "bg-green-100 text-green-700"
-                      : "bg-red-100 text-red-700"
+                    ? "bg-green-100 text-green-700"
+                    : "bg-red-100 text-red-700"
                     }`}
                 >
                   <span
@@ -765,35 +771,15 @@ const OrderManagementContent = () => {
           </div>
         ) : null}
 
-        {/* Pagination logic */}
-        {filteredOrders.length > 0 &&
-          (() => {
-            const startIndex = (currentPage - 1) * itemsPerPage;
-            const endIndex = startIndex + itemsPerPage;
-            const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
-            const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
-
-            return (
-              <>
-                {viewMode === VIEW_MODES.GRID ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {paginatedOrders.map((order) => (
-                      <OrderCard
-                        key={order.id}
-                        order={order}
-                        tables={tables}
-                        onEdit={handleViewClick}
-                        onDelete={handleDeleteClick}
-                        onRestore={handleRestoreClick}
-                        onDeletePermanent={handleDeletePermanentClick}
-                        onStatusChange={handleStatusChange}
-                        prepTime={prepTime}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <OrderListView
-                    orders={paginatedOrders}
+        {/* Pagination logic - Sử dụng server-side pagination */}
+        {filteredOrders.length > 0 && (
+          <>
+            {viewMode === VIEW_MODES.GRID ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredOrders.map((order) => (
+                  <OrderCard
+                    key={order.id}
+                    order={order}
                     tables={tables}
                     onEdit={handleViewClick}
                     onDelete={handleDeleteClick}
@@ -802,24 +788,36 @@ const OrderManagementContent = () => {
                     onStatusChange={handleStatusChange}
                     prepTime={prepTime}
                   />
-                )}
+                ))}
+              </div>
+            ) : (
+              <OrderListView
+                orders={filteredOrders}
+                tables={tables}
+                onEdit={handleViewClick}
+                onDelete={handleDeleteClick}
+                onRestore={handleRestoreClick}
+                onDeletePermanent={handleDeletePermanentClick}
+                onStatusChange={handleStatusChange}
+                prepTime={prepTime}
+              />
+            )}
 
-                {/* Pagination */}
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  totalItems={filteredOrders.length}
-                  pageSize={itemsPerPage}
-                  onPageChange={(page) => setCurrentPage(page)}
-                  onPageSizeChange={(size) => {
-                    setItemsPerPage(size);
-                    setCurrentPage(1);
-                  }}
-                  pageSizeOptions={[5, 10, 20, 50]}
-                />
-              </>
-            );
-          })()}
+            {/* Pagination - Sử dụng totalPages và totalItems từ server */}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={itemsPerPage}
+              onPageChange={(page) => setCurrentPage(page)}
+              onPageSizeChange={(size) => {
+                setItemsPerPage(size);
+                setCurrentPage(1);
+              }}
+              pageSizeOptions={[5, 10, 20, 50]}
+            />
+          </>
+        )}
 
         {/* Loading Overlay */}
         {isLoadingForm && (

@@ -40,6 +40,10 @@ export const fetchKitchenOrders = async (filters = {}) => {
       params.append("pageSize", filters.pageSize);
     }
 
+    // Thêm hours filter (đơn trong vòng X giờ gần nhất, mặc định 24h)
+    const hours = filters.hours || 24;
+    params.append("hours", hours);
+
     const queryString = params.toString();
     const url = `${BASE_URL}/kitchen${queryString ? `?${queryString}` : ""}`;
 

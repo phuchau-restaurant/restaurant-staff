@@ -208,7 +208,7 @@ class OrdersController {
   getAll = async (req, res, next) => {
     try {
       const tenantId = req.tenantId;
-      const { status, waiterId, pageNumber, pageSize } = req.query;
+      const { status, waiterId, pageNumber, pageSize, hours } = req.query;
 
       // Xây dựng filters (bao gồm cả pagination nếu có)
       const filters = {};
@@ -216,6 +216,8 @@ class OrdersController {
       if (waiterId) filters.waiterId = waiterId;
       if (pageNumber) filters.pageNumber = pageNumber;
       if (pageSize) filters.pageSize = pageSize;
+      // Lọc theo số giờ gần nhất (VD: 24 giờ)
+      if (hours) filters.hours = parseInt(hours);
 
       // Gọi service (tự xử lý pagination nếu có)
       const result = await this.ordersService.getAllOrders(tenantId, filters);
@@ -267,7 +269,7 @@ class OrdersController {
   getForKitchen = async (req, res, next) => {
     try {
       const tenantId = req.tenantId;
-      const { status, categoryId, itemStatus, pageNumber, pageSize } = req.query;
+      const { status, categoryId, itemStatus, pageNumber, pageSize, hours } = req.query;
 
       const orderStatus = status;
       if (status && !Object.values(OrderStatus).includes(status)) {
@@ -278,17 +280,21 @@ class OrdersController {
       }
 
       // Xây dựng pagination object nếu có
-      const pagination = (pageNumber && pageSize) 
-        ? { pageNumber, pageSize } 
+      const pagination = (pageNumber && pageSize)
+        ? { pageNumber, pageSize }
         : null;
 
-      // Gọi service (tự xử lý pagination nếu có)
+      // Parse hours parameter (VD: 24 giờ)
+      const hoursFilter = hours ? parseInt(hours) : null;
+
+      // Gọi service (tự xử lý pagination và hours filter nếu có)
       const result = await this.ordersService.getKitchenOrders(
         tenantId,
         orderStatus,
         categoryId,
         itemStatus,
-        pagination
+        pagination,
+        hoursFilter
       );
 
       // Build message

@@ -36,11 +36,12 @@ export const fetchOrderDetails = async (orderId) => {
 
 /**
  * Lấy danh sách đơn hàng chưa có người nhận (status = Unsubmit)
+ * @param {number} hours - Số giờ gần nhất để lọc (đếặc định: 24)
  * @returns {Promise<Array>} Danh sách đơn hàng chưa có waiter
  */
-export const fetchUnassignedOrders = async () => {
+export const fetchUnassignedOrders = async (hours = 24) => {
   try {
-    const response = await fetch(`${BASE_URL}?status=Unsubmit`, {
+    const response = await fetch(`${BASE_URL}?status=Unsubmit&hours=${hours}`, {
       headers: getHeaders(),
     });
     const result = await response.json();
@@ -58,11 +59,12 @@ export const fetchUnassignedOrders = async () => {
 /**
  * Lấy danh sách đơn hàng của waiter hiện tại
  * @param {string} waiterId - ID của waiter
+ * @param {number} hours - Số giờ gần nhất để lọc (đếặc định: 24)
  * @returns {Promise<Array>} Danh sách đơn hàng của waiter
  */
-export const fetchMyOrders = async (waiterId) => {
+export const fetchMyOrders = async (waiterId, hours = 24) => {
   try {
-    const response = await fetch(`${BASE_URL}?waiterId=${waiterId}`, {
+    const response = await fetch(`${BASE_URL}?waiterId=${waiterId}&hours=${hours}`, {
       headers: getHeaders(),
     });
     const result = await response.json();

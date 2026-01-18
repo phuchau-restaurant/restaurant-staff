@@ -27,6 +27,11 @@ export class OrdersRepository extends BaseRepository {
       query = query.eq('waiter_id', filters.waiter_id);
     }
 
+    // Lọc theo thời gian tạo (lấy đơn từ thời điểm này trở đi)
+    if (filters.created_after) {
+      query = query.gte('created_at', filters.created_after.toISOString());
+    }
+
     query = query.order('created_at', { ascending: false });
 
     const { data, error } = await query;
@@ -58,6 +63,10 @@ export class OrdersRepository extends BaseRepository {
       }
       if (filters.waiter_id) {
         query = query.eq('waiter_id', filters.waiter_id);
+      }
+      // Lọc theo thời gian tạo (lấy đơn từ thời điểm này trở đi)
+      if (filters.created_after) {
+        query = query.gte('created_at', filters.created_after.toISOString());
       }
       return query;
     };
