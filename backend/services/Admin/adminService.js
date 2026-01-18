@@ -33,7 +33,7 @@ export default class AdminService {
         throw error;
       }
 
-      if (user.role !== "admin") {
+      if (user.role?.toLowerCase() !== "admin") {
         const error = new Error("Only admins can generate QR codes");
         error.statusCode = 403;
         throw error;
