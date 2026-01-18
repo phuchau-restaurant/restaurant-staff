@@ -310,10 +310,16 @@ const MenuManagementContent = () => {
         );
       }
 
-      // Delete images if any
+      // Delete images if any - filter out fake/fallback image IDs (e.g., "fallback-1", "new-xxx")
       if (menuData.imagesToDelete && menuData.imagesToDelete.length > 0) {
         for (const imageId of menuData.imagesToDelete) {
-          await menuService.deleteMenuImage(imageId);
+          // Only delete if imageId is a valid integer (real database ID)
+          const numericId = Number(imageId);
+          if (!isNaN(numericId) && Number.isInteger(numericId) && numericId > 0) {
+            await menuService.deleteMenuImage(imageId);
+          } else {
+            console.log(`Skipping delete for fallback image ID: ${imageId}`);
+          }
         }
       }
 
@@ -581,12 +587,14 @@ const MenuManagementContent = () => {
       }
 
       // Nếu API không trả về ảnh, fallback sang imgUrl
+      // Use menuItem.id since it's always available, mark as fallback so it won't be deleted from API
       if (images.length === 0 && menuDetail.imgUrl) {
         images = [
           {
-            id: `primary-${menuDetail.id}`,
+            id: `fallback-${menuItem.id}`,
             url: menuDetail.imgUrl,
             isPrimary: true,
+            isFallback: true, // Mark as fallback to prevent API delete attempts
           },
         ];
       }
