@@ -230,6 +230,7 @@ export const STATUS_OPTIONS = [
   { value: "Pending", label: "Đang chuẩn bị" },
   { value: "Completed", label: "Hoàn thành" },
   { value: "Served", label: "Đã phục vụ" },
+  { value: "Paid", label: "Đã thanh toán" },
   { value: "Cancelled", label: "Đã hủy" },
 ];
 

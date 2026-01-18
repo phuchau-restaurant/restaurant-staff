@@ -564,8 +564,11 @@ class OrdersService {
     // Kiểm tra có yêu cầu pagination không
     const usePagination = pagination && pagination.pageNumber && pagination.pageSize;
 
-    // Tạo filter cơ bản
-    const repoFilters = { tenant_id: tenantId, status: orderStatus };
+    // Tạo filter cơ bản - CHỈ thêm status nếu có giá trị
+    const repoFilters = { tenant_id: tenantId };
+    if (orderStatus) {
+      repoFilters.status = orderStatus;
+    }
 
     // Lọc theo số giờ gần nhất (VD: 24 giờ)
     if (hours) {
@@ -597,7 +600,13 @@ class OrdersService {
     // Kitchen LUÔN lọc bỏ đơn Unsubmit
     orders = orders.filter(o => o.status !== OrdersStatus.UNSUBMIT);
 
-    if (!orders || orders.length === 0) return [];
+    if (!orders || orders.length === 0) {
+      // Trả về đúng format khi có pagination
+      if (usePagination) {
+        return { data: [], pagination: paginationInfo };
+      }
+      return [];
+    }
 
     //  Lấy danh sách các order_id
     const orderIds = orders.map((o) => o.id);

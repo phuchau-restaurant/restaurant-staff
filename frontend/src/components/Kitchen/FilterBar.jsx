@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { ChevronDown, Search, SlidersHorizontal, ArrowUpDown } from "lucide-react";
 
 const FilterBar = ({
@@ -18,6 +18,40 @@ const FilterBar = ({
   const [showStationDropdown, setShowStationDropdown] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [showSortDropdown, setShowSortDropdown] = useState(false);
+
+  // Refs for buttons to calculate dropdown position
+  const statusBtnRef = useRef(null);
+  const stationBtnRef = useRef(null);
+  const sortBtnRef = useRef(null);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        statusBtnRef.current && !statusBtnRef.current.contains(e.target) &&
+        stationBtnRef.current && !stationBtnRef.current.contains(e.target) &&
+        sortBtnRef.current && !sortBtnRef.current.contains(e.target)
+      ) {
+        setShowStationDropdown(false);
+        setShowStatusDropdown(false);
+        setShowSortDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Get dropdown position based on button ref
+  const getDropdownPosition = (btnRef) => {
+    if (!btnRef.current) return {};
+    const rect = btnRef.current.getBoundingClientRect();
+    return {
+      position: 'fixed',
+      top: rect.bottom + 4,
+      left: rect.left,
+      width: rect.width,
+    };
+  };
 
   const selectedCategory = categoryOptions.find(
     (c) => c.value === filterStation
@@ -51,7 +85,7 @@ const FilterBar = ({
       </div>
 
       {/* Status Filter */}
-      <div className="relative">
+      <div className="relative" ref={statusBtnRef}>
         <button
           onClick={() => {
             setShowStatusDropdown(!showStatusDropdown);
@@ -66,7 +100,10 @@ const FilterBar = ({
         </button>
 
         {showStatusDropdown && (
-          <div className="absolute top-full right-0 mt-1 bg-white border-2 border-gray-200 rounded-lg shadow-lg z-50 w-full">
+          <div
+            className="bg-white border-2 border-gray-200 rounded-lg shadow-lg z-[9999]"
+            style={getDropdownPosition(statusBtnRef)}
+          >
             {statusOptions.map((status) => (
               <button
                 key={status.value}
@@ -87,7 +124,7 @@ const FilterBar = ({
       </div>
 
       {/* Category Filter */}
-      <div className="relative">
+      <div className="relative" ref={stationBtnRef}>
         <button
           onClick={() => {
             setShowStationDropdown(!showStationDropdown);
@@ -102,7 +139,10 @@ const FilterBar = ({
         </button>
 
         {showStationDropdown && (
-          <div className="absolute top-full right-0 mt-1 bg-white border-2 border-gray-200 rounded-lg shadow-lg z-50 w-full">
+          <div
+            className="bg-white border-2 border-gray-200 rounded-lg shadow-lg z-[9999]"
+            style={getDropdownPosition(stationBtnRef)}
+          >
             {categoryOptions.map((category) => (
               <button
                 key={category.value}
@@ -124,7 +164,7 @@ const FilterBar = ({
 
       {/* Sort Dropdown */}
       {sortBy !== undefined && setSortBy && (
-        <div className="relative">
+        <div className="relative" ref={sortBtnRef}>
           <button
             onClick={() => {
               setShowSortDropdown(!showSortDropdown);
@@ -139,7 +179,10 @@ const FilterBar = ({
           </button>
 
           {showSortDropdown && (
-            <div className="absolute top-full right-0 mt-1 bg-white border-2 border-gray-200 rounded-lg shadow-lg z-50 w-full">
+            <div
+              className="bg-white border-2 border-gray-200 rounded-lg shadow-lg z-[9999]"
+              style={getDropdownPosition(sortBtnRef)}
+            >
               {sortOptions.map((option) => (
                 <button
                   key={option.value}
