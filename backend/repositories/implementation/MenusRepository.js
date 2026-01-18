@@ -84,19 +84,87 @@ async getById(id) {
     return rawData ? new Menus(rawData) : null; // Map sang Model
 }
  async getAll(filters = {}, pagination = null) {
-    // Gọi hàm cha để lấy data thô (đã xử lý logic filter và phân trang)
-    const result = await super.getAll(filters, pagination);
-    
-    // Nếu có phân trang, result là object { data, pagination }
+    // Extract special filters that need custom handling
+    const { 
+      categoryId, 
+      onlyAvailable, 
+      search, 
+      sortBy, 
+      sortOrder,
+      priceMin,
+      priceMax,
+      ...basicFilters 
+    } = filters;
+
+    // Sử dụng count để lấy tổng số bản ghi
+    let query = supabase.from(this.tableName).select("*", { count: "exact" });
+
+    // Apply basic equality filters (like tenant_id)
+    for (const [key, value] of Object.entries(basicFilters)) {
+      if (value !== null && value !== undefined) {
+        query = query.eq(key, value);
+      }
+    }
+
+    // Filter by category
+    if (categoryId) {
+      query = query.eq('category_id', categoryId);
+    }
+
+    // Filter by availability
+    if (onlyAvailable) {
+      query = query.eq('is_available', true);
+    }
+
+    // Search by name (case-insensitive)
+    if (search) {
+      query = query.ilike('name', `%${search}%`);
+    }
+
+    // Filter by price range
+    if (priceMin !== null && priceMin !== undefined) {
+      query = query.gte('price', priceMin);
+    }
+    if (priceMax !== null && priceMax !== undefined) {
+      query = query.lte('price', priceMax);
+    }
+
+    // Apply sorting
+    const validSortColumns = ['id', 'name', 'price', 'created_at', 'updated_at'];
+    const sortColumn = validSortColumns.includes(sortBy) ? sortBy : 'id';
+    const ascending = sortOrder !== 'desc';
+    query = query.order(sortColumn, { ascending });
+
+    // Áp dụng phân trang nếu có
+    if (pagination && pagination.pageNumber && pagination.pageSize) {
+      const { pageNumber, pageSize } = pagination;
+      const from = (pageNumber - 1) * pageSize;
+      const to = from + pageSize - 1;
+      query = query.range(from, to);
+    }
+
+    const { data, error, count } = await query;
+    if (error) {
+      throw new Error(`[${this.tableName}] GetAll failed: ${error.message}`);
+    }
+
+    // Map to Model
+    const mappedData = (data || []).map(item => new Menus(item));
+
+    // Trả về object chứa data và thông tin phân trang
     if (pagination && pagination.pageNumber && pagination.pageSize) {
       return {
-        data: result.data.map(item => new Menus(item)),
-        pagination: result.pagination
+        data: mappedData,
+        pagination: {
+          pageNumber: pagination.pageNumber,
+          pageSize: pagination.pageSize,
+          totalItems: count || 0,
+          totalPages: Math.ceil((count || 0) / pagination.pageSize)
+        }
       };
     }
-    
-    // Nếu không có phân trang, result là array
-    return result.map(item => new Menus(item));
+
+    return mappedData;
   }
 
 

@@ -11,11 +11,22 @@ class MenusController {
     this.categoriesService = categoriesService;
   }
 
-  // [GET] /api/menus/?categoryId=<id>&available=true&pageNumber=1&pageSize=10
+  // [GET] /api/menus/?categoryId=<id>&available=true&pageNumber=1&pageSize=10&search=keyword&sortBy=name&sortOrder=asc&priceMin=0&priceMax=100
   getAll = async (req, res, next) => {
     try {
       const tenantId = req.tenantId;
-      const { categoryId, available, pageNumber, pageSize } = req.query; // Lấy query params
+      const { 
+        categoryId, 
+        available, 
+        pageNumber, 
+        pageSize,
+        search,
+        sortBy,
+        sortOrder,
+        priceMin,
+        priceMax
+      } = req.query;
+      
       const onlyAvailable = available === "true";
 
       // Xử lý phân trang nếu có
@@ -31,10 +42,20 @@ class MenusController {
         if (pagination.pageSize > 100) pagination.pageSize = 100; // Limit max page size
       }
 
+      // Build filters object for service
+      const filters = {
+        categoryId: categoryId || null,
+        onlyAvailable,
+        search: search?.trim() || null,
+        sortBy: sortBy || 'id',
+        sortOrder: sortOrder === 'desc' ? 'desc' : 'asc',
+        priceMin: priceMin ? parseFloat(priceMin) : null,
+        priceMax: priceMax ? parseFloat(priceMax) : null,
+      };
+
       const result = await this.menusService.getMenusByTenant(
         tenantId,
-        categoryId,
-        onlyAvailable,
+        filters,
         pagination
       );
 

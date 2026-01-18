@@ -77,7 +77,7 @@ export class ModifierGroups {
       selectionType: this.selectionType,
       isRequired: this.isRequired,
       minSelect: this.minSelections,
-      maxSelect: this.maxSelection,
+      maxSelect: this.maxSelections,
       displayOrder: this.displayOrder,
       isActive: this.isActive,
       modifiers: this.modifiers,

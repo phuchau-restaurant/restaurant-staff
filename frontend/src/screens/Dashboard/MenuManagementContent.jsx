@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Plus, UtensilsCrossed } from "lucide-react";
 
 // Components
@@ -14,7 +14,7 @@ import LoadingOverlay from "../../components/SpinnerLoad/LoadingOverlay";
 // Services & Utils
 import * as menuService from "../../services/menuService";
 import * as modifierService from "../../services/modifierService";
-import { filterAndSortMenuItems, getPrimaryImage } from "../../utils/menuUtils";
+import { getPrimaryImage } from "../../utils/menuUtils";
 import {
   STATUS_OPTIONS,
   MESSAGES,
@@ -42,10 +42,13 @@ const MenuManagementContent = () => {
 
   // State quản lý dữ liệu
   const [menuItems, setMenuItems] = useState([]);
-  const [filteredMenuItems, setFilteredMenuItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [modifierGroups, setModifierGroups] = useState([]);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [isFiltering, setIsFiltering] = useState(false);
+
+  // Ref for debounce timer
+  const searchTimeoutRef = useRef(null);
 
   // State quản lý phân trang
   const [currentPage, setCurrentPage] = useState(1);
@@ -64,6 +67,9 @@ const MenuManagementContent = () => {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [priceRange, setPriceRange] = useState("");
   const [sortBy, setSortBy] = useState("name");
+
+  // Track if it's the initial mount
+  const isInitialMount = useRef(true);
 
   // State quản lý modals
   const [alertModal, setAlertModal] = useState({
@@ -118,40 +124,108 @@ const MenuManagementContent = () => {
 
   // ==================== LIFECYCLE ====================
 
-  // Fetch dữ liệu ban đầu
+  // Fetch dữ liệu ban đầu (categories và modifier groups - chỉ load 1 lần)
   useEffect(() => {
-    fetchInitialData();
-  }, [currentPage, pageSize]);
+    fetchStaticData();
+  }, []);
 
-  // Filter và sort phía client
+  // Fetch menu items khi filters thay đổi (với debounce cho search)
   useEffect(() => {
-    const filtered = filterAndSortMenuItems(
-      menuItems,
-      searchTerm,
-      statusFilter,
-      categoryFilter,
-      priceRange,
-      sortBy
-    );
-    setFilteredMenuItems(filtered);
-  }, [menuItems, searchTerm, sortBy, statusFilter, categoryFilter, priceRange]);
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // Debounce search (500ms), nhưng các filter khác apply ngay lập tức
+    const delay = searchTerm ? 500 : 0;
+
+    searchTimeoutRef.current = setTimeout(() => {
+      fetchMenuData().then(() => {
+        // Mark initial mount complete after first data fetch
+        if (isInitialMount.current) {
+          isInitialMount.current = false;
+        }
+      });
+    }, delay);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [currentPage, pageSize, searchTerm, statusFilter, categoryFilter, priceRange, sortBy]);
 
   // ==================== API CALLS ====================
 
   /**
-   * Fetch tất cả dữ liệu ban đầu
+   * Fetch static data (categories, modifier groups) - chỉ load 1 lần
    */
-  const fetchInitialData = async () => {
+  const fetchStaticData = async () => {
     try {
-      setInitialLoading(true);
-      const [menuResult, categoryData, modifierData] = await Promise.all([
-        menuService.fetchMenuItems({
-          pageNumber: currentPage,
-          pageSize: pageSize,
-        }),
+      const [categoryData, modifierData] = await Promise.all([
         menuService.fetchActiveCategories(),
         modifierService.fetchModifierGroups(),
       ]);
+
+      // Xử lý categoryData có thể có pagination
+      const categoryList = categoryData.data || categoryData || [];
+      setCategories(categoryList);
+      setModifierGroups(modifierData.data || modifierData || []);
+    } catch (error) {
+      console.error("Fetch static data error:", error);
+      showAlert("Lỗi", "Không thể tải dữ liệu danh mục. Vui lòng thử lại!", "error");
+    }
+  };
+
+  /**
+   * Parse price range string to min/max values
+   */
+  const parsePriceRange = (priceRangeStr) => {
+    if (!priceRangeStr) return { priceMin: null, priceMax: null };
+    
+    const [min, max] = priceRangeStr.split('-');
+    return {
+      priceMin: min ? parseFloat(min) : null,
+      priceMax: max ? parseFloat(max) : null,
+    };
+  };
+
+  /**
+   * Fetch menu items với filters và pagination
+   */
+  const fetchMenuData = async () => {
+    try {
+      // Show loading indicator (không dùng initialLoading để tránh hiển thị full skeleton)
+      if (menuItems.length === 0) {
+        setInitialLoading(true);
+      } else {
+        setIsFiltering(true);
+      }
+
+      // Parse price range
+      const { priceMin, priceMax } = parsePriceRange(priceRange);
+
+      // Map sortBy value to API field
+      const sortMapping = {
+        name: 'name',
+        price: 'price',
+        createdAt: 'created_at',
+      };
+
+      // Build API params
+      const apiParams = {
+        pageNumber: currentPage,
+        pageSize: pageSize,
+        search: searchTerm || undefined,
+        sortBy: sortMapping[sortBy] || 'id',
+        sortOrder: 'asc',
+        categoryId: categoryFilter || undefined,
+        available: statusFilter || undefined,
+        priceMin: priceMin,
+        priceMax: priceMax,
+      };
+
+      const menuResult = await menuService.fetchMenuItems(apiParams);
 
       // Xử lý response có pagination hoặc không
       let menuData = [];
@@ -163,12 +237,9 @@ const MenuManagementContent = () => {
         setPaginationInfo(null);
       }
 
-      // Xử lý categoryData có thể có pagination
-      const categoryList = categoryData.data || categoryData || [];
-
       // Tạo map categoryId -> categoryName để lookup nhanh
       const categoryMap = {};
-      categoryList.forEach((cat) => {
+      categories.forEach((cat) => {
         categoryMap[cat.id] = cat.name;
       });
 
@@ -209,13 +280,12 @@ const MenuManagementContent = () => {
       );
 
       setMenuItems(menuItemsWithImagesAndModifiers);
-      setCategories(categoryList);
-      setModifierGroups(modifierData.data || modifierData || []);
     } catch (error) {
-      console.error("Fetch initial data error:", error);
-      showAlert("Lỗi", "Không thể tải dữ liệu. Vui lòng thử lại!", "error");
+      console.error("Fetch menu data error:", error);
+      showAlert("Lỗi", "Không thể tải dữ liệu món ăn. Vui lòng thử lại!", "error");
     } finally {
       setInitialLoading(false);
+      setIsFiltering(false);
     }
   };
 
@@ -232,6 +302,44 @@ const MenuManagementContent = () => {
   const handlePageSizeChange = (size) => {
     setPageSize(size);
     setCurrentPage(1); // Reset về trang 1 khi thay đổi pageSize
+  };
+
+  /**
+   * Wrapper handlers cho filters - reset về trang 1 khi filter thay đổi
+   */
+  const handleSearchChange = (value) => {
+    setSearchTerm(value);
+    if (!isInitialMount.current) {
+      setCurrentPage(1);
+    }
+  };
+
+  const handleStatusChange = (value) => {
+    setStatusFilter(value);
+    if (!isInitialMount.current) {
+      setCurrentPage(1);
+    }
+  };
+
+  const handleCategoryChange = (value) => {
+    setCategoryFilter(value);
+    if (!isInitialMount.current) {
+      setCurrentPage(1);
+    }
+  };
+
+  const handlePriceRangeChange = (value) => {
+    setPriceRange(value);
+    if (!isInitialMount.current) {
+      setCurrentPage(1);
+    }
+  };
+
+  const handleSortChange = (value) => {
+    setSortBy(value);
+    if (!isInitialMount.current) {
+      setCurrentPage(1);
+    }
   };
 
   /**
@@ -664,8 +772,9 @@ const MenuManagementContent = () => {
 
   // ==================== STATISTICS ====================
 
+  // Use pagination totalItems if available for accurate stats
   const stats = {
-    total: menuItems.length,
+    total: paginationInfo ? paginationInfo.totalItems : menuItems.length,
     available: menuItems.filter((item) => item.isAvailable === true).length,
     unavailable: menuItems.filter((item) => item.isAvailable === false).length,
   };
@@ -714,7 +823,10 @@ const MenuManagementContent = () => {
                 Quản Lý Món Ăn
               </h1>
               <p className="text-gray-600 mt-1">
-                Tổng số: {filteredMenuItems.length} món ăn
+                Tổng số: {paginationInfo ? paginationInfo.totalItems : menuItems.length} món ăn
+                {isFiltering && (
+                  <span className="ml-2 text-blue-600 text-sm">Đang tải...</span>
+                )}
                 {/* Socket connection indicator */}
                 <span
                   className={`ml-3 inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${
@@ -788,24 +900,29 @@ const MenuManagementContent = () => {
         {/* Filter Bar */}
         <MenuFilterBar
           searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
+          onSearchChange={handleSearchChange}
           sortBy={sortBy}
-          onSortChange={setSortBy}
+          onSortChange={handleSortChange}
           statusFilter={statusFilter}
-          onStatusChange={setStatusFilter}
+          onStatusChange={handleStatusChange}
           statusOptions={STATUS_OPTIONS}
           categoryFilter={categoryFilter}
-          onCategoryChange={setCategoryFilter}
+          onCategoryChange={handleCategoryChange}
           categories={categories}
           priceRange={priceRange}
-          onPriceRangeChange={setPriceRange}
+          onPriceRangeChange={handlePriceRangeChange}
           priceRanges={PRICE_RANGES}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
         />
 
         {/* Content */}
-        {filteredMenuItems.length === 0 ? (
+        {isFiltering ? (
+          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+            <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p className="text-gray-600">Đang tải dữ liệu...</p>
+          </div>
+        ) : menuItems.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm p-12 text-center">
             <UtensilsCrossed className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-600 mb-2">
@@ -824,7 +941,7 @@ const MenuManagementContent = () => {
           </div>
         ) : viewMode === VIEW_MODES.GRID ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredMenuItems.map((item) => (
+            {menuItems.map((item) => (
               <MenuCard
                 key={item.id}
                 menuItem={item}
@@ -838,7 +955,7 @@ const MenuManagementContent = () => {
           </div>
         ) : (
           <MenuListView
-            menuItems={filteredMenuItems}
+            menuItems={menuItems}
             onEdit={handleEditClick}
             onDelete={handleDeleteClick}
             onRestore={handleRestoreMenuItem}

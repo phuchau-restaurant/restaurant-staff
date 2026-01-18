@@ -54,7 +54,7 @@ const ModifierGroupCard = memo(({ group, onEdit, onDelete, onRestore, onDeletePe
               {group.isRequired ? "Bắt buộc" : "Tùy chọn"}
             </span>
             <span>
-              Chọn: {group.minSelect || 0} - {group.maxSelect || "∞"}
+              Chọn: {group.minSelect ?? group.minSelections ?? 0} - {group.maxSelect ?? group.maxSelections ?? "∞"}
             </span>
           </div>
 

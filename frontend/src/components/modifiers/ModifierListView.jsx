@@ -111,7 +111,7 @@ const ModifierListView = memo(({ groups, onEdit, onDelete, onRestore, onDeletePe
                       </span>
                     </td>
                     <td className={`px-6 py-4 text-center text-sm text-gray-600 ${inactiveStyle}`}>
-                      {group.minSelect || 0} - {group.maxSelect || "∞"}
+                      {group.minSelect ?? group.minSelections ?? 0} - {group.maxSelect ?? group.maxSelections ?? "∞"}
                     </td>
                     <td className="px-6 py-4 text-center">
                       <span

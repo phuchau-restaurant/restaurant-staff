@@ -7,27 +7,22 @@ class MenusService {
 
   /**
    * Lấy danh sách Menu theo Tenant
-   * Có thể lọc theo CategoryId nếu cần
+   * Hỗ trợ lọc, tìm kiếm, sắp xếp và phân trang
    * @param {string} tenantId - ID của tenant
-   * @param {string|null} categoryId - ID của category (optional)
-   * @param {boolean} onlyAvailable - Chỉ lấy món đang bán
+   * @param {object} filters - { categoryId, onlyAvailable, search, sortBy, sortOrder, priceMin, priceMax }
    * @param {object|null} pagination - { pageNumber, pageSize } (optional)
    */
-  async getMenusByTenant(tenantId, categoryId = null, onlyAvailable = false, pagination = null) {
+  async getMenusByTenant(tenantId, filters = {}, pagination = null) {
     if (!tenantId) throw new Error("Missing tenantId");
 
-    const filters = { tenant_id: tenantId };
-    
-    // Nếu có lọc theo category
-    if (categoryId) {
-      filters.category_id = categoryId;
-    }
-    // Nếu chỉ lấy món đang bán
-    if (onlyAvailable) {
-      filters.is_available = true;
-    }
+    // Build query filters for repository
+    const queryFilters = { 
+      tenant_id: tenantId,
+      // Additional filters will be handled by repository
+      ...filters
+    };
 
-    return await this.menusRepo.getAll(filters, pagination);
+    return await this.menusRepo.getAll(queryFilters, pagination);
   }
 
 

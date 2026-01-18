@@ -44,17 +44,52 @@ export const fetchActiveCategories = async () => {
 
 /**
  * Fetch danh sách món ăn từ API
- * @param {Object} pagination - { pageNumber, pageSize } (optional)
+ * @param {Object} params - {
+ *   pageNumber, pageSize, search, sortBy, sortOrder, categoryId, available, priceMin, priceMax
+ * }
  * @returns {Promise<Object|Array>} Danh sách món ăn hoặc object có pagination
  */
-export const fetchMenuItems = async (pagination = null) => {
+export const fetchMenuItems = async (params = {}) => {
   try {
     const queryParams = new URLSearchParams();
 
-    // Thêm pagination params nếu có
-    if (pagination && pagination.pageNumber && pagination.pageSize) {
-      queryParams.append("pageNumber", pagination.pageNumber);
-      queryParams.append("pageSize", pagination.pageSize);
+    // Pagination params
+    if (params.pageNumber) {
+      queryParams.append("pageNumber", params.pageNumber);
+    }
+    if (params.pageSize) {
+      queryParams.append("pageSize", params.pageSize);
+    }
+
+    // Search param
+    if (params.search) {
+      queryParams.append("search", params.search);
+    }
+
+    // Sort params
+    if (params.sortBy) {
+      queryParams.append("sortBy", params.sortBy);
+    }
+    if (params.sortOrder) {
+      queryParams.append("sortOrder", params.sortOrder);
+    }
+
+    // Category filter
+    if (params.categoryId) {
+      queryParams.append("categoryId", params.categoryId);
+    }
+
+    // Availability filter
+    if (params.available !== undefined && params.available !== null && params.available !== "") {
+      queryParams.append("available", params.available);
+    }
+
+    // Price range filters
+    if (params.priceMin !== undefined && params.priceMin !== null) {
+      queryParams.append("priceMin", params.priceMin);
+    }
+    if (params.priceMax !== undefined && params.priceMax !== null) {
+      queryParams.append("priceMax", params.priceMax);
     }
 
     const url = `${BASE_URL}${
@@ -77,10 +112,10 @@ export const fetchMenuItems = async (pagination = null) => {
       }
       return result.data || [];
     }
-    return pagination ? { data: [], pagination: null } : [];
+    return params.pageNumber ? { data: [], pagination: null } : [];
   } catch (error) {
     console.error("Fetch menu items error:", error);
-    return pagination ? { data: [], pagination: null } : [];
+    return params.pageNumber ? { data: [], pagination: null } : [];
   }
 };
 
