@@ -59,6 +59,8 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem("user", JSON.stringify(data.data.user));
             localStorage.setItem("accessToken", data.data.accessToken);
             console.log("✅ Auto-login successful");
+            // Dispatch event để các context khác có thể refresh data
+            window.dispatchEvent(new Event('auth:success'));
           } else {
             throw new Error("Invalid response format");
           }
@@ -116,6 +118,8 @@ export const AuthProvider = ({ children }) => {
         // Lưu vào localStorage
         localStorage.setItem("user", JSON.stringify(data.data.user));
         localStorage.setItem("accessToken", data.data.accessToken);
+        // Dispatch event để các context khác có thể refresh data
+        window.dispatchEvent(new Event('auth:success'));
         return { success: true, user: data.data.user };
       } else {
         throw new Error(data.message || "Dữ liệu đăng nhập không hợp lệ");

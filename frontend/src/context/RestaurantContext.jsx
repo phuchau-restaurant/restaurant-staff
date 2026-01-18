@@ -19,11 +19,19 @@ export const RestaurantProvider = ({ children }) => {
     });
     const [loading, setLoading] = useState(true);
 
-    // Fetch restaurant info on mount
+    // Fetch restaurant info when user is authenticated
     useEffect(() => {
         const fetchInfo = async () => {
+            // Check if user is logged in (has token)
+            const token = localStorage.getItem("accessToken");
+            if (!token) {
+                setLoading(false);
+                return;
+            }
+
             try {
                 const response = await getRestaurantInfo();
+
                 if (response.success && response.data) {
                     setRestaurantInfo({
                         name: response.data.name || "RoRi",
@@ -46,7 +54,19 @@ export const RestaurantProvider = ({ children }) => {
         };
 
         fetchInfo();
+
+        // Listen for auth success event (when user logs in)
+        const handleAuthSuccess = () => {
+            fetchInfo();
+        };
+        window.addEventListener("auth:success", handleAuthSuccess);
+
+        return () => {
+            window.removeEventListener("auth:success", handleAuthSuccess);
+        };
     }, []);
+
+
 
     // Update Browser Title & Favicon
     useEffect(() => {
