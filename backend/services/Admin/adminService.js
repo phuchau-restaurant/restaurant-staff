@@ -287,7 +287,7 @@ export default class AdminService {
   }
 
   /**
-   * Private: Tạo QR PDF
+   * Private: Tạo QR PDF với thiết kế đẹp
    */
   async _generateQRPDF(table, url) {
     return new Promise(async (resolve, reject) => {
@@ -296,15 +296,19 @@ export default class AdminService {
         const qrBuffer = await QRCode.toBuffer(url, {
           errorCorrectionLevel: "H",
           type: "png",
-          margin: 1,
+          margin: 2,
           scale: 10,
           width: 400,
+          color: {
+            dark: "#1a1a2e",
+            light: "#ffffff",
+          },
         });
 
         // Tạo PDF document
         const doc = new PDFDocument({
           size: "A4",
-          margin: 50,
+          margin: 0,
         });
 
         const buffers = [];
@@ -313,7 +317,6 @@ export default class AdminService {
         doc.on("data", buffers.push.bind(buffers));
         doc.on("end", () => {
           const pdfBuffer = Buffer.concat(buffers);
-          // Sanitize table number để tránh ký tự không hợp lệ trong filename
           const safeTableNumber = String(table.tableNumber).replace(
             /[^a-zA-Z0-9-_]/g,
             "-"
@@ -327,50 +330,159 @@ export default class AdminService {
 
         doc.on("error", reject);
 
-        // === Layout PDF ===
+        // === Layout PDF với thiết kế đẹp ===
         const pageWidth = doc.page.width;
         const pageHeight = doc.page.height;
+        const centerX = pageWidth / 2;
 
-        // 1. Logo placeholder (nếu có)
-        // doc.image('path/to/logo.png', 50, 50, { width: 100 });
+        // 1. Background gradient effect (simulated với rectangles)
+        doc.rect(0, 0, pageWidth, pageHeight).fill("#f8fafc");
+        
+        // Header decorative bar
+        doc.rect(0, 0, pageWidth, 120).fill("#1e40af");
+        
+        // Decorative accent line
+        doc.rect(0, 120, pageWidth, 8).fill("#3b82f6");
 
-        // 2. Tiêu đề lớn
+        // 2. Restaurant name / Title area
         doc
-          .fontSize(36)
+          .fontSize(28)
           .font("Helvetica-Bold")
-          .text(`Table ${table.tableNumber}`, 0, 100, {
+          .fillColor("#ffffff")
+          .text("RESTAURANT", 0, 35, {
             align: "center",
             width: pageWidth,
           });
 
-        // 3. QR Code - căn giữa
-        const qrSize = 350;
-        const qrX = (pageWidth - qrSize) / 2;
-        const qrY = 200;
+        doc
+          .fontSize(14)
+          .font("Helvetica")
+          .fillColor("#93c5fd")
+          .text("Scan • Order • Enjoy", 0, 70, {
+            align: "center",
+            width: pageWidth,
+          });
 
+        // 3. Table number badge
+        const badgeWidth = 200;
+        const badgeHeight = 60;
+        const badgeX = centerX - badgeWidth / 2;
+        const badgeY = 155;
+
+        // Badge background
+        doc
+          .roundedRect(badgeX, badgeY, badgeWidth, badgeHeight, 30)
+          .fill("#1e40af");
+
+        // Badge text
+        doc
+          .fontSize(32)
+          .font("Helvetica-Bold")
+          .fillColor("#ffffff")
+          .text(`Table ${table.tableNumber}`, 0, badgeY + 13, {
+            align: "center",
+            width: pageWidth,
+          });
+
+        // 4. QR Code với frame
+        const qrSize = 280;
+        const qrX = centerX - qrSize / 2;
+        const qrY = 250;
+
+        // QR frame/border
+        const framePadding = 20;
+        doc
+          .roundedRect(
+            qrX - framePadding,
+            qrY - framePadding,
+            qrSize + framePadding * 2,
+            qrSize + framePadding * 2,
+            15
+          )
+          .fill("#ffffff");
+
+        // QR shadow effect
+        doc
+          .roundedRect(
+            qrX - framePadding + 4,
+            qrY - framePadding + 4,
+            qrSize + framePadding * 2,
+            qrSize + framePadding * 2,
+            15
+          )
+          .fill("#e2e8f0");
+
+        // QR frame lại
+        doc
+          .roundedRect(
+            qrX - framePadding,
+            qrY - framePadding,
+            qrSize + framePadding * 2,
+            qrSize + framePadding * 2,
+            15
+          )
+          .fill("#ffffff");
+
+        // QR Code image
         doc.image(qrBuffer, qrX, qrY, {
           width: qrSize,
           height: qrSize,
         });
 
-        // 4. Hướng dẫn
+        // 5. Instructions section
+        const instructY = qrY + qrSize + 50;
+
         doc
           .fontSize(24)
-          .font("Helvetica")
-          .text("Scan to Order", 0, qrY + qrSize + 40, {
+          .font("Helvetica-Bold")
+          .fillColor("#1e293b")
+          .text("Scan to Order", 0, instructY, {
             align: "center",
             width: pageWidth,
           });
 
-        // 5. Optional: WiFi info
-        doc
-          .fontSize(12)
-          .font("Helvetica")
-          .text("WiFi: Restaurant-Guest", 0, pageHeight - 100, {
+        // Step by step instructions
+        const stepsY = instructY + 45;
+        const steps = [
+          "1. Open camera on your phone",
+          "2. Point at QR code",
+          "3. Tap notification to open menu",
+        ];
+
+        doc.fontSize(14).font("Helvetica").fillColor("#64748b");
+
+        steps.forEach((step, index) => {
+          doc.text(step, 0, stepsY + index * 25, {
             align: "center",
             width: pageWidth,
-          })
-          .text("Password: welcome123", 0, pageHeight - 80, {
+          });
+        });
+
+        // 6. Footer với decorative elements
+        const footerY = pageHeight - 80;
+
+        // Footer line
+        doc
+          .moveTo(80, footerY - 20)
+          .lineTo(pageWidth - 80, footerY - 20)
+          .strokeColor("#e2e8f0")
+          .lineWidth(2)
+          .stroke();
+
+        // Footer text
+        doc
+          .fontSize(11)
+          .font("Helvetica")
+          .fillColor("#94a3b8")
+          .text("Thank you for dining with us!", 0, footerY, {
+            align: "center",
+            width: pageWidth,
+          });
+
+        doc
+          .fontSize(10)
+          .fillColor("#cbd5e1")
+          .text("Need help? Ask our friendly staff", 0, footerY + 20, {
             align: "center",
             width: pageWidth,
           });
@@ -418,7 +530,7 @@ export default class AdminService {
           expiresIn: `${QR_EXPIRE_DAYS}d`,
         });
 
-        const customerLoginUrl = `${FRONTEND_URL}/login?token=${jwtToken}`;
+        const customerLoginUrl = `${CUSTOMER_URL}/login?token=${jwtToken}`;
 
         // Generate theo format
         if (format === "png" || format === "all") {
