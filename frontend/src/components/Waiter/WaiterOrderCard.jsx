@@ -226,8 +226,8 @@ const WaiterOrderCard = ({
                     </span>
                   </div>
 
-                  {/* Action buttons for New Orders (Confirm/Cancel) */}
-                  {showClaimButton && item.status !== "Cancelled" && item.status !== "Pending" && item.status !== "Ready" && item.status !== "Served" && (
+                  {/* Action buttons for Unconfirmed items (Confirm/Cancel) */}
+                  {(!item.status || item.status === null) && (
                     <div className="flex gap-1.5 sm:gap-2 mt-2">
                       <button
                         onClick={(e) => handleConfirmItem(e, item)}
@@ -435,8 +435,8 @@ const WaiterOrderCard = ({
                             </button>
                           )}
 
-                          {/* Confirm/Cancel for new orders */}
-                          {showClaimButton && item.status !== "Cancelled" && item.status !== "Pending" && item.status !== "Ready" && item.status !== "Served" && (
+                          {/* Confirm/Cancel for unconfirmed items */}
+                          {(!item.status || item.status === null) && (
                             <>
                               <button
                                 onClick={(e) => handleConfirmItem(e, item)}
