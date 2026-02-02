@@ -102,6 +102,26 @@ export class ModifierOptionsRepository extends BaseRepository {
   }
 
   /**
+ * Lấy nhiều modifier options theo danh sách IDs (Batch Query)
+ * @param {Array<number>} ids - Danh sách ID cần fetch
+ * @returns {Promise<Array<ModifierOptions>>}
+ */
+  async getByIds(ids) {
+    if (!ids || ids.length === 0) return [];
+
+    // Loại bỏ duplicates
+    const uniqueIds = [...new Set(ids)];
+
+    const { data, error } = await supabase
+      .from(this.tableName)
+      .select("*")
+      .in("id", uniqueIds);
+
+    if (error) throw new Error(`GetByIds failed: ${error.message}`);
+    return (data || []).map(item => new ModifierOptions(item));
+  }
+
+  /**
    * Xóa tất cả options của một group
    */
   async deleteByGroupId(groupId) {

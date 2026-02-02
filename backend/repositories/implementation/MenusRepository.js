@@ -8,58 +8,58 @@ import { Menus } from "../../models/Menus.js";
 export class MenusRepository extends BaseRepository {
   constructor() {
     // Mapping: [id, tenant_id, category_id, name, description, price, img_url, is_available]
-    super("dishes", "id"); 
+    super("dishes", "id");
   }
   /**
    * Tìm category theo tên (Bắt buộc phải có tenant_id để tránh lộ data)
    * @param {string} tenantId - ID của nhà hàng/thuê bao
    * @param {string} name - Tên cần tìm
    */
-//
+  //
   async create(data) {
     const menuEntity = new Menus(data);
 
-    const dbPayload = menuEntity.toPersistence(); 
+    const dbPayload = menuEntity.toPersistence();
 
     const { data: result, error } = await supabase
       .from(this.tableName)
-      .insert([dbPayload]) 
+      .insert([dbPayload])
       .select();
 
     if (error) throw new Error(`Create failed: ${error.message}`);
-    
+
     //  Map kết quả trả về ngược lại thành Model để trả lên Service
     return result?.[0] ? new Menus(result[0]) : null;
   }
 
-async update(id, updates) {
+  async update(id, updates) {
     console.log('[MenusRepo] Update received:', { id, updates });
     console.log('[MenusRepo] isRecommended in updates:', updates.isRecommended);
-    
+
     //"Clean Payload"  
     const menuEntity = new Menus(updates);
     console.log('[MenusRepo] menuEntity.isRecommended:', menuEntity.isRecommended);
-    
+
     const dbPayload = menuEntity.toPersistence();
     console.log('[MenusRepo] dbPayload.is_recommended:', dbPayload.is_recommended);
 
     // Loại bỏ các key có giá trị undefined -> Vì default value của is_active có thể không đc truyền vào
     // lọc sạch object dbPayload.
     Object.keys(dbPayload).forEach(key => {
-        if (dbPayload[key] === undefined) {
-            delete dbPayload[key];
-        }
+      if (dbPayload[key] === undefined) {
+        delete dbPayload[key];
+      }
     });
     console.log('[MenusRepo] Final dbPayload:', dbPayload);
-    
+
     const { data, error } = await supabase
       .from(this.tableName)
-      .update(dbPayload) 
+      .update(dbPayload)
       .eq(this.primaryKey, id)
       .select();
 
     if (error) throw new Error(`[Menu] Update failed: ${error.message}`);
-    
+
     //mapping return model
     return data?.[0] ? new Menus(data[0]) : null;
   }
@@ -78,22 +78,40 @@ async update(id, updates) {
     return data.map(item => new Menus(item)) || [];
   }
 
-// override thêm getById để trả về Model
-async getById(id) {
+  // override thêm getById để trả về Model
+  async getById(id) {
     const rawData = await super.getById(id); // Gọi cha lấy raw data
     return rawData ? new Menus(rawData) : null; // Map sang Model
-}
- async getAll(filters = {}, pagination = null) {
+  }
+  /**
+   * Lấy nhiều dishes theo danh sách IDs (Batch Query)
+   * @param {Array<number>} ids - Danh sách ID cần fetch
+   * @returns {Promise<Array<Menus>>}
+   */
+  async getByIds(ids) {
+    if (!ids || ids.length === 0) return [];
+
+    const uniqueIds = [...new Set(ids)];
+
+    const { data, error } = await supabase
+      .from(this.tableName)
+      .select("*")
+      .in("id", uniqueIds);
+
+    if (error) throw new Error(`GetByIds failed: ${error.message}`);
+    return (data || []).map(item => new Menus(item));
+  }
+  async getAll(filters = {}, pagination = null) {
     // Extract special filters that need custom handling
-    const { 
-      categoryId, 
-      onlyAvailable, 
-      search, 
-      sortBy, 
+    const {
+      categoryId,
+      onlyAvailable,
+      search,
+      sortBy,
       sortOrder,
       priceMin,
       priceMax,
-      ...basicFilters 
+      ...basicFilters
     } = filters;
 
     // Sử dụng count để lấy tổng số bản ghi
@@ -183,7 +201,7 @@ async getById(id) {
       .in('id', uniqueIds);
 
     if (error) throw new Error(`[Menus] GetByIds failed: ${error.message}`);
-    
-    return data.map(item => new Menus(item)); 
+
+    return data.map(item => new Menus(item));
   }
 }
