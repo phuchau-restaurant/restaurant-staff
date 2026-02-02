@@ -5,8 +5,8 @@ export const tenantMiddleware = (req, res, next) => {
     // Ưu tiên 1: Lấy từ User đã đăng nhập (nếu đã cài Auth Middleware)
     if (req.user && req.user.tenant_id) return req.user.tenant_id;
 
-    // ưu tiên 2 lấy từ header
-    const tenantId = req.headers['x-tenant-id'];
+    // ưu tiên 2 lấy từ header - khi deploy thì không dùng ưu tiên 2
+    // const tenantId = req.headers['x-tenant-id'];
 
     // Validate
     if (!tenantId) {
